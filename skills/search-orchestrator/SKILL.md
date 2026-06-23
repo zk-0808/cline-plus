@@ -345,6 +345,61 @@ Step 4  在 Phase 4 输出 Sources 表时标注哪些来源经过 goggle 提升
 | `csdn.net/某文章` | Tech blog | [社区] Medium | ↓ DOWNRANK (zh-tech) |
 | `arxiv.org/abs/...` | Paper | [文档] High | ✓ BOOST (academic) |
 
+### 3.5.5 Goggle × Source Weighting 联动（FinalScore 模型）
+
+> **背景**：第一次 A/B 实测（2026-06-23 K8s ImagePullBackOff 查询）发现，Goggle 白名单永远赶不上长尾——例如 `imroc.cc`（中文 K8s 排障权威站）在白名单中不存在，但其内容质量明显高于 `csdn.net`。
+>
+> **结论**：不通过扩白名单解决，而通过**让 Goggle 与 §3.3 Source Weighting 联动**，使未命中 Goggle 的优质站点能通过权威分级自然升上来。
+>
+> **设计原则**：不引入数学计算，而是让 LLM 在排序时遵守一个**复合规则**。
+
+#### 联动公式
+
+```
+FinalScore(result) = SearchRank + GoggleWeight + SourceWeight
+```
+
+各项含义：
+
+| 项 | 取值 | 来源 |
+|----|------|------|
+| `SearchRank` | `-position`（如第 3 条 = -3） | 搜索引擎原始排序 |
+| `GoggleWeight` | `+2`（✓ BOOST）/ `-1`（↓ DOWNRANK）/ `-∞`（✗ DISCARD）/ `0`（—） | §3.5.2 Goggle 规则 |
+| `SourceWeight` | `+10` (T1) / `+3` (T2) / `+1` (T3) / `+0.1` (T4) | §3.3 权威分级 |
+
+#### 联动示例（基于本项目 A/B 实测）
+
+| URL | SearchRank | GoggleWeight | SourceWeight | FinalScore | 上升/下沉 |
+|-----|-----------:|-------------:|-------------:|-----------:|----------|
+| `kubernetes.io/zh/docs/...` | -8 | +2 (BOOST general-tech+zh-tech) | +10 (T1) | **+4** | ⬆ 最强 |
+| `imroc.cc/.../imagepullbackoff` | -10 | 0 (—) | +3 (T2 社区专家) | **-7** | ⬆ 升至 T2 档 |
+| `cloudnative-tech.com/p/7429/` | -5 | 0 (—) | +1 (T3) | **-4** | 持平 |
+| `wenku.csdn.net/column/...` | -3 | -1 (DOWNRANK zh-tech) | +0.1 (T4) | **-3.9** | ⬇ 沉底 |
+| `lryc.cc/news/...` | -7 | -∞ (DISCARD) | — | **-∞** | ⛔ 剔除 |
+
+可见 `imroc.cc` 没在白名单也能自然上升，无需扩 Goggle。
+
+#### 实操规则（LLM 必须遵守）
+
+```
+对每条搜索结果按以下步骤打分：
+
+1. 应用 Goggle 规则得到 GoggleWeight
+2. 评估 Source Authority 得到 SourceWeight（必须显式给出 T 级）
+3. 按 FinalScore 重排
+4. 若 FinalScore 出现并列，按原 SearchRank 决定
+5. 在 Phase 4 输出中，Sources 表新增 "T-Level" 列（与 Goggle Action 并列）
+```
+
+#### 设计护栏（避免膨胀）
+
+| 规则 | 原因 |
+|------|------|
+| 不为每个新发现的优质站补 BOOST 白名单 | 防止「200 域名白名单」陷阱（GPT 2026-06-23 评审第二轮指出） |
+| 优先用 Source Weighting 提升新站，而不是 Goggle | Goggle 是**类别级粗筛**，Source Weighting 才是**站点级精筛** |
+| Goggle 仅覆盖**高频垃圾域** + **少数普世权威域**（github/docs/arxiv） | 长尾交给 Source Weighting |
+| 不引入实际数值计算 / 排序代码 | 保持「提示词级」轻量本质，不增加新依赖 |
+
 ---
 
 ## Phase 4: Synthesize (Output)

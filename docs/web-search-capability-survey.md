@@ -308,3 +308,58 @@
 ### 9.4 T2→T3 期间外部评审原文
 
 GPT 评审原文已记录在本次对话 commit 6a37513 之后的会话上下文中，未单独存档为文件——理由：本节已经把所有可执行结论提炼，原文复述会重复信息。如未来需要 audit 评审过程，可从 git 会话日志 / handoff 文件回溯。
+
+---
+
+## 10. A/B 验证记录
+
+> 评测框架与可贴 prompt 模板见 [skills/search-orchestrator/examples/ab-test-template.md](../skills/search-orchestrator/examples/ab-test-template.md)。
+
+### 10.1 Run #1 —— Phase 3.5 Goggle 首轮验证（2026-06-23）
+
+| 项 | 内容 |
+|----|------|
+| 改造 | Phase 3.5 Domain Goggles（A general-tech + E zh-tech） |
+| Commit | `19a8953` |
+| Query | `"Kubernetes 滚动更新 ImagePullBackOff 排查方法"`，max_results=10，单次调用 |
+| Run A 农场/转载站数 | 5/10（CSDN×4、lryc.cc×1） |
+| Run B 被 DOWNRANK+DISCARD 数 | 5/10 |
+| **垃圾站清除率** | **5/5 = 100%** |
+| BOOST 命中 | 1/10（kubernetes.io/zh） |
+| 未命中 `—` 状态 | 4/10（imroc.cc、devgex.com、cloudnative-tech.com、jishuzhan.net） |
+| 用户首轮主观评分 | 2/5（错误指标） |
+| 按 ab-test-template §2.4 修正评分 | **4/5** |
+| 决策 | **保留**，推进 P1.5 联动 |
+
+### 10.2 第二轮 GPT 评审与 P1.5 联动
+
+GPT 二轮评审的核心修正：
+
+| 评审点 | 调整 |
+|--------|------|
+| BOOST 命中率是错误指标 | ✅ 接受 → ab-test-template §2.3 把"垃圾站清除率"列为主指标，BOOST 命中数降为"参考" |
+| 缺 TRUST SCORE 层 | ✅ 接受 → 新增 SKILL.md §3.5.5 联动小节，FinalScore = SearchRank + GoggleWeight + SourceWeight |
+| 不要手动加 imroc.cc | ✅ 接受 → 让 Source Weighting 把 imroc.cc 自然评为 T2，无需扩 Goggle |
+| 评测框架是真正资产 | ✅ 接受 → 固化为 examples/ab-test-template.md |
+
+### 10.3 联动后的预期效果（基于 Run #1 数据回算）
+
+按 SKILL.md §3.5.5 FinalScore 公式回算 Run #1 的 10 条结果：
+
+| URL | SearchRank | GoggleWeight | SourceWeight | FinalScore |
+|-----|-----------:|-------------:|-------------:|-----------:|
+| kubernetes.io/zh/... | -8 | +2 | +10 (T1) | **+4** ⬆⬆ |
+| imroc.cc/... | -10 | 0 | +3 (T2) | **-7** ⬆ |
+| cloudnative-tech.com/... | -5 | 0 | +1 (T3) | **-4** |
+| devgex.com/... | -6 | 0 | +1 (T3) | **-5** |
+| jishuzhan.net/... | -9 | 0 | +1 (T3) | **-8** |
+| blog.csdn.net (×2) | -1, -2 | -1, -1 | +0.1 (T4) | **-1.9 / -2.9** ⬇ |
+| wenku.csdn.net (×2) | -3, -4 | -1, -1 | +0.1 (T4) | **-3.9 / -4.9** ⬇ |
+| lryc.cc/news/... | -7 | -∞ | — | **-∞** ⛔ |
+
+**重排后预期 Top 5**：kubernetes.io / imroc.cc / cloudnative-tech / devgex / blog.csdn[1]。
+**Top-5 T1+T2 变化**：Run A 原始 = 0，Run B(Goggle only) = 1，**Run B(Goggle + SourceWeight) = 2**——通过联动让 imroc.cc 自然升上来，是不扩白名单的最佳证明。
+
+### 10.4 下一次验证
+
+下一项跑 A/B 应是 **P2 Query Rewrite + Fanout**。模板已就位。
