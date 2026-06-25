@@ -256,6 +256,28 @@ Run the prioritized search queries. For each result:
 2. **Cross-reference** — if two independent sources agree, confidence increases. If they conflict, flag the contradiction.
 3. **Respect rate limits** — batch parallel queries within tool limits, don't spam.
 
+### 2.1 fetch_content 全文归档（Iron Law）
+
+> **来源**：Run #10 / Run #11 暴露的系统性问题——§2 标题为"全文归档"但实际只存 2-3 句摘要，导致 Run #11 baseline SimHash 在 verbatim 对上 Miss（"摘要级指纹"≠"文档级指纹"），Net Gain 成为上界估计。
+
+**每个 fetch_content 成功的 URL，其返回正文必须完整归档到输出文件的独立章节。**
+
+归档要求：
+- **归档完整正文**，不是摘要、不是 highlights、不是 snippet
+- 每个 URL 的归档块包含：URL、fetch 状态、完整正文
+- fetch 失败的 URL 也要记录（URL + 失败原因），不省略
+- 归档章节在输出文件中位于搜索结果表之后、P6 highlights 之前
+
+**为什么必须归档全文**：
+1. **可审计性**：P3 Quote 必须是 fetch_content 返回正文的连续子串——无全文归档则无法事后验证 Quote 是否 verbatim
+2. **基线评测**：P4 同源合并的算法基线（SimHash/Jaccard）需要全文作为输入——摘要替代正文会破坏 SimHash 经典设定（Run #11 教训）
+3. **P6 highlights 抽取的源数据**：highlights 是从全文中抽取的 verbatim 子串——无全文则 highlights 的 verbatim 性不可验证
+
+**与 P6 的关系**：
+- P6 §3.6.1 说"fetch_content 全文不直接进合成 context，只进 highlights"——这是**合成 context** 的约束（Phase 4 合成只用 highlights，不用全文）
+- **不等于"全文丢弃"**——全文必须归档到输出文件，只是不进 Phase 4 合成 context
+- 即：全文 → 归档到输出文件 §2 + 抽取 highlights → highlights 进 Phase 4 合成
+
 ---
 
 ## Phase 3: Evaluate (After Each Round)
@@ -493,6 +515,65 @@ FinalScore(result) = SearchRank + GoggleWeight + SourceWeight
 | **不在提示词层引入多样性/反垄断算分**（如 DiversityPenalty） | Run #3（2026-06-24）证实：LLM 在提示词层算分不可靠，且 ±2 量级压不过 T1 SourceWeight ±10。多样性排序属机制层问题，见 mechanism-candidates #21 |
 
 > **Run #3 教训**：曾尝试新增 §3.5.6 DiversityPenalty + R1 保底来缓解 fanout 单一路垄断，复测综合 2.6/5，倒退。**回退** —— 多样性约束移交机制层（见 mechanism-candidates #21），SKILL 层不再算分。详见实验报告 [run-3-fanout-tuned](../../docs/search-orchestrator/experiments/run-3-fanout-tuned.md) 与决策 [D-2026-06-24-search-rollback-diversity](../../docs/decisions/D-2026-06-24-search-rollback-diversity.md) / [D-2026-06-24-search-defer-p2](../../docs/decisions/D-2026-06-24-search-defer-p2.md)。
+
+---
+
+## Phase 3.6: P6 Highlights（fetch 后 verbatim 抽取）
+
+> **机制来源**：[D-2026-06-25-search-adopt-p6-highlights](../../docs/decisions/D-2026-06-25-search-adopt-p6-highlights.md)（active）
+> **验证**：[run-10-p6-highlights](../../docs/search-orchestrator/experiments/run-10-p6-highlights.md) — 评分 4/5，Extractive Fidelity 92.3%
+
+### 3.6.1 触发条件
+
+每个 sub-Q 的所有 fetch_content 结果在进入 Phase 4 合成之前，**必须**先经过 P6 highlights 抽取。fetch_content 全文不直接进合成 context，只进 highlights。
+
+> **澄清**（Run #11 教训）：此处"不直接进合成 context"指 Phase 4 合成只用 highlights，**不等于全文丢弃**。fetch_content 全文必须按 §2.1 归档到输出文件，用于可审计性和后续基线评测。即：全文 → 归档（§2.1）+ 抽取 highlights → highlights 进合成。
+
+### 3.6.2 抽取规则
+
+```
+Phase 3.6  P6 Highlights（每个 sub-Q ≤500 token）
+  ① 对每个 sub-Q 的所有 fetch_content 结果，抽取与该 sub-Q 直接相关的关键句
+  ② 抽取规则：verbatim 引用（连续子串，允许首尾空白/格式标记差异）
+     - 禁止改写、同义替换、跨语言归纳
+     - 允许截取（在句号/逗号处截断）和省略标记（"..."）
+     - 允许格式标记差异（斜体/粗体/链接/代码标记的增减）
+  ③ 每条 highlight 格式："引文" [Source: URL]
+  ④ 每个 sub-Q 的 highlights 总量 ≤500 token
+  ⑤ 标注置信度（High/Medium/Low）和反证覆盖（有/无）
+```
+
+### 3.6.3 Iron Law — verbatim 抽取
+
+> **LLM 不得改写、同义替换、跨语言归纳。** 引文必须是来源全文的连续子串（允许首尾空白/格式标记差异）。截取和省略标记（"..."）是允许的；同义替换不是。
+
+Run #10 验证的两条 paraphrase 失败模式（须避免）：
+1. **主语同义替换**：把 "This release of PostgreSQL" 改成 "PostgreSQL 17" —— 禁止。应直接 verbatim 引用 "This release of PostgreSQL"
+2. **跨语言归纳**：英文原文用中文总结 —— 禁止。应直接 verbatim 引用英文原文，在 highlight 外另起一行做中文注释（如有需要）
+
+### 3.6.4 输出格式
+
+每个 sub-Q 的 highlights 块：
+
+```markdown
+### Qn Highlights — [sub-Q 主题]
+
+> **Qn 主问题**: [sub-Q 文本]
+
+- "verbatim 引文" [Source: URL]
+- "verbatim 引文" [Source: URL]
+...
+
+**置信度**: High/Medium/Low — [原因]
+**反证覆盖**: ✅ 有 / ❌ [未找到反证] — [原因]
+```
+
+### 3.6.5 P6 的边界（诚实声明）
+
+- P6 只做 **token 压缩 + verbatim 保真**，不做信息综合（综合在 Phase 4）
+- P6 不替代 Phase 3 评估——评估仍在 Phase 3.1-3.5 完成
+- 若 fetch_content 失败（HTTP 错误/JS Challenge 假页面），该 URL 不产生 highlights，标注 `[fetch 失败]`
+- 若 search 工具不可用导致 R3 反证全部不可达，所有 sub-Q 标注 `❌ [未找到反证]`，Phase 4 整体置信度降一档
 
 ---
 

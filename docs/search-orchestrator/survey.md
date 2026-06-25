@@ -291,6 +291,7 @@
 | [D-2026-06-24-search-revise-p4-metrics](../decisions/D-2026-06-24-search-revise-p4-metrics.md) | active | 修订 P4 评估指标（域名多样性降级为观察指标） |
 | [D-2026-06-24-search-infra-mcp-upgrade](../decisions/D-2026-06-24-search-infra-mcp-upgrade.md) | **rolled-back** | 启动 MCP 基础设施升级验证（中文 fetch 覆盖率）— Run #8a 否决 TLS 指纹假设 |
 | [D-2026-06-24-search-evaluate-p5-output-schema](../decisions/D-2026-06-24-search-evaluate-p5-output-schema.md) | proposed | 评估 P5 Output Schema（Q1/Q2/Q3 已定义，Run #9 待启动） |
+| [D-2026-06-25-search-adopt-p6-highlights](../decisions/D-2026-06-25-search-adopt-p6-highlights.md) | active | 采纳 P6 Highlights（fetch 后 verbatim 抽取 ≤500 token） |
 
 ### 9.2 A/B 实验数据
 
@@ -307,6 +308,8 @@
 | [run-9-p5-output-schema](experiments/run-9-p5-output-schema.md) | P5 Output Schema 首轮验证（单源列表型证据集） | 1/5 设计失败 | — | ❌ **设计失败，非机制失败**。Run A 基线 Claim Coverage 100%、Info Loss 0%——指标天花板已被自由文本顶满，Run B schema 抽取无提升空间。根因：Run #6 单源列表型证据集（1 URL × 4 同源 claim）不触发 P5 核心收益场景（跨源字段对齐）。P5 决策维持 proposed，启动 Run #9b 多实体对比框架重做 |
 | [run-9b-p5-output-schema-v2](experiments/run-9b-p5-output-schema-v2.md) | P5 Output Schema 多实体对比验证（Gin/Echo/Fiber × 5 维度） | 3/5 有条件 | — | ⚠️ **有条件 active（外部评审决策 C）**。Conflict ID +40% 仅方向性信号（非双盲）；Field Alignment 天花板归因 P3 证据集已结构化；Output Length 已排除（纯格式差异）。Run #9c 须双盲 + 非结构化证据集，Conflict ID Δ < +15% 则降回 proposed |
 | [run-9c-p5-output-schema-v3](experiments/run-9c-p5-output-schema-v3.md) | P5 Output Schema 双盲验证（非结构化证据集） | 2/5 | — | ❌ **双盲证伪，降回 proposed**。Conflict ID Δ=-20%（自由文本 100% > schema 80%），Field Alignment Δ=-7%。核心发现：schema 结构可能限制跨维度冲突发现（执行者倾向只报告 schema 内字段间冲突，自由文本叙事流更灵活）。Schema 幻觉=0 护栏有效但不足以挽救机制收益 |
+| [run-10-p6-highlights](experiments/run-10-p6-highlights.md) | P6 Highlights verbatim 抽取保真度验证（PostgreSQL 17 vs MySQL 8.4） | 4/5 | — | ✅ **P6 升级 active**。Extractive Fidelity 92.3%（24/26），Paraphrase 7.7%（2/26），Untraceable 0。两条 paraphrase 模式：主语同义替换 + 跨语言归纳。提示词层 verbatim 抽取指令基本有效。SKILL 加载机制修复（symlink）后首条 P 级机制通过验证 |
+| [run-11-p4-semantic-merge](experiments/run-11-p4-semantic-merge.md) | P4 语义场景去重增益验证（LLM vs SimHash/Jaccard 基线，K8s sidecar 跨语言） | 4/5 | — | ✅ **P4 语义场景已验证（仅 translation 子类）**。Baseline：P=1.00, R=0.20, F1=0.33（高精度低召回，FP=0）。P4 LLM：P=1.00, R=1.00, F1=1.00。Net Gain（Recall 差）+0.80。3 个 translation 对全部正确合并。Baseline translation Miss 属算法边界（lexical 不具备跨语言能力，文献一致）；3-8 verbatim Miss 属数据限制（仅摘要非全文，摘要级指纹≠文档级指纹）。降级 4/5：样本量仅 3 对（全部 translation），Net Gain +0.80 为上界估计（摘要限制低估 baseline verbatim 能力） |
 
 ### 9.3 最终路线状态
 
@@ -314,10 +317,95 @@
 - P1.5 FinalScore 联动：active
 - P2 Query Rewrite + Fanout：**deferred**（D-2026-06-24-search-defer-p2）
 - **P3 Evidence-bound Citation：active（三档模式，D-2026-06-24-search-adopt-p3）**
-- **P4 Evidence Deduplication：active（同源内容合并，D-2026-06-24-search-adopt-p4-same-source-merge）**
+- **P4 Evidence Deduplication：active（同源内容合并，D-2026-06-24-search-adopt-p4-same-source-merge）** — Run #7 逐字场景 Merge Precision 100%；Run #11 语义场景 4/5（跨语言 translation：Baseline P=1.00/R=0.20/F1=0.33，P4 LLM P=1.00/R=1.00/F1=1.00，Net Gain +0.80。Baseline translation Miss 属算法边界，3-8 verbatim Miss 属数据限制。局限：样本量 3 对，仅 translation 子类，Net Gain 为上界估计）
 - P5 / P6（V2）：候选
 - **P5 Output Schema**：**proposed**（D-2026-06-24-search-evaluate-p5-output-schema）— Run #9 1/5 设计失败，Run #9b 3/5 有条件（非双盲 +40% 方向性信号），Run #9c 2/5 双盲证伪（Conflict ID Δ=-20%，自由文本反超 schema）。降回 proposed 触发条件已满足。核心教训：schema 结构可能限制跨维度冲突发现；非双盲偏差严重高估机制收益
-  - P6 Highlights / Relevance Compression：候选（mechanism-candidates #17）
+- **P6 Highlights / Relevance Compression：active**（D-2026-06-25-search-adopt-p6-highlights）— Run #10 4/5：Extractive Fidelity 92.3%，Paraphrase 7.7%，Untraceable 0。提示词层 verbatim 抽取指令基本有效。两条 paraphrase 模式：主语同义替换 + 跨语言归纳
 - **Infra（MCP 后端升级）**：**rolled-back**（D-2026-06-24-search-infra-mcp-upgrade）— Run #8a 否决 TLS 指纹假设；中文场景永久 Tier C；新候选 M-22 Browser-backed Fetch 状态：**候选（暂缓）**，触发条件为 Tier C 被证明严重影响答案质量
 
 详见各决策文件 + [search-orchestrator/README.md](README.md)。
+
+### 9.4 工程约定（Iron Laws）
+
+非机制候选，但已落地为 SKILL.md 硬性规则的工程教训：
+
+| 约定 | 来源 | SKILL.md 位置 | 说明 |
+|------|------|--------------|------|
+| fetch_content 全文归档 | Run #10 + Run #11 暴露的系统性问题 | §2.1（新增 2026-06-25） | 每个 fetch 成功的 URL 必须在输出文件归档完整正文（非摘要）。Run #11 教训：摘要替代正文破坏 SimHash 经典设定，导致 baseline verbatim 检测能力被低估。§3.6.1 P6 已补澄清——"不进合成 context"≠"全文丢弃" |
+
+---
+
+## 10. 现成结论引用（2026-06-25）
+
+> **背景**：SKILL 加载问题修复后（见 handoff 2026-06-25），回顾历史 Run #1~#9c 发现 5 个机制验证型 Run 在"SKILL 未加载"状态下执行，结论可信度存疑。对其中 5 个候选机制评估"自实验 vs 搜现成结论"后，判定以下 5 项可直接引用现成学术/工程结论，无需自实验（避免与现成研究重复）。
+>
+> **全文**：[搜索结论.md](搜索结论.md)
+> **执行主体**：TRAE agent 文献调研（非 SKILL 层机制执行，不违反 project-rules.md §约束 5）
+
+### 10.1 P1 Domain Goggles — 提示词层软过滤 vs Brave Goggles 硬排序
+
+| 项 | 内容 |
+|---|---|
+| 对应存疑 Run | #1 |
+| 核心命题 | 提示词层"软过滤"（LLM 按 BOOST/DOWNRANK/DISCARD 表打标）能否等效 Brave Goggles 的域名级硬排序 |
+| **裁决** | **不可等效。** 关键不在"排序精度"而在"介入点"：Goggles 在召回阶段对数万候选硬过滤，软过滤在最终 10-50 条上软重排。精度损失有界（NDCG 级），召回损失无界（长尾不可恢复）。叠加延迟 100-1000×、成本、非确定性三重代价 |
+| 工程结论 | 软过滤可视为 Goggles 在"最终结果重排"子空间上的有损近似；对长尾依赖查询发生不可恢复的结构性失败 |
+| 关键来源 | [Brave Goggles 白皮书](https://brave.com/static-assets/files/goggles.pdf)、[RankGPT](https://github.com/sunnweiwei/rankgpt)、[Brave Rerank](https://brave.com/blog/search-rerank) |
+| 对 P1 决策的影响 | P1 已 active（D-2026-06-23-search-adopt-goggles）。现成结论**支持**提示词层软过滤作为降级实现的合理性（无 Brave 后端时的最优替代），但明确了其结构性天花板——长尾召回不可恢复。P1 状态不变 |
+
+### 10.2 P4 Same-Source Merge — 提示词层去重 vs IR 成熟方法
+
+| 项 | 内容 |
+|---|---|
+| 对应存疑 Run | #7 |
+| 核心命题 | 同源转载/镜像去重是 IR 成熟技术；项目提示词层实现是否与现成方法等价 |
+| **裁决** | **分场景。** 逐字/近逐字镜像：提示词层与现成方法（SimHash/shingling+MinHash）目标等价，但工程上被严格压制（更贵、更慢、不确定、阈值不可证），属过度工程。语义级同源（改写/洗稿/翻译）：现成句法指纹明确"做不好"，提示词层 LLM 可能真正不等价（更强），但需用语义任务自己的评测证明，不能援引 shingling 成熟度背书 |
+| 工程结论 | 结果级尺度（几条到上百条）下，朴素 SimHash/Jaccard + URL 规范化几行代码即可平替逐字去重。提示词层唯一站得住的差异化是"语义合并"和"零额外基础设施" |
+| 关键来源 | [Manning IR Book §19.6](https://nlp.stanford.edu/IR-book/html/htmledition/near-duplicates-and-shingling-1.html)、[Manku/Google WWW'07](https://research.google.com/pubs/archive/33026.pdf)、[Henzinger DOCENG'13](https://clgiles.ist.psu.edu/pubs/DOCENG2013-near-duplicate-detection.pdf) |
+| 对 P4 决策的影响 | P4 已 active（D-2026-06-24-search-adopt-p4-same-source-merge）。现成结论**部分支持** P4：逐字场景下 P4 是 overkill 但功能等价；语义场景下 P4 有真正价值。**Run #11 已补充语义场景评测**（4/5）：跨语言 translation 场景 P4 LLM P=1.00/R=1.00 vs lexical baseline P=1.00/R=0.20，Net Gain（Recall 差）+0.80，FP=0。Baseline 性质为"高精度低召回"（宁漏杀不误杀），translation Miss 属算法边界（lexical 不具备跨语言能力，文献一致），3-8 verbatim Miss 属数据限制（仅摘要非全文）。局限：样本量 3 对，仅 translation 子类，Net Gain 为上界估计 |
+
+### 10.3 #20 反证检索 — 负向 query 召回差是否"非提示词可治"
+
+| 项 | 内容 |
+|---|---|
+| 对应存疑 Run | #2/3 遗产 |
+| 核心命题 | DDG/通用搜索后端对负向 query（OR/否定词/反例词）召回差是后端能力限制，非提示词可治 |
+| **裁决** | **基本成立，但需收紧措辞。** 负向召回差发生在检索阶段（非生成阶段），提示词够不到。NevIR 基准：多数神经检索模型在否定上等于或低于随机排序；"语义坍缩"使否定信号在向量空间不可分。DDG 特异性：基于 Bing，2023 年起大部分算子被下线，"后端能力限制"字面成立 |
+| 反证修正 | 命题把三种机制混为一谈（OR 算子支持、词项级否定、语义级反例）；词法后端对显式否定线索并非无能（BM25 比 dense embedding 抓得好）；可由检索架构+训练数据缓解，非"完全不可治" |
+| 工程结论 | agent 正确动作：OR 拆成多次检索取并集；否定/排除转正向词项或后置过滤；反证用高召回词法 + NLI/重排，而非指望后端理解否定 |
+| 关键来源 | [NevIR EACL'24](https://aclanthology.org/2024.eacl-long.139.pdf)、[NegBench MIT](https://news.mit.edu/2025/study-shows-vision-language-models-cant-handle-negation-words-queries-0514)、[DDG 算子下线 gHacks](https://www.ghacks.net/2023/04/24/duckduckgo-disables-most-search-filters-from-search)、[BioGen TREC'25](https://arxiv.org/html/2603.17580) |
+| 对 #20 状态的影响 | #20 保持**候选（P2 失败遗产）**。现成结论**支持** #20 的核心判断（提示词层不可治），但修正了"完全不可治"的绝对说法——可由检索策略+架构缓解。理想机制列的"分拆负向短语单发"已被现成结论验证为正确方向 |
+
+### 10.4 #21 多样性排序 — LLM 提示词层算分可靠性
+
+| 项 | 内容 |
+|---|---|
+| 对应存疑 Run | #2/3 遗产 |
+| 核心命题 | LLM 在提示词层做数值算分（DiversityPenalty ±2）不可靠，量级压不过 SourceWeight ±10 |
+| **裁决** | **成立，且比直觉更深。** 三重叠加：① LLM 算术本身不准（NumericBench：简单加减都达不到 100%，next-token 范式与算术进位逻辑相反）；② 数值分被"压缩"（评分误差 σ²≈0.21 vs 基线 0.87，4 倍方差压缩），±2 落在噪声地板内；③ pointwise 逐条打分是排序家族里方差最大、最不稳定的范式，提示噪声影响比算法本身还大 |
+| 工程结论 | 算分必须出 LLM、进算法层。LLM 只做语义判断（输出离散标签/布尔，不输出分数），数值合成与排序交给确定性代码。若必须 LLM 参与排序，用 pairwise/setwise 而非 pointwise |
+| 关键来源 | [NumericBench arXiv'25](https://arxiv.org/html/2502.11075v1)、[LLM 评分压缩 arXiv'25](https://arxiv.org/html/2602.13862v2)、[LLM-as-a-Judge 偏差 arXiv'25](https://arxiv.org/html/2506.22316v2)、[零样本 LLM 排序大规模研究 arXiv'24](https://arxiv.org/html/2406.14117v1) |
+| 对 #21 状态的影响 | #21 保持**候选（P2 失败遗产）**。现成结论**强支持** #21 的核心判断（提示词层算分不可靠），且给出了比原判断更深的机理（三重叠加）。理想机制列的"排序后处理代码"方向正确 |
+
+### 10.5 #22 Browser Fetch — headless 浏览器是否"唯一对路径方案"
+
+| 项 | 内容 |
+|---|---|
+| 对应存疑 Run | #8a 遗产 |
+| 核心命题 | Playwright/headless Chromium 是穿透 Cloudflare JS Challenge 的唯一对路径方案 |
+| **裁决** | **命题需修正。** 真实浏览器内核是**必要执行环境**（JS Challenge 必须真实 JS 执行），但**既非唯一**（老式挑战有 cloudscraper/FlareSolverr 旁路；引擎级工具 nodriver/Camoufox 更隐蔽；托管云浏览器另成一路），**也不充分**（裸 headless 必被识别，需叠加 stealth 补丁 + 住宅代理 + 拟人化行为 + CAPTCHA solver） |
+| 工程结论 | headless 浏览器是"地基"不是"整栋楼"。稳定方案是"住宅代理 + 真实浏览器 + solver"多层叠加，让单层失效不至于崩盘 |
+| 关键来源 | [Browserless](https://www.browserless.io/blog/how-to-bypass-cloudflare-scraping)、[Scrapfly stealth](https://scrapfly.io/blog/posts/playwright-stealth-bypass-bot-detection)、[ByteTunnels nodriver/Camoufox](https://bytetunnels.com/posts/playwright-vs-selenium-stealth-which-evades-detection-better) |
+| 对 #22 状态的影响 | #22 保持**候选（暂缓）**。现成结论**修正**了原命题的"唯一"措辞，但**不改变**暂缓决策——触发条件（Tier C snippet-only 被证明严重影响答案质量）未变。若未来启动，应选多层叠加方案而非裸 Playwright |
+
+### 10.6 汇总：现成结论对路线图的影响
+
+| 机制 | 原状态 | 现成结论影响 | 是否需自实验 |
+|------|--------|-------------|-------------|
+| P1 Goggles | active | 支持降级实现合理性，明确长尾天花板 | 否 |
+| P4 Same-Source Merge | active（已机制化） | 逐字场景 overkill，语义场景有真正价值 | 仅语义场景需补评测 |
+| #20 反证检索 | 候选 | 支持核心判断，修正"完全不可治" | 否 |
+| #21 多样性排序 | 候选 | 强支持核心判断，给出更深机理 | 否 |
+| #22 Browser Fetch | 候选（暂缓） | 修正"唯一"措辞，不改变暂缓决策 | 否（启动时选多层方案） |
+
+**净变化**：5 个机制均无需自实验，避免与现成研究重复。唯一仍需自实验的是 P6 Highlights（提示词层抽取保真度，无现成结论覆盖）和 P3 三档模式（项目自创设计，附带在 Run #10 观察）。
