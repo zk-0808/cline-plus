@@ -1,115 +1,108 @@
-# Handoff — P5 Output Schema 三轮验证终态（双盲证伪）
+# Handoff — SKILL 未加载重大发现 + P6 实验框架待重设计
 
 ## 本会话总账
 
 ### 会话起点
 
-上会话完成 Run #8a（MCP TLS 指纹假设 disproven），启动 P5 Output Schema 评估（proposed）。handoff 列出下次动作：写 run-9 实验框架 + 执行 Run #9。
+上会话完成 P5 Output Schema 三轮验证终态（Run #9c 2/5 双盲证伪，P5 降回 proposed）。handoff 列出下次动作：从 P6 / M-22 / #20 / #21 中选一项推进。
 
 ### 本会话决策
 
 | 决策 | 状态 |
 |------|------|
-| 执行 Run #9（单源列表型证据集） | ✅ 1/5 设计失败 — 指标天花板被自由文本顶满 |
-| 执行 Run #9b（多实体对比 Gin/Echo/Fiber × 5 维度） | ✅ 3/5 有条件 — Conflict ID +40% 仅方向性信号（非双盲） |
-| 外部评审 Run #9b | ✅ 决策 C：有条件 active，Run #9c 须双盲 + 非结构化证据集 |
-| 执行 Run #9c（双盲 + 非结构化证据集） | ✅ 2/5 双盲证伪 — Conflict ID Δ=-20%，自由文本反超 schema |
-| P5 Output Schema 降回 proposed | ✅ 降回触发条件已满足（Δ < +15%） |
-| 新增 project-rules.md §约束 5（执行主体边界） | ✅ 已落地 |
-| 新增 mechanism-candidates #23（TRAE/Cline 边界混淆） | ✅ 已落地 |
-| handoff 进入 git | ✅ 本会话起执行 |
+| 修复 project-rules.md 标题漂移（"四条"→"五条"） | ✅ 已落地 |
+| 选择 P6 Highlights 作为下一步方向（收益最高且能一次性推进） | ✅ 已选 |
+| 写 Run #10 完整双盲 A/B 实验框架 | ✅ 已写，后作废 |
+| 文献调研发现 P6 设计落在研究安全区 | ✅ 完成（RECOMP / Perplexity / LongLLMLingua / LLMLingua / EMNLP 2025） |
+| Run #10 重写为轻量版（只验抽取保真度） | ✅ 已写 |
+| **发现 Cline 从未加载 SKILL** | ✅ 确认（可能 B 成立） |
+| 写 handoff | ✅ 本文件 |
 
 ### 关键发现
 
 ```
-P5 Output Schema 三轮验证终态:
+重大发现：Cline 从未加载 search-orchestrator SKILL
 
-Run #9  (单源列表型, 非双盲)
-  → 1/5 设计失败
-  → 指标天花板被自由文本顶满，schema 无提升空间
-  → 根因：单源列表型证据集不触发 P5 核心收益场景
+现象：
+  用户在 Cline 执行 Run #10 Phase 0 时，模型思考链显示：
+  "Let me first read the SKILL file"
+  但实际读取的是 run-10-phase0-evidence.md（证据文件），不是 SKILL.md
 
-Run #9b (多实体对比, 非双盲)
-  → 3/5 有条件
-  → Conflict ID +40%（方向性信号）
-  → 但非双盲偏差严重高估机制收益
-  → 外部评审决策 C：有条件 active
+根因：
+  项目根目录无 .clinerules 或任何 Cline 配置文件
+  所有历史 Run（#1~#9c）的提示词都是自然语言引用：
+    "请用 search-orchestrator SKILL 执行"
+    "按 SKILL.md L2 流程执行"
+  没有任何一次 Run 用过 @search-orchestrator 或类似语法调用
+  提示词"请用 X SKILL"不等于 SKILL 被加载
 
-Run #9c (双盲 + 非结构化证据集)
-  → 2/5 双盲证伪
-  → Conflict ID Δ=-20%（自由文本 100% > schema 80%）
-  → Field Alignment Δ=-7%（自由文本 100% > schema 93%）
-  → Schema 幻觉=0（护栏有效，但不足以挽救机制收益）
-                ↓
-终态结论:
-  P5 Output Schema 双盲证伪，降回 proposed
-  schema 结构可能限制跨维度冲突发现
-  （执行者倾向只报告 schema 内字段间冲突，
-   自由文本叙事流允许更灵活地连接不同维度信息）
-                ↓
-方法论教训:
-  非双盲偏差不仅高估了幅度，甚至高估了方向
-  Run #9b 的 +40% 在双盲验证中变为 -20%
-  → 此后所有 A/B 实验默认双盲
+影响范围（可能 B 成立）：
+  所有历史 Run 的"SKILL 执行产出"可信度存疑
+  模型可能从未读过 SKILL.md，只是按自己对"搜索调研"的理解执行
+  产出"符合 SKILL 流程"的假象可能源于：
+    ① 模型本身能力 + 提示词里散落的 SKILL 术语（Phase 1/Goggle/P3）
+    ② 模型对"调研方法论"的通用理解，恰好与 SKILL.md 部分重合
+
+与约束 5 的关系：
+  约束 5 解决的是"TRAE agent 越界用 WebSearch 替代 Cline SKILL"
+  本次发现的是更底层问题：
+    即使执行主体正确（Cline），SKILL 本身从未被加载
+  约束 5 的前提"designated executor 是 Cline + SKILL"中的"SKILL"部分从未成立
 ```
 
-### 执行主体边界事件
-
-本会话发现并修复了一个严重的执行边界问题：
+### P6 文献调研结论（本会话唯一有价值的产出）
 
 ```
-Run #9b Phase 0 执行时:
-  TRAE agent 直接用 WebSearch/WebFetch 替代 SKILL 流程
-  → 绕过了 Goggle / P3 / 三档模式全部机制
-  → 产出的证据不合规
-                ↓
-根因:
-  project-rules.md 四条防漂移约束全部针对文档同步
-  没有一条针对执行主体边界
-  session memory 两次记录该教训但从未机制化
-                ↓
-修复:
-  新增 project-rules.md §约束 5（执行主体边界）
-  新增 mechanism-candidates #23（永久C类，半机制化辅助）
-  run-9b-p5-output-schema-v2.md §1.1.1 声明各 Phase 的 designated_executor
-  run-9c 框架继承 designated_executor 声明
+P6 Highlights 设计落在研究安全区内，完整 ablation 与现成结论重复：
+
+| 研究 | 关键结论 |
+|------|---------|
+| RECOMP (ICLR'24) | 压到 5-11% token，EM 仅掉 2-4 分；oracle 压缩反超全文 |
+| Perplexity (生产) | query-aware 抽取式，BrowseComp +4-4.81pp，token 降 10-70% |
+| LongLLMLingua | RAG 4x 压缩提升最多 21.4 分，绕开 lost-in-the-middle |
+| LLMLingua | 20x 压缩仅掉 1.5 分，25-30x 才断崖 |
+| EMNLP 2025 | 仅 input 变长就掉 13.9-85% 性能，7K token 内即显著 |
+| BRIEF (NAACL'25) | 学习式抽取 19x 压缩，HotpotQA 仅掉 1.6 EM |
+
+P6 设计要素全部命中安全区：
+  - query-aware 压缩 ✅
+  - ≤500 token 远在断崖前 ✅
+  - 抽取式非生成式 ✅
+  - 缩短 context 本身就是收益 ✅
+
+唯一未覆盖风险：
+  Perplexity 用专门训练的 snippet 模型保证抽取保真
+  P6 用提示词层指令，LLM 可能把"抽取"理解成"改写"
+  → 但此风险因 SKILL 未加载问题，尚未验证
 ```
 
 ### 本会话产生的文件
 
 | 文件 | 说明 |
 |------|------|
-| `docs/search-orchestrator/experiments/run-9-p5-output-schema.md` | Run #9 实验框架（单源列表型） |
-| `docs/search-orchestrator/experiments/run-9b-p5-output-schema-v2.md` | Run #9b 实验框架（多实体对比） |
-| `docs/search-orchestrator/experiments/run-9b-phase0-evidence.md` | Run #9b Phase 0 证据集（从 research/ 迁移） |
-| `docs/search-orchestrator/experiments/run-9b-external-review.md` | Run #9b 外部评审材料 |
-| `docs/search-orchestrator/experiments/run-9c-p5-output-schema-v3.md` | Run #9c 实验框架（双盲 + 非结构化证据集） |
-| `docs/search-orchestrator/experiments/run-9c-ground-truth-sealed.md` | Run #9c 密封 GT |
-| `docs/search-orchestrator/experiments/run-9c-run-a-output.md` | Run #9c Run A 输出（Cline 双盲执行） |
-| `docs/search-orchestrator/experiments/run-9c-run-b-output.md` | Run #9c Run B 输出（Cline 双盲执行） |
+| `docs/search-orchestrator/experiments/run-10-p6-highlights.md` | Run #10 实验框架（轻量版，待重设计） |
 
 ### 本会话修改的文件
 
 | 文件 | 改动 |
 |------|------|
-| `docs/project-rules.md` | 新增 §约束 5（执行主体边界）+ 子条款（执行产出归档路径）+ 标题"四条"→"五条" |
-| `docs/mechanism-candidates.md` | #16 降回候选；新增 #23（TRAE/Cline 边界混淆，永久C类） |
-| `docs/search-orchestrator/survey.md` | §9.2 Run #9/#9b/#9c 三行填入；§9.3 P5 降回 proposed |
+| `docs/project-rules.md` | 标题"四条"→"五条"（修复漂移） |
+| `docs/mechanism-candidates.md` | #17 候选 → 实验中（Run #10 轻量版），附文献调研依据 |
 | `docs/handoff.md` | 本文件 |
 
 ### 明确不做的事
 
-- ✅ 不再为 P5 Output Schema 设计 Run #9d — 三轮验证已充分，双盲证伪是终态结论
-- ✅ 不在非双盲条件下引用 Conflict ID +40% 作为量化依据 — 仅可作方向性历史记录
-- ✅ 不用 TRAE agent 的 WebSearch/WebFetch 替代 Cline SKILL 流程（约束 5）
+- ✅ 不在 SKILL 加载机制确认前执行任何新 Run
+- ✅ 不引用历史 Run（#1~#9c）的结论作为可信依据——需先回顾评估
+- ✅ 不假设"请用 X SKILL"提示词能触发 SKILL 加载
 
 ### 当前路线图
 
 > **不在此处展开**。权威源：[survey.md §9.3 最终路线状态](search-orchestrator/survey.md#L311-L321)。
 >
 > 本会话对路线的净变化：
-> - `P5 Output Schema`：proposed → active（有条件）→ **proposed**（双盲证伪降回）
-> - 新增 `约束 5`（执行主体边界）+ `#23`（TRAE/Cline 边界混淆）
+> - `P6 Highlights`：候选 → 实验中（Run #10 轻量版）— 但因 SKILL 未加载问题，实验框架待重设计
+> - **历史 Run #1~#9c 结论可信度全部存疑**（待回顾）
 
 ### 未完成项
 
@@ -117,17 +110,15 @@ Run #9b Phase 0 执行时:
 > - 机制候选清单：[mechanism-candidates.md](mechanism-candidates.md)
 > - 决策与实验进度：[survey.md §9](search-orchestrator/survey.md#L277)
 >
-> 下次会话的**可选方向**（P5 已终态，需选下一项）：
+> 下次会话的**核心任务**：
 >
-> | 方向 | 关联条目 | 说明 |
-> |------|---------|------|
-> | P6 Highlights / Relevance Compression | mechanism-candidates #17 | 候选（V2 P6） |
-> | M-22 Browser-backed Fetch | mechanism-candidates #22 | 候选（暂缓），需触发条件 |
-> | #20 反证检索 | mechanism-candidates #20 | 候选（P2 失败遗产） |
-> | #21 多样性排序 | mechanism-candidates #21 | 候选（P2 失败遗产） |
-> | 其它长期候选 #1~#15 | mechanism-candidates.md | 见全表 |
->
-> 长期候选（暂不动）：mechanism-candidates #1~#15、#17、#18、#20、#21、#22。
+> | 任务 | 说明 |
+> |------|------|
+> | 1. 确认 Cline SKILL 加载机制 | 查官方文档：是 `.clinerules` 引用？`@skill-name` 语法？还是别的？修复项目配置 |
+> | 2. 回顾所有历史 Run 可信度 | Run #1~#9c 哪些结论可保留、哪些需重做、哪些可直接搜现成结论替代 |
+> | 3. 重新设计实验框架 | 在 SKILL 加载机制修复后，重新设计 Run #10 及后续实验 |
+> | 4. 评估"自实验 vs 搜现成结论" | 对每个候选机制判断：是否值得自实验，还是直接引用学术/工程结论 |
+> | 5. P6 落地决策 | 基于文献调研结论 + SKILL 加载修复后的轻量验证，决定 P6 是否 active |
 
 ### Handoff（下次会话第一句话建议）
 
@@ -140,4 +131,4 @@ Run #9b Phase 0 执行时:
 >
 > ---
 >
-> **接续上下文**：上会话完成 P5 Output Schema 三轮验证终态。Run #9 1/5 设计失败（单源列表型），Run #9b 3/5 有条件（非双盲 +40% 方向性信号），Run #9c 2/5 双盲证伪（Conflict ID Δ=-20%，自由文本反超 schema）。P5 降回 proposed，不再做 Run #9d。本会话新增约束 5（执行主体边界：TRAE agent 不得用 WebSearch/WebFetch 替代 Cline SKILL 流程）+ mechanism-candidates #23（永久C类）。方法论教训：非双盲偏差不仅高估幅度，甚至高估方向；此后所有 A/B 实验默认双盲。**下一步**：从 P6 / M-22 / #20 / #21 中选一项推进，或处理其它长期候选。
+> **接续上下文**：上会话发现重大问题——Cline 从未加载 search-orchestrator SKILL，所有历史 Run（#1~#9c）的"SKILL 执行产出"可信度存疑（可能 B 成立：模型从未读 SKILL.md，只按通用理解执行）。本会话另完成 P6 文献调研，确认 P6 设计落在研究安全区（RECOMP/Perplexity/LongLLMLingua/LLMLingua/EMNLP 2025），完整 ablation 与现成结论重复。Run #10 已写轻量版框架但因 SKILL 加载问题待重设计。**下一步**：① 确认 Cline SKILL 加载机制并修复项目配置；② 回顾所有历史 Run 可信度；③ 重新设计实验框架；④ 对每个候选评估"自实验 vs 搜现成结论"；⑤ P6 落地决策。
