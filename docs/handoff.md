@@ -90,6 +90,23 @@ P6 设计要素全部命中安全区：
 | `docs/mechanism-candidates.md` | #17 候选 → 实验中（Run #10 轻量版），附文献调研依据 |
 | `docs/handoff.md` | 本文件 |
 
+### ⚠️ 实验生效前置条件提醒（下次会话执行任何 Run 前必查）
+
+> **本会话教训**：Run #1~#9c 全部在"SKILL 未加载"状态下执行，结论可信度存疑。下次会话执行任何新 Run 前，必须确认以下前置条件全部成立：
+
+| # | 前置条件 | 验证方式 | 当前状态 |
+|---|---------|---------|---------|
+| 1 | **Cline 已加载 search-orchestrator SKILL** | 查 Cline 官方文档确认加载机制（`.clinerules` / `@skill-name` / 其他），修复项目配置后实测模型能读取到 SKILL.md 内容 | ❌ 未确认 |
+| 2 | **提示词不依赖自然语言引用触发 SKILL 加载** | "请用 X SKILL"不等于 SKILL 被加载；必须用 Cline 实际支持的加载语法 | ❌ 未确认 |
+| 3 | **搜索 MCP（duckduckgo）可用** | 在 Cline 中实测 search 工具调用成功 | ⚠️ 本会话末搜索限流 |
+| 4 | **fetch_content MCP 可用** | 在 Cline 中实测 fetch 工具调用成功 | ❓ 未测 |
+| 5 | **designated_executor 声明已写入实验框架** | 检查 run-N-*.md 的 §1.x 执行主体声明（约束 5 子条款） | ✅ Run #10 已写 |
+| 6 | **双盲要求（若实验设计为双盲）** | 执行者不知道 GT；GT 文件密封；Run A/B 在不同会话执行 | 视实验设计而定 |
+
+**任一前置条件未满足时，禁止执行 Run**。违反前置条件产出的实验数据不可信，会污染 survey.md §9.2 实验表与 mechanism-candidates 状态。
+
+---
+
 ### 明确不做的事
 
 - ✅ 不在 SKILL 加载机制确认前执行任何新 Run
