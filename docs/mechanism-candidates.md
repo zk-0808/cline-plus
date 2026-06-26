@@ -24,8 +24,8 @@
 | 2 | PowerShell 阻塞用 `-NoProfile` 等参数 | 系统提示词 | A | shell-wrapper plugin（safe-exec） | 候选 |
 | 3 | UTF-8 输出乱码处理 | 系统提示词 | A | shell-wrapper plugin（环境变量注入） | 候选 |
 | 4 | 重复循环要主动跳出 | 提示词 / Skill | A | loop-guard plugin（基于工具调用相似度） | 候选 |
-| 5 | 长会话要主动 compact + 写 handoff | Skill / 提示词 | A | `registerMessageBuilder` plugin（双产物） | 实验中（P5） |
-| 6 | 跨会话续作要先读上次 handoff | 提示词 / Skill | A | `session_start` hook + index.jsonl | 实验中（P5） |
+| 5 | 长会话要主动 compact + 写 handoff | Skill / 提示词 | A | `registerMessageBuilder` plugin（双产物） | 候选 |
+| 6 | 跨会话续作要先读上次 handoff | 提示词 / Skill | A | `session_start` hook + index.jsonl | 候选 |
 | 7 | Windows 不支持 Cline 早期 Hook | OUTLINE §6.1 | B | SDK plugin hook（已确认存在，需 Phase 2 验证 Windows 可用性） | 候选（验证后或可标"已退休"） |
 | 8 | 调研先行 / 五问门控 | OUTLINE §3 | **C** | 不可机制化 | 永久C类 |
 | 9 | 证据优于推测 / 问题定义优于方案 | constitution / OUTLINE | **C** | 不可机制化 | 永久C类 |
@@ -33,7 +33,7 @@
 | 11 | 三轮收敛律 / 2 轮收敛节奏 | OUTLINE §10.2 | **C** | 不可机制化 | 永久C类 |
 | 12 | 决策 vs 实现分层（ADR vs Design Doc） | OUTLINE §9.1 | **C** | 不可机制化 | 永久C类 |
 | 13 | 战略决断不得伪装成待办 | OUTLINE §4.2 | **C** | 不可机制化（但可由 plugin 检测"未来再研究"类待办并提醒） | 永久C类（半机制化辅助） |
-| 14 | 自研 compact 路线已失败 / `compaction_count=0` | memory + task analysis | A→已转向 | 接入 Cline messageBuilder（替代自研） | 实验中（P5） |
+| 14 | 自研 compact 路线已失败 / `compaction_count=0` | memory + task analysis | A→已转向 | 接入 Cline messageBuilder（替代自研） | 候选 |
 | 15 | 装机/部署任务必须先盘点现状（已装/已配置的工具与配置），再决定是否安装新依赖 | 本次 DDG MCP 装机失误（2026-06-23） | **C** | 不可机制化（治理思考方式）。可由 plugin 半机制化：装机前自动扫 `cline_mcp_settings.json` / PATH / 已知工具，但根治在认知层 | 永久C类（半机制化辅助） |
 | 16 | Output Schema 结构化抽取（Search→Extract→Normalize→Reason） | search-orchestrator/survey.md §9 + decisions/D-2026-06-24-search-evaluate-p5-output-schema.md（superseded）+ decisions/D-2026-06-25-search-redesign-p5-evidence-map.md（proposed）+ experiments/run-9b-p5-output-schema-v2.md（3/5 有条件）+ run-9b-external-review.md（外部评审决策 C）+ run-9c-p5-output-schema-v3.md（2/5 双盲证伪）+ experiments/run-13-p5-evidence-map.md（2/5 双盲证伪）+ experiments/run-14-p5-gap-ledger.md（4/5 ✅ Gap Ledger 升级 active） | A | search-orchestrator skill v2：P5 v1 字段对齐 schema（Run #9c 证伪）与 v2 Evidence Map / Claim Graph（Run #13 证伪）均未对自由文本展现决定性优势；仅 Gap Ledger 强制证据缺口枚举显示窄增量 | **部分已机制化** — Run #14 4/5 双盲验证通过：Gap Detection Recall Δ=+55.6%（33.3% → 88.9%），Implicit Gap Recall Δ=+40%（40% → 80%），安全指标全部不退化。Gap Ledger 最小机制已升级 active 并进入 SKILL.md。False Gap=1 阻挡 5/5（Run B G15 把 cloudscraper"已淘汰"误标为"侦察用途待评估"），缓解措施=每项 gap 需引用 evidence id，evidence 充分则不应标 gap。完整 Evidence Map / Claim Graph 保持 proposed，不再推进 |
 | 17 | Highlights / Relevance Compression（fetch 后强制 token 压缩） | search-orchestrator/survey.md §9.3 P6 行 + experiments/run-10-p6-highlights.md（4/5 ✅）+ decisions/D-2026-06-25-search-adopt-p6-highlights.md（active） | A | search-orchestrator skill v2：fetch_content 结果不直接进 context，先按 sub-Q 抽 ≤500 token | **已机制化** — Run #10 评分 4/5：Extractive Fidelity 92.3%（24/26），Paraphrase 7.7%（2/26），Untraceable 0。两条 paraphrase 模式：主语同义替换 + 跨语言归纳。提示词层 verbatim 抽取指令基本有效 |
