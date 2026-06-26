@@ -3,7 +3,7 @@
 **日期**：2026-06-26
 **designated_executor**：TRAE agent（代码编写 + 框架文档）→ 用户手动（CLI 安装 + 实跑验证）
 **时间窗口**：0.5–1 天工程量上限
-**状态**：in experiment
+**状态**：concluded — **No-Go**（2026-06-26）
 
 ---
 
@@ -83,22 +83,50 @@
 
 ## 5. Spike 结果
 
-（待 Phase 2 完成后填写）
+**结论：No-Go**（2026-06-26）。根因为外部 CLI 运行时能力缺失，非我方实现缺陷。
+
+### 环境事实
+
+| 项 | 值 | 来源 |
+|----|----|------|
+| Cline CLI 版本 | 3.0.30（npm `cline` 包 `latest`，已是最新版） | registry.npmjs.org/cline/latest |
+| CLI 依赖 SDK | @cline/sdk@0.0.52 / @cline/core@0.0.52 | 同上 |
+| VS Code 扩展版本 | 3.89.2（独立版本号体系，与 CLI 无关） | VS Code Marketplace |
+| 官方文档声明 | "plugins not applicable on VSCode and JetBrains Extension for now" | docs.cline.bot/customization/plugins |
+
+> 修正记录：前期曾误判"CLI 落后 89 版需升级"。实际 `cline`（CLI）与 `saoudrizwan.claude-dev`（VS Code 扩展）是两套独立版本号，3.0.30 即 CLI 最新版，无需也无法升级。
 
 ### 实跑记录
 
 | 步骤 | 结果 | 备注 |
 |------|------|------|
-| npm i -g cline | 待执行 | |
-| cline plugin install | 待执行 | |
-| cline -i 实跑 | 待执行 | |
-| handoff.md 生成 | 待检查 | |
-| index.jsonl 追加 | 待检查 | |
-| session_start hook | 待检查 | |
+| cline plugin install p5-spike-plugin.ts | ✅ 安装成功 | 落地 `.cline/plugins/_installed/local/p5-spike-plugin.ts-0e22232320f0/` |
+| config plugins（我方插件） | ❌ No plugins found | 安装产物物理存在，但 CLI 不识别为有效插件 |
+| 手动放到官方发现根路径 `.cline/plugins/` | ❌ No plugins found | 排除"发现路径错误"假设 |
+| **官方样例 weather-metrics.ts** install + config plugins | ❌ **No plugins found** | **决定性：官方样例同样加载不了，排除我方文件问题** |
+| cline -c 实跑 verbose 日志 | ❌ 仅内置 `[hook:agent_start/end]`，无 plugin 加载 | beforeRun 未触发 |
+| handoff.md 生成 | ❌ 未生成 | registerMessageBuilder 未被装载 |
+| index.jsonl 追加 | ❌ 未追加 | 同上 |
+| session_start hook（session-start.log） | ❌ 未生成 | beforeRun 未触发 |
+
+### 网络情况核查
+
+- cline 官方 GitHub issues 搜索 "plugin + No plugins found"：**0 条**（无公开已知 bug）。
+- 通用网络搜索：无相关命中。
+- 判断：这不是孤立 bug，而是当前 CLI 分发版 plugin 运行时发现/装载链路尚未落地的自然结果，与官方文档"暂不适用"声明一致。
 
 ### Go/No-Go 判定
 
-（待填写）
+**No-Go**，命中以下 No-Go 标准：
+
+1. **API 无法稳定实现**：`registerMessageBuilder` 在 CLI 3.0.30 上根本无法被装载，谈不上稳定介入。
+2. **无法形成稳定闭环**：compact → handoff → index 链路从第一步（插件装载）即断裂。
+
+**关键结论**：Plugin 独占能力（`registerMessageBuilder`）目前在所有可交付载体上都无法运行——
+- VS Code 扩展：明确不支持 plugin 加载入口（ADR-002 必须载体约束）；
+- CLI 3.0.30（最新版）：有 install 命令但运行时无法发现/装载，连官方样例亦然。
+
+四重独立验证（文件写法 / 我方 install / 手动发现路径 / 官方样例）全部失败，已穷尽排查空间。退出理由为**工程性（外部能力缺失）**，非主观价值判断，符合 ADR-002 退出标准。
 
 ---
 
