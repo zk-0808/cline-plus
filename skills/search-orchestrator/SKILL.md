@@ -176,6 +176,27 @@ R2-CN: <中文关键词> (site:<中文 T2 域> OR …)
 
 两子路并行 dispatch、按 URL 去重后并入 R2 池参与排序。不强制启用——单语种主题维持单 R2 即可。
 
+##### 1.4.2.ter site: 不可用时的降级方案（当后端拒绝 site: query 时启用）
+
+**触发条件**：search 后端对 `site:` query 返回 `BOT_DETECTED`、0 结果、或持续超时。
+
+> **Run #14 实测（2026-06-26）**：DDG 后端对 `site:` query 100% 触发 `BOT_DETECTED`，对 `OR` 复合 query 部分触发，对单引号精确匹配最稳定。这是后端特性（非 wrapper bug，#24 wrapper 只管节流不管 query 形式）。
+
+**降级方案**：把 `site:` operator 从 query 语法降级为**普通关键词**——将目标站点域名作为自然语言词加入 query，让搜索引擎做模糊匹配而非严格限域。
+
+| 原 R2 模板（site: 语法） | 降级 R2 模板（自然语言限域） |
+|------------------------|----------------------------|
+| `"Playwright Cloudflare" (site:reddit.com OR site:news.ycombinator.com)` | `Playwright Cloudflare reddit` 或 `Playwright Cloudflare hacker news` |
+| `nodriver Cloudflare bypass (site:github.com OR site:stackoverflow.com)` | `nodriver Cloudflare bypass github` 或 `nodriver Cloudflare stackoverflow` |
+
+**注意事项**：
+- 降级后召回会**变宽**（不再严格限域到该站点，可能返回其他来源），需在 §3.2 评估时人工过滤
+- 一次只加**一个**站点名作为关键词，避免 `OR` 复合 query 再次触发后端检测
+- 若降级后仍触发 `BOT_DETECTED`，按 §1.4.2 的 site: 列表换下一个站点名重试
+- 降级触发时在输出中标注 `R2 降级（site: 不可用）`，便于 §3.2 评估时识别
+
+**不断启用降级的判断**：若同一 sub-question 的 R2 连续 2 次降级仍失败，跳过 R2，仅靠 R1 + R3 + fetch_content 间接覆盖，并在 Gap Ledger（§4.1）中标注"R2 限域搜索不可用"作为 gap。
+
 #### 1.4.3 反证型 R3 的话术模式
 
 R3 不是"换一个同义词"，而是**主动假设**：「如果当前假设是错的，谁会写下反例？」常用模式：
