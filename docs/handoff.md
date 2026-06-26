@@ -15,7 +15,7 @@
 | SKILL.md §2.1 fetch 归档分 Research/Production 模式（GPT 第二轮评审建议） | ✅ 落地 |
 | SKILL.md §3.3 加 T1 与社区冲突标记规则（GPT 第二轮评审建议，部分采纳） | ✅ 落地 |
 | Goggle 域名表数据化 | ⏳ 暂缓（触发条件：Goggle >10 或单表 >20 行；当前 §3.5.5 设计护栏已生效） |
-| 消融实验（Ablation） | ⏳ 记录为下一阶段主任务（GPT 最有价值建议） |
+| 消融实验（Ablation） | ⏳ 后续可选方向（GPT 建议，按计划推进，不作为主任务） |
 | 写 handoff | ✅ 用户口头要求，触发 project-rules.md 4.a |
 
 ---
@@ -113,8 +113,8 @@ Infra 机制 active（1 条）：#24 wrapper。
 
 | 方向 | 说明 | 优先级 |
 |------|------|--------|
-| **消融实验（Ablation）**（下一阶段主任务） | GPT 终评最有价值建议。减法实验验证已有机制真实收益：分别关闭 Complexity Gate / Goggle / Source Weighting / Gap Ledger / Query Fanout，观察 Recall / Citation 准确率 / Token / 延迟。**前置**：需先定义"关闭模块"语义（完全删除规则 vs 替换为 baseline 行为）与减法实验框架（非 A/B 双盲，是 A/A' 单盲减法） | **高** |
 | CSDN 博客发布 | 博客已写好（`docs/blog/csdn-search-orchestrator.md`），待用户手动复制到 CSDN 编辑器发布。标签建议：Cline / MCP / 提示词工程 / A/B 测试 / 搜索引擎 / LLM / 开源 | 中 |
+| 消融实验（Ablation） | GPT 终评建议。减法实验验证已有机制真实收益：分别关闭 Complexity Gate / Goggle / Source Weighting / Gap Ledger / Query Fanout，观察 Recall / Citation 准确率 / Token / 延迟。**按计划推进，不作为主任务**；前置：定义"关闭模块"语义（完全删除规则 vs 替换为 baseline 行为）与减法实验框架（非 A/B 双盲，是 A/A' 单盲减法） | 中 |
 | SKILL 平台化拆分 | 触发条件：SKILL > 1200 行 或 单 Phase > 300 行。当前 ~800 行，未达触发线 | 低 |
 | Goggle 域名表数据化 | 触发条件：Goggle >10 或单表 >20 行。当前 5 个 Goggle，反膨胀护栏已生效 | 低 |
 | #22 Browser Fetch 启动评估 | 候选（暂缓）。仅当 Tier C snippet-only 被证明严重影响答案质量才启动 | 低 |
@@ -131,4 +131,4 @@ Infra 机制 active（1 条）：#24 wrapper。
 然后读 docs/handoff.md，按下面的工作内容继续。
 ```
 
-接续上下文：本会话完成两大收尾——① 项目化发布 GitHub 闭环（仓库 https://github.com/zk-0808/cline-search-orchestrator，含 8 份论文式分层研究文档 + README + MIT LICENSE + Skill + wrapper + 决策/实验归档，远程 main = `722062d`）；② GPT 三轮 SKILL 评审闭环（9/10，无设计硬伤），落地两处设计改进：§2.1 fetch 归档分 Research/Production 模式 + §3.3 T1 与社区冲突标记规则。下一步是**消融实验**：GPT 终评最有价值建议，减法实验验证已有机制真实收益。前置工作：先定义"关闭模块"语义（完全删除规则 vs 替换为 baseline 行为）与减法实验框架（非 A/B 双盲，是 A/A' 单盲减法）。注意执行边界：消融实验的执行主体需在实验框架 run-N-*.md 中声明 designated_executor；若需 Goggle 过滤 / P3 抽取 / Gap Ledger 等 SKILL 层机制处理，执行主体是 Cline + SKILL，TRAE agent 不得用 WebSearch/WebFetch 替代（project-rules.md §约束 5）。
+接续上下文：本会话完成两大收尾——① 项目化发布 GitHub 闭环（仓库 https://github.com/zk-0808/cline-search-orchestrator，含 8 份论文式分层研究文档 + README + MIT LICENSE + Skill + wrapper + 决策/实验归档，远程 main = `dc597fa`）；② GPT 三轮 SKILL 评审闭环（9/10，无设计硬伤），落地两处设计改进：§2.1 fetch 归档分 Research/Production 模式 + §3.3 T1 与社区冲突标记规则。项目化发布与外部评审均已闭环，无突出主任务待启动；后续按计划推进常规项（CSDN 博客发布 / SKILL 平台化拆分触发监控 / Goggle 数据化触发监控 / #22 启动评估 / #24 V2 backend 切换 / 消融实验）。注意执行边界：若后续启动消融实验或任何需 Goggle 过滤 / P3 抽取 / Gap Ledger 等 SKILL 层机制处理的工作，执行主体需在实验框架 run-N-*.md 中声明 designated_executor，由 Cline + SKILL 执行，TRAE agent 不得用 WebSearch/WebFetch 替代（project-rules.md §约束 5）。
