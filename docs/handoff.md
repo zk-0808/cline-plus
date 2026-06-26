@@ -1,42 +1,68 @@
-# Handoff — Run #14 P5 Gap Ledger 最小机制框架建立 + Phase 0b 采集受阻 + 候选 #24 登记
+# Handoff — Run #14 闭环（P5 Gap Ledger 升级 active）+ #24 wrapper 落地 + 准备项目化发布
 
 ## 本会话决策
 
 | 决策 | 状态 |
 |------|------|
-| 澄清「先开 run13」语义 → Run #13 已闭环密封评分 2/5，本会话实为**新建 Run #14** | ✅ 已澄清，不动 Run #13 任何产物 |
-| 新建 Run #14：P5 **Gap Ledger 最小机制**双盲验证（剥离 Evidence Map 节点-边，仅追加一步强制证据缺口枚举） | ✅ 框架文件已建，状态 Phase 0b |
-| Run #14 单变量隔离 + gap 密集证据集（GT gap ≥5，含显性/隐性各 ≥2）+ 主指标改为 Gap Detection Recall | ✅ 已写入框架 |
-| Run #14 query 锚定 mechanism-candidates #22（Browser Fetch 反爬选型，项目后续真实用到 + 天然 gap 密集） | ✅ 已回填 §2.2/§5/§6.1 |
-| 证据池策略：新建 gap 密集池（不复用 Run #13 池），query 由 agent 推定 | ✅ Phase 0a 确认 |
-| Phase 0b DDG `BOT_DETECTED` 运行时故障处置 → 双轨：Run #14 用「冷却+降速」手动续跑，不停 | ✅ 用户拍板双轨 |
-| 登记 **mechanism-candidates #24**：搜索 MCP 自适应反-bot 节流/退避（Class A，候选） | ✅ 新候选，未写决策、未动代码 |
-| 写 handoff | ✅ 用户口头要求，触发 project-rules.md 4.a |
+| Run #14 Phase 0b 续跑（wrapper 落地后） → 18 条 P3 evidence + 9 gap + 5 relation 的 gap 密集证据池 | ✅ 完成 |
+| Run #14 Phase 0c GT 密封（9 gap = 4 显性 + 5 隐性，5 material relation） | ✅ 完成 |
+| Run #14 Phase 1a/1b 盲态双轨（Run A 自由文本 / Run B Gap Ledger + 自由文本） | ✅ 用户在 Cline 跑完 |
+| Run #14 Phase 2 评分 4/5 → **P5 Gap Ledger 升级 active**（进入 SKILL.md §4.1） | ✅ 完成 |
+| #24 wrapper 实现（方案 C：强制 max_results≤10 + 3 次失败熔断 30s/2min/10min 指数退避 + fetch 独立通道） | ✅ 落地，11/11 测试 + 子代理两轮 review + Run #14 功能性验证通过 |
+| #24 决策文档 status: proposed → active | ✅ 完成 |
+| SKILL.md §1.4.2.ter 新增 R2 降级方案（site: 不可用时降级为自然语言关键词） | ✅ 完成 |
+| 准备项目化发布 GitHub（整理全部文档） | ⏳ 下一步 |
+| 写 handoff | ✅ 用户口头要求 + 主题切换（实验 → 项目发布），触发 project-rules.md 4.a + 4.c |
 
 ---
 
 ## 本会话净变化
 
-### Run #14 框架建立（P5 Gap Ledger 最小机制）
+### 1. Run #14 闭环（P5 Gap Ledger 最小机制双盲验证，4/5 升级 active）
 
 权威文件：[run-14-p5-gap-ledger.md](search-orchestrator/experiments/run-14-p5-gap-ledger.md)
 
-设计要点（与 Run #13 的关键区别）：
+**实验设计**：单变量隔离（Run B 只追加 Gap Ledger 一步，不做节点-边/Conflict Ledger），gap 密集证据集（GT 9 gap = 4 显性 + 5 隐性 + 5 material relation），query 锚定 Cloudflare 反爬方案选型（#22 范畴，天然 gap 密集）。
 
-- **单变量隔离**：Run #13 的 Run B 是完整 Evidence Map（Nodes + Edges + Conflict Ledger + Gap Ledger）；Run #14 的 Run B **只保留 Gap Ledger 一步**（强制证据缺口枚举），剥离节点-边/Conflict Ledger，其余与 Run A 完全相同 → 单独测量 Run #13 唯一窄增量的边际贡献。
-- **gap 密集证据集**：GT 要求 ≥5 个 gap（补 Run #13 gap 分母仅 3 的统计功效短板），含显性缺口 ≥2 + 隐性缺口 ≥2（隐性=看似被回答实为单源/过时/范围外推）。
-- **主指标换轨**：从 Material Relation Recall 改为 **Gap Detection Recall + Implicit Gap Recall**；material relation/可追溯/False Gap/Unsupported Relation/Info Loss 转为安全指标。
-- **query**：`评估无头浏览器抓取穿透 Cloudflare 等反爬的可行方案：Playwright / nodriver / Camoufox / FlareSolverr / cloudscraper 与托管云浏览器的有效性、被识别风险、住宅代理与 CAPTCHA 依赖、适用边界`
-- **升级 active（仅 Gap Ledger 进 SKILL.md）触发条件**：≥4/5；≤3/5 则 P5 整条线收敛保持 proposed。
+**结果**：
 
-### mechanism-candidates #24 登记
+| 指标 | Run A | Run B | Δ |
+|------|------:|------:|--:|
+| Gap Detection Recall | 3/9 = 33.3% | 8/9 = 88.9% | **+55.6%** |
+| Implicit Gap Recall | 2/5 = 40% | 4/5 = 80% | +40% |
+| Material Relation Recall | 5/5 = 100% | 5/5 = 100% | 0 |
+| Traceability Rate | ~100% | ~100% | 0 |
+| False Gap Count | 0 | 1 | +1 |
+| Unsupported Relation Count | 0 | 0 | 0 |
+| Information Loss Count | 0 | 0 | 0 |
+| Answer Verbosity Delta | 基准 | +36% | +36% |
 
-[mechanism-candidates.md #24](mechanism-candidates.md)：搜索 MCP 自适应反-bot 节流/退避，Class A，候选。
+**评分 4/5**：Gap Δ +55.6% 远超 4/5 阈值 +20%（接近 5/5 阈值 +30%），Implicit Δ +40% 满足 5/5 隐性要求，安全指标全部不退化。未达 5/5 的唯一原因：False Gap = 1（Run B G15 把 cloudscraper"已淘汰"误标为"侦察用途待评估"）。
 
-- 触发证据：Run #14 Phase 0b DDG 被封运行时故障 + web-search-setup.md §七 分层（rate limit/bot 重试归 MCP 层）+ duckduckgo-websearch 源码实证。
-- 根因（读 MCP 源码 + DDG 库文档确认）：`max_results>10` 触发 vqd 连续翻页放大 + 同 IP 短时高频 → 越过 DDG 服务端反爬阈值，封 IP/session 级。
-- 理想机制四点：① `BOT_DETECTED` 指数退避 + 跨请求记忆被封状态主动降速；② vqd 翻页间 jitter；③ 会话级熔断（自动降 max_results/串行化）；④ 回退 lite/bing backend。需 fork 上游或包薄 wrapper（现为 `npx -y` 拉上游不可直接改）。
-- 治理依据：与 #21 同理——确定性运行时节流应交给代码而非提示词（提示词靠 LLM 自觉，跨调用不可靠）。
+**落地**：[SKILL.md §4.1](../skills/search-orchestrator/SKILL.md) 新增 Gap Ledger 章节（强制证据缺口枚举，合成前必做），含输出格式 / gap 类型枚举（缺反证 / 无直接对比 / 单一来源 / 证据过时 / 范围外推）/ 5 项隐性缺口必查清单 / Iron Law 边界 / false gap 失败模式警示。原 4.1-4.4 递增为 4.2-4.5。
+
+**P5 路线终态**：完整 Evidence Map / Claim Graph 保持 proposed，不再推进（Run #9c / Run #13 两代结构化中间表示双盲证伪）。仅 Gap Ledger 最小机制升级 active。
+
+### 2. #24 MCP 反-bot 节流 wrapper 落地（方案 C）
+
+权威文件：[D-2026-06-26-search-adopt-mcp-throttle-wrapper.md](decisions/D-2026-06-26-search-adopt-mcp-throttle-wrapper.md)（status: active）
+
+代码：[search-mcp-wrapper/](../search-mcp-wrapper/) — 4 文件（package.json / tsconfig.json / src/index.ts / src/test/integration.ts）
+
+**设计**：薄 wrapper 包 duckduckgo-websearch 上游，强制 cap max_results≤10（禁分页，消除 vqd 连击）+ 3 次 BOT_DETECTED 触发熔断（30s/2min/10min 指数退避，circuitBreakCount 递增）+ 串行化链防并发穿透 + fetch_content 独立通道（与 search 反爬正交，熔断期可正常调用）。
+
+**验证**：
+- 11/11 集成测试通过
+- 子代理两轮 code review 通过（第一轮发现 2 严重问题：N=2 早熔断 vs 决策文档 3 次阈值，修正后复审 0 严重 0 建议）
+- Run #14 Phase 0b 功能性验证通过：3 次熔断正确触发指数退避，fetch 独立通道不受影响，降级规约正确执行
+
+**暴露的上游特性（非 wrapper bug）**：DDG 后端对 `site:` 100% 触发 BOT_DETECTED、`OR` 部分触发、单引号最稳定。需 SKILL 层调整 R2 策略（已落地 §1.4.2.ter）。
+
+**V2 可选扩展（暂缓）**：④ backend 切换（Brave/Bing MCP），触发条件为 DDG 持续不可用。
+
+### 3. SKILL.md §1.4.2.ter R2 降级方案
+
+[SKILL.md §1.4.2.ter](../skills/search-orchestrator/SKILL.md)：site: 不可用时降级为自然语言关键词（如 `reddit` / `hacker news`），单站点单 query 避免 OR 复合触发检测，连续 2 次失败跳过 R2 并在 Gap Ledger 标注。Run #14 实测有效。
 
 ---
 
@@ -44,17 +70,28 @@
 
 | 文件 | 说明 |
 |------|------|
-| `docs/search-orchestrator/experiments/run-14-p5-gap-ledger.md` | Run #14 框架（假设 H14 / 单变量 / gap 密集证据集要求 / 主指标 Gap Detection Recall / 两档提示词 / 执行流程 / 结果区待填） |
-| `docs/search-orchestrator/experiments/run-14-phase0-evidence.md` | Phase 0b evidence pool（Cline + SKILL 侧落盘，**非 TRAE agent 产出**；当前采集受 DDG 反爬中断，仅 Q1 Playwright 10 条结果，待续跑） |
+| `search-mcp-wrapper/package.json` | wrapper 包定义 |
+| `search-mcp-wrapper/tsconfig.json` | TS 配置（rootDir: ./src） |
+| `search-mcp-wrapper/src/index.ts` | wrapper 实现（ThrottledSearchWrapper + 串行化链 + 熔断器） |
+| `search-mcp-wrapper/src/test/integration.ts` | 11 场景集成测试 |
+| `search-mcp-wrapper/.gitignore` | 排除 node_modules / .npm-cache / build |
+| `docs/decisions/D-2026-06-26-search-adopt-mcp-throttle-wrapper.md` | #24 决策文档（active） |
+| `docs/search-orchestrator/experiments/run-14-ground-truth-sealed.md` | Run #14 GT 密封（9 gap + 5 relation） |
+| `docs/search-orchestrator/experiments/run-14-run-a-output.md` | Run A 输出（自由文本，~3300 字） |
+| `docs/search-orchestrator/experiments/run-14-run-b-output.md` | Run B 输出（Gap Ledger 32 项 + Final Answer，~4500 字） |
 
 ## 本会话修改文件
 
 | 文件 | 改动 |
 |------|------|
-| `docs/mechanism-candidates.md` | 新增 #24 行（搜索 MCP 自适应反-bot 节流，Class A，候选） |
+| `docs/search-orchestrator/experiments/run-14-p5-gap-ledger.md` | §5.2/§5.3 提示词补全 evidence pool 路径声明（盲态约束）+ §6 填入结果记录 + 状态行改为已完成 |
+| `docs/search-orchestrator/experiments/run-14-phase0-evidence.md` | 用户在 Cline 续跑追加 §5（续跑采集 18 条 P3 evidence）+ §6（wrapper 行为日志） |
+| `docs/search-orchestrator/survey.md` | §9.1 加 #24 决策行 / §9.2 加 Run #14 行 / §9.3 P5 Gap Ledger 升级 active 行 |
+| `docs/mechanism-candidates.md` | #16 部分已机制化（Gap Ledger）/ #24 已机制化（wrapper） |
+| `docs/decisions/README.md` | 索引表 #24 状态 proposed → active + 加验证证据 |
+| `skills/search-orchestrator/SKILL.md` | §4.1 新增 Gap Ledger 章节 + 原 4.1-4.4 递增为 4.2-4.5 + §1.4.2.ter 新增 R2 降级方案 |
+| `skills/search-orchestrator/references/web-search-setup.md` | 推荐配置改 wrapper（§2.1）+ 回滚配置（§2.2）+ 三层职责图 + wrapper 维护说明 |
 | `docs/handoff.md` | 覆盖为本交接 |
-
-注：git status 另显示 Run #13 全部文件仍 untracked、D-2026-06-25 等上一批 modified 未提交 —— 系上一会话 handoff commit 未实际落地的遗留，本次 commit 一并纳入以恢复完整快照。
 
 ---
 
@@ -62,13 +99,22 @@
 
 权威源：
 
-- [survey.md §9.3 最终路线状态](search-orchestrator/survey.md#L316)
+- [survey.md §9.3 最终路线状态](search-orchestrator/survey.md)
 - [mechanism-candidates.md](mechanism-candidates.md)
 
 本会话净变化：
 
-- P5：在 Run #13（v2 Evidence Map 2/5 证伪）之后，新建 Run #14 单独验证唯一窄增量「Gap Ledger 强制证据缺口枚举」最小机制。Run #14 尚未评分，P5 路线状态仍 proposed（§9.3 未跳终态）。
-- #24：新登记候选（搜索 MCP 自适应反-bot 节流），未启动。
+- **P5 Gap Ledger：active**（Run #14 4/5，进入 SKILL.md §4.1）。P5 完整 Evidence Map / Claim Graph 保持 proposed，不再推进。
+- **#24 搜索 MCP 反-bot 节流 wrapper：已机制化**（方案 C 落地，Run #14 功能性验证通过）。
+
+P 级机制总览（active）：
+
+- P1 Domain Goggles：active
+- P1.5 FinalScore 联动：active
+- P3 Evidence-bound Citation：active（三档模式）
+- P4 Evidence Deduplication：active（逐字 + translation + summary/rewrite）
+- **P5 Gap Ledger：active**（本会话新增）
+- P6 Highlights / Relevance Compression：active
 
 ---
 
@@ -76,11 +122,9 @@
 
 | 方向 | 说明 | 优先级 |
 |------|------|--------|
-| **Run #14 Phase 0b 续跑采集**（双轨A） | DDG 被封。动作：Q1 结果先落盘 → 冷却 3-5 分钟 → Q2-Q8 降速续跑（`max_results≤10` 规避翻页连击 + 串行 + 每条间隔 3-5 秒）。仍反复被封则缩小 query 方案对比面（六方案→主力 3-4 个），勿用单方案池硬凑（污染 gap 指标）。**这是 #24 未机制化前的人工 workaround，非实验变量** | 高 |
-| Run #14 Phase 0c/1/2 | 采集完成后：agent 密封 GT（gap ≥5，显性/隐性各 ≥2）→ 用户在 Cline 盲态跑 Run A / Run B → agent 解封评分 | 高 |
-| #24 落地评估（双轨B） | 独立推进，不阻塞 Run #14。评估 fork 上游 vs 薄 wrapper MCP，再定实验框架 | 中 |
+| **项目化发布 GitHub**（下一步主任务） | 整理全部文档，写成项目提交 GitHub。需考虑：README 重写 / 文档结构梳理 / 敏感信息清理 / .gitignore 审查 / license / 仓库命名 | **高** |
 | #22 Browser Fetch 启动评估 | 候选（暂缓）。仅当 Tier C snippet-only 被证明严重影响答案质量才启动 | 低 |
-| run-10-output.md 去留确认 | 上一会话遗留 modified，本次 status 未再出现（疑已恢复/提交），可确认 | 低 |
+| #24 V2 backend 切换 | 暂缓。DDG 持续不可用时启动 | 低 |
 
 ---
 
@@ -93,4 +137,4 @@
 然后读 docs/handoff.md，按下面的工作内容继续。
 ```
 
-接续上下文：本会话新建 Run #14（P5 Gap Ledger 最小机制双盲验证），它从 Run #13（完整 Evidence Map 2/5 证伪）中剥离出唯一窄增量——「自由文本合成前追加一步强制证据缺口枚举」单独验证，Run B 不再做节点-边/Conflict Ledger。证据集要求 gap 密集（GT gap ≥5，显性/隐性各 ≥2），主指标为 Gap Detection Recall。query 锚定 #22 浏览器反爬选型（天然 gap 密集）。Phase 0a 已确认，Phase 0b 采集时 DDG 触发 BOT_DETECTED：定位根因为 vqd 翻页放大 + 同 IP 高频，已登记新候选 #24（搜索 MCP 自适应反-bot 节流，Class A）。采用双轨：Run #14 用「冷却+降速」手动续跑采集（Q1 已得 10 条），#24 独立评估不阻塞。下一步：在 Cline+SKILL 续跑 Phase 0b 采完 gap 密集证据池 → agent 密封 GT → 盲态跑 Run A/B → 评分。注意执行边界：Phase 0b/1 必须 Cline+SKILL 执行，TRAE agent 不用裸 WebSearch 替代；采集时不得动用代理/headless 等手段（那是被测对象 #22，会污染中立性）。
+接续上下文：本会话完成两项主线收尾——① Run #14 P5 Gap Ledger 最小机制双盲验证 4/5 升级 active，Gap Detection Recall Δ=+55.6%，已写入 SKILL.md §4.1；② #24 搜索 MCP 反-bot 节流 wrapper 落地（方案 C，11/11 测试 + 子代理两轮 review + Run #14 功能性验证通过），决策文档 active。P5 完整 Evidence Map 保持 proposed 不再推进。下一步是**项目化发布 GitHub**：整理全部文档，写成项目提交。需考虑 README 重写 / 文档结构梳理 / 敏感信息清理 / .gitignore 审查 / license / 仓库命名。注意执行边界：项目发布涉及全局文档整理，TRAE agent 可直接推进（非 Cline+SKILL 职责）。
