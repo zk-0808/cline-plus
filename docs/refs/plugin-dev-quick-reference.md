@@ -6,11 +6,23 @@
 
 ---
 
-## 0. 重要前提：社区经验为空
+## 0. ~~重要前提：社区经验为空~~（⚠️ Stale，2026-06-27 作废）
 
-- 搜过 SDK plugin 开发的中英文社区经验、博客、踩坑记录 → **未发现任何有价值的二手沉淀**
-- 原因：`@cline/sdk` 仍是 0.x，文档刚推出不久，社区尚未形成实战经验沉淀
-- **后果**：我们做 P5 实验时本质上就在为社区**探路**，每一处不顺手都值得记录回 `mechanism-candidates.md` 或新建 `plugin-dev-notes.md`
+> **⚠️ Stale 标注（2026-06-27，[ADR-002 Update 5](../decisions/ADR-002-project-shape.md)）**：本节"社区经验为空"结论**作废**——经 [Marketplace 开发机制并行调查](../decisions/investigation-note-marketplace-dev-mechanism.md) 4-subagent 并行核查证伪：
+>
+> - npm `@cline/sdk` 周下载 **234,966**（2026-06-27 fetch）
+> - GitHub 外部贡献者 abeatrix **7 个 plugin development PR**（2026-05-19~06-23 合并）
+> - 官方 plugin examples **11 个**（含 weather-metrics/custom-compaction/agents-squad）
+> - 独立官方 plugin 仓库 `cline/typescript-lsp-plugin`
+> - Marketplace 上架 **~22 Plugins / ~50 Skills / ~200 MCP**
+>
+> **RCA 根因**：原调查方法缺陷——把"无 how-to 博客"误等同为"无开发活动"（证据类型混淆 + 单源裁决）。详见调查报告 §C 号 Process Reviewer 5 Whys 分析。
+>
+> 本节原文保留用于追溯，但不应再作为决策依据。下方"后果"段已不适用——P5 实验不再是"为社区探路"，而是验证 #5 自有命题（messageBuilder + compact 双产物 + 检索索引）。
+
+~~搜过 SDK plugin 开发的中英文社区经验、博客、踩坑记录 → **未发现任何有价值的二手沉淀**~~（已作废）
+~~原因：`@cline/sdk` 仍是 0.x，文档刚推出不久，社区尚未形成实战经验沉淀~~（已作废）
+~~**后果**：我们做 P5 实验时本质上就在为社区**探路**，每一处不顺手都值得记录回 `mechanism-candidates.md` 或新建 `plugin-dev-notes.md`~~（已作废）
 
 ---
 

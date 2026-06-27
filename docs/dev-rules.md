@@ -186,6 +186,45 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 
 源由：用户 2026-06-27 指示"用户要求 loop 时把自行把提示词注入给子代理"——避免每次都要用户提醒，TRAE agent 应自动按 §1.11 触发条件识别角色并注入。
 
+### 1.13 子条款：结论时效性门控
+
+依据 [evidence-governance.md §15](evidence-governance.md) 结论时效性模型，引用 ADR 结论作为新决策论据前，**必须**检查该 ADR 的 `evidence_as_of` 与 `expires_if_unchanged` 字段：
+
+1. **未超期**（`expires_if_unchanged` 在未来）：可直接引用
+2. **已超期**（`expires_if_unchanged` 在过去）：
+   - 停止引用该结论作为决策依据
+   - 降级为 Hypothesis（待复查）
+   - 触发复查（重新核查证据来源是否仍成立）
+3. **缺字段**（存量 ADR 未填）：在下次 Update 时补齐；引用前需人工判断时效
+
+**禁止**：直接引用超期结论作为新决策的论据而不复查。
+
+**适用范围**：所有涉及外部生态（社区活跃度 / 包下载量 / 上架数 / GitHub 活动 / 官方文档版本）的 ADR 结论。
+
+**成熟实践映射**：
+- 结论时效性门控 ↔ **Refresh Token 验证**（使用前必须检查是否过期）+ **SLR 检索时间范围限定**（系统综述要求声明检索时间窗）
+
+源由：2026-06-27 [ADR-002-p5-experiment-exit-review §2.4](decisions/ADR-002-p5-experiment-exit-review.md) 引用"社区无 Plugin 实战沉淀"（2026-06-23 形成于 ADR-002 Context §5）作为舍弃 P5 论据，未复查——4 天后该结论已被 5 类反证证伪。
+
+### 1.14 子条款："无 X"类结论门控
+
+下"无 X"类结论（无开发记录 / 无社区沉淀 / 无可用工具 / 无文档 / 无示例）前，**必须**：
+
+1. 经 search-orchestrator SKILL 反证查询（如适用，按 [project-rules-search-orchestrator.md](project-rules-search-orchestrator.md)）
+2. 至少 **3 类独立证据类型**一致（如 npm + GitHub + 官方文档 + Marketplace + 搜索引擎）
+3. 在 Investigation Note（[evidence-governance.md §10](evidence-governance.md)）中记录反证搜索过程，含 query 列表（[evidence-governance.md §17](evidence-governance.md)）
+
+**禁止**：
+- 基于单一证据类型下"无 X"结论
+- 仅自述"搜过 X"而不记录 query 列表（违反 §17 调研可复现性）
+
+**违反时**：回滚结论，降级为 Hypothesis，登记 Conflict Registry。
+
+**成熟实践映射**：
+- "无 X"结论门控 ↔ **EBSE 三角验证（Triangulation）** + **科学方法的否定假设（Falsifiability）**——Karl Popper 强调可证伪性是科学结论的必要条件，"无 X"结论必须主动寻找反证
+
+源由：2026-06-23 [plugin-dev-quick-reference.md §0](refs/plugin-dev-quick-reference.md) 仅基于"搜博客"单一证据类型下"社区无 plugin 实战经验"结论，未查 npm/GitHub/官方 examples/Marketplace 任一独立证据源。
+
 ---
 
 ## 2. handoff 通用触发器

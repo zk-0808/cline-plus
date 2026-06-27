@@ -8,6 +8,9 @@
 docs/
 ├── README.md                     ← 本文件
 ├── PROJECT_DEV_OUTLINE.md        全局工程纪律（A/B/C 分类 / 五问门控 / 停止条件 / 协作流程）
+├── dev-rules.md                  跨功能通用防漂移规则（执行边界 / handoff 通用触发器 / 状态值约定，永久保留）
+├── project-rules-search-orchestrator.md  search-orchestrator 开发期防漂移约束（功能冻结后删除）
+├── handoff.md                    会话快照（本会话决策 / 净变化 / 下次第一句话）
 ├── mechanism-candidates.md       经验机制化清单（A 类未来代码化的候选）
 │
 ├── decisions/                    所有决策：ADR-*（战略）+ D-*（运营）
@@ -65,6 +68,8 @@ evidence:
 | 我想… | 去哪 |
 |------|------|
 | 看项目工程纪律 | [PROJECT_DEV_OUTLINE.md](PROJECT_DEV_OUTLINE.md) |
+| 看跨功能通用防漂移规则 | [dev-rules.md](dev-rules.md) |
+| 看 search-orchestrator 开发期约束 | [project-rules-search-orchestrator.md](project-rules-search-orchestrator.md) |
 | 看所有决策时间线 | [decisions/README.md](decisions/README.md) |
 | 看搜索编排主题状态 | [search-orchestrator/README.md](search-orchestrator/README.md) |
 | 看待机制化的 A 类清单 | [mechanism-candidates.md](mechanism-candidates.md) |

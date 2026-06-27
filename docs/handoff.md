@@ -1,102 +1,120 @@
-# Handoff — 三层证据治理结构 + 固定评审角色体系建立
+# Handoff — VS Code 扩展可设置选项盘点 + Marketplace 开发机制并行调查
 
 ## 本会话决策
 
 | 决策 | 状态 |
 |------|------|
-| 建立 Level 1 元规则层：evidence-governance.md + reviewer-personas.md | ✅ 已写 |
-| 修订 dev-rules.md §1.5-§1.12 执行门控（8 条新规则）| ✅ 已写 |
-| ADR-002 添加 Methodology Note（Update 1-4 历史说明，Update 5 起执行新框架）| ✅ 已写 |
-| ADR-002 Update 4 修正 Update 3 路径与 manifest 格式错误 | ✅ 已写 |
-| ADR-001 Update 1 Capability Probe 5 实测计划（路径与 manifest 已修正）| ✅ 已写 |
-| mechanism-candidates #5/#7 备注基于 Update 4 修正 | ✅ 已同步 |
-| workflow-review-2026-06-27.md 记录评审反馈与采纳方案 | ✅ 已写 |
-| dev-rules.md §1.12 子代理调用必须自行注入评审角色提示词 | ✅ 已写 |
+| Probe 5 实测：VS Code 扩展 4.0.0 已有 plugin 装载入口（Customize 按钮）| ✅ 已证实 |
+| VS Code 扩展可设置选项完整盘点（Settings 5 tab + Customize 3 子 tab + 文件系统层）| ✅ 已写 |
+| Marketplace 开发机制并行调查（4 subagent：SE/Best-Practice/Process/SE）| ✅ 已完成 |
+| "无开发记录"结论证伪（RCA：调查方法缺陷 + 时间衰减 + 时效性门控缺失）| ✅ 已证伪 |
+| Agents Squad handoff store 源码核查（与 #5 重叠度低，命题边界明确）| ✅ 已核查 |
+| A 组：ADR-002 Update 5 + p5-exit-review §2.4 stale + quick-ref §0 stale | ✅ 已写 |
+| B 组：evidence-governance §15/§16/§17/§18 + dev-rules §1.13/§1.14 + ADR-002 退休条件 | ✅ 已写 |
+| 外源二手信息部分采纳（O-ext1~6 + C8/C9/C10 + U6）| ✅ 已写 |
+| U12 resolved：messageBuilder 是 compact 正确介入点（custom-compaction.ts 源码 6.3KB 直接证实）| ✅ 已解决 |
+| 确认 monorepo 结构：`apps/vscode`（VSCode 扩展）+ `sdk/`（SDK）+ `sdk/ARCHITECTURE.md`（26KB 架构文档，Architecture Recon 现成材料）| ✅ 已确认 |
 
-> 本会话由用户"写handoff"明确触发（触发器 a）。本会话主题为**工作流治理结构重构**，与上一个 handoff（VS Code 扩展原生能力调研）有延续但话题已转为方法论层。
+> 本会话由用户"写handoff"明确触发（触发器 a）。主题为 **Cline 扩展能力盘点 + Marketplace 开发机制调查**，承接上一个 handoff 的 Probe 5 实测计划，并实际完成了 Probe 5 + 大幅扩展为 Marketplace 生态调查。
 
 ---
 
 ## 本会话净变化
 
-### 1. 颠覆链事故回顾（06-26 ~ 06-27）
+### 1. Probe 5 实测结论（推翻 ADR-002 Update 1）
 
-ADR-002 Update 1→2→3→4 连续 4 次颠覆，围绕"VS Code 扩展是否支持 plugin"。外部评审指出核心根因不是"调研规则不足"，而是**证据治理失败**——把单一证据直接升级为最终结论，跳过假设、验证、置信度管理环节。
+- **Observation**：用户在 VS Code Cline 扩展 4.0.0 的 Customize 按钮发现 plugin 管理面板，已装 p5-spike-plugin + weather-metrics
+- **推翻** Update 1 "VS Code 扩展未集成 plugin 装载入口"——该结论仅基于 v3.89.2 CHANGELOG，遗漏 v4.0.0 的 Customize UI
+- **ADR-004 恢复条件 2 满足**——#5 不再依赖 CLI 载体，VS Code 扩展直接可用
 
-### 2. 三层治理结构建立
+### 2. VS Code 扩展可设置选项盘点（investigation-note-vscode-settings-inventory.md）
 
-| 层级 | 文档 | 职责 | 借鉴的成熟实践 |
-|------|------|------|--------------|
-| **Level 1 元规则** | [evidence-governance.md](evidence-governance.md) | 如何形成结论 | EBSE / RCA / ADR Methodology / 科学方法 / Lean Startup |
-| **Level 1 元规则** | [reviewer-personas.md](reviewer-personas.md) | 如何评审（成熟实践映射器）| SE/Process/Reliability/Security/API 评审实践 |
-| **Level 2 执行门控** | [dev-rules.md §1.5-§1.12](dev-rules.md) | 何时必须停 / 必须调用评审 | — |
-| **Level 3 应用** | ADR / Investigation Note | 实际应用 | — |
+- **Settings 5 tab**：API Configuration（Plan/Act 双模型）/ Features（**Auto Compact 开关**、Hooks 开关、Checkpoints、Yolo Mode）/ Terminal（执行模式 VS Code vs background）/ General（语言、遥测）/ About（v4.0.0）
+- **Customize 3 子 tab**：Skills（search-orchestrator 已装）/ MCP（playwright禁/duckduckgo启/skills-mcp-server启）/ Plugins（p5-spike + weather-metrics）
+- **文件系统层**：`~/.cline/data/{settings,db}/`（发现 teams.db / cron.db / hub-daemon）、`plugins/_installed/{local,remote}/`
+- ⚠️ **安全发现**：providers.json 明文存 API key
+- **关键发现**：Auto Compact 是 Cline 原生开关（当前关闭）——#5 的"compact"是原生能力，非自建
 
-### 3. evidence-governance.md 核心机制
+### 3. C3 hook 体系冲突解决（用户提供 `docs.cline.bot/customization/hooks` 入口）
 
-- **证据生命周期状态机**：Observation → Evidence → Hypothesis → Verified → Decision（禁止跳级）
-- **Observation vs Inference 分离**：观察不会错，解释会错
-- **证据职责分工**：不同证据类型回答不同问题（官方=设计意图，源码=实际行为，实测=真实运行）
-- **Confidence 模型**：高（≥3 源一致）/ 中（2 源一致）/ 低（单源或冲突）
-- **Unknown 状态原则**：允许 ADR 暂停于 Unknown，不强制补成 Yes/No
-- **Conflict Registry**：冲突时登记，不立即裁决
-- **Decision Readiness Checklist**：写入 ADR 前的 5 项检查
-- **Evidence Escalation**：官方→Example→源码→实测，禁止 `grep→grep→grep`
-- **实验优先**：Observation 成本 > Experiment 成本时优先实验
-- **Investigation Note**：ADR 之前的证据链记录模板
+> 用户在插件内部发现可跳转到 hooks 官方文档。该页为 stub，实际内容在 `sdk/plugins`。解答了困扰 subagent A 的 C3 冲突。
 
-**产源诚实记录**（§14）：本框架**无创新部分**——所有组成部分映射到 EBSE/RCA/ADR/科学方法/Lean Startup。本地扩展仅是 AI 工作流场景适配。
+| 概念 | 数量 | 性质 |
+|------|------|------|
+| **Hook Stages**（底层）| 15 | agent 运行时底层事件流阶段 |
+| **Lifecycle Hooks**（开发者接口）| 7 | plugin 在 `hooks: {}` 里可注册的 typed callback |
 
-### 4. reviewer-personas.md 核心机制
+**关键发现**：`before_agent_start` stage 官方注明用途 **"Inject context or modify prompt/messages"**——#5 的潜在介入点。但引发了 U12：messageBuilder vs `before_agent_start` hook 哪个是 compact 流程的正确介入点？
 
-**定位**：成熟实践映射器（best-practice mapper）——首要任务是映射成熟实践，非创造新概念。
+### 4. U12 完全解决（WebFetch custom-compaction.ts 6.3KB 源码，官方一手，高置信度）
 
-**5 个固定角色**：
-- Software Engineering Reviewer (ADR/RFC/EBSE/ATAM)
-- Process Reviewer (Lean/PDCA/A3/RCA/Postmortem)
-- Reliability Reviewer (SRE/Error Budget/Incident Response)
-- Security Reviewer (STRIDE/LINDDUN/Threat Modeling)
-- API Reviewer (REST/RFC/API Evolution)
+> **方法**：通过 GitHub API 直接定位 `sdk/examples/plugins/custom-compaction.ts`，WebFetch 获取完整源码（6,334 bytes，0 截断）。未走 minified 推断。按 [§1.6](dev-rules.md) 双来源验证（源码 + ARCHITECTURE.md 交叉）。
 
-**核心约束**：如果存在成熟实践，优先说明名称+核心思想+适用理由；只有现有实践不足时才建议新增本地规则。输出区分：成熟实践 / 本地扩展 / 创新。
+**Observation**：custom-compaction.ts manifest `capabilities: ["messageBuilders"]`，使用 `api.registerMessageBuilder({ name: "summarize-middle-history", build(messages) { ... } })`。build() 接收 `Message[]` 返回 `Message[]`——纯消息变换函数。核心逻辑：估算 token → 超 75% 阈值 → 保留首条 user message + 最近 24K token → 中间历史替换为一条摘要 message。**不写入文件系统**。
 
-### 5. dev-rules.md §1.5-§1.12 执行门控（8 条）
+ARCHITECTURE.md §9 明确 compaction 职责分工：
+- `@cline/agents`：turn-preparation seam，运行 lifecycle hooks + **允许 hosts rewrite message history before provider call**
+- `@cline/core`：compaction policy + **"inject a prepare-turn pipeline for root sessions"**
+- Core 在 plugin messageBuilder 之后运行内置的 API-safety message builder（最终保护）
 
-| 条款 | 触发条件 | 解决的根因 |
-|------|---------|----------|
-| §1.5 权威源与独立证据 | 形成结论时 | 证据职责混用 |
-| §1.6 双来源验证 | 关键结论 | 单源裁决 |
-| §1.7 Minified 边界 | 用 minified 代码时 | minified 语义误读 |
-| §1.8 Evidence Collapse | 证据冲突时 | 同一证据类型打转 |
-| §1.9 Direction Drift | 用户重新定义问题 | 方向偏离未纠正 |
-| §1.10 Core Proposition Flip | 核心命题翻转 ≥2 次 | 推理系统失控 |
-| §1.11 评审角色调用门控 | 写 ADR / 事故复盘等 | 重新发明轮子 |
-| §1.12 子代理注入 | 执行 loop / Task subagent | 依赖用户提醒 |
+**结论（U12）**：
+- ✅ `registerMessageBuilder` 是 compact 流程的正确介入点——custom-compaction.ts 就是官方 example
+- ❌ `before_agent_start` hook 不是 compact 正确答案（那是底层 stage，messageBuilder 是独立扩展点）
+- ✅ build() 内可以做 fs.writeFileSync 写 handoff.md + index.jsonl（虽 example 无此例，但 plugin 运行在 Node.js 环境，fs 可用）
+- **#5 可直接抄 custom-compaction.ts 的模式**，替换 build() 内摘要逻辑为：写 handoff.md + index.jsonl + 返回修改后消息
 
-### 6. ADR-002 Update 4 路径与 manifest 修正
+### 5. sdk/ARCHITECTURE.md 26KB — Architecture Recon 天降神兵
 
-Update 3 基于 minified 代码反向工程推断的 plugin 安装路径（`.cline/<pluginName>/`）和 manifest（`managed.json`）错误。Update 4 对照官方文档修正：
-- 安装路径：`.cline/plugins/`（项目级）或 `~/.cline/plugins/`（全局级）
-- manifest：`package.json` 含 `cline` 字段，格式 `{ "cline": { "plugins": [{ "paths": ["./index.ts"], "capabilities": ["tools","hooks"] }] } }`
-- VS Code 扩展能否自动发现 `.cline/plugins/`：官方文档未说明，仍需实测
+> 外部专家说的"先花一天画架构图"，这里已经有现成的 26KB ARCHITECTURE.md，含 mermaid 分层图、6 大 package 职责、4 种运行时流程（Local/Hub/Remote/CLI）、9 个 Design Seams（含 compaction 与 extension 系统）。**下次会话唯一应该做的第一件事就是读完这份文档。**
 
-### 7. ADR-002 Methodology Note
+### 6. Marketplace 开发机制（investigation-note-marketplace-dev-mechanism.md，4 subagent）
 
-Update 1-4 保留不变（历史可追溯），明确标注"predate Evidence Governance framework"。从 Update 5 起所有结论必须标注 Observation / Inference / Evidence Type / Confidence / Remaining Unknown，不可跳级。
+**后端架构（hybrid）**：
+- 公开 catalog：`https://cline.github.io/marketplace/catalog.json`（202 条：149 MCP + 15 plugin + 38 skill，未鉴权）
+- 鉴权 API：`api.cline.bot/v1/marketplace/*`（401，WorkOS）
+- 数据流：上架侧 → cline.github.io CI 生成 catalog → extension host fetch → postMessage 注入 webview
+
+**上架机制按类型分化**：
+- MCP：GitHub Issue + 人工审核（cline/mcp-marketplace）
+- Plugin/Skill：PR + `npm run validate`（cline/plugins、cline/skills）
+
+**两套 CONTRIBUTING**（外源 O-ext1 补齐）：
+1. 主仓贡献（改 Cline 本体）：`cline/cline` 的 `apps/vscode` → Issue→PR→Playwright E2E
+2. Registry 上架（提交第三方扩展）：cline/plugins + cline/skills + cline/marketplace → PR + validate
+
+### 4. "无开发记录"结论证伪（C 号 RCA）
+
+**5 类反证**：npm @cline/sdk 周下载 23.5万 / cline CLI 26.3万 / GitHub abeatrix 7 个 plugin PR（5-6月合并）/ 11 个官方 examples / Marketplace ~22 Plugins
+
+**RCA 根因**：① 调查方法缺陷（把"无 how-to 博客"误等同为"无开发活动"，证据类型混淆 + 单源裁决，主）② 时间衰减（次）③ 时效性门控缺失（结构性）
+
+**元发现（C10）**：外源二手博客停留在 v3.81 "只有 MCP + 源码贡献"，**遗漏 plugin 体系**——印证 plugin/marketplace 是 v4.0 前后新事物，二手沉淀滞后
+
+### 5. Agents Squad handoff store vs #5（C 号 SE Review）
+
+- Agents Squad `capabilities: ["tools"]`，**不用 messageBuilder**；handoff store 是 Blackboard pattern（subagent 间共享，LLM tool 触发）
+- #5 是 self-continuity（compact 触发 messageBuilder 产出，自我恢复）
+- **重叠度低**——应作为独立 plugin 共存
+- #5 借鉴：路径方案 `~/.cline/data/plugins/<plugin>/handoffs/<conversationId>/` + 穿越防护
+- #5 独有增量：messageBuilder 注册 + compact 触发 + **index.jsonl 检索索引**
 
 ---
 
-## 本会话修改文件
+## 本会话修改/新建文件
 
 | 文件 | 改动 |
 |------|------|
-| `docs/evidence-governance.md` | 新建（Level 1 元规则，14 章 + 产源说明）|
-| `docs/reviewer-personas.md` | 新建（Level 1 元规则，5 固定角色 + 调用规则）|
-| `docs/dev-rules.md` | 新增 §1.5-§1.12（8 条执行门控）|
-| `docs/decisions/ADR-002-project-shape.md` | Update 4（路径修正）+ Methodology Note |
-| `docs/decisions/ADR-001-handoff-compact-memory.md` | Update 1 Probe 5 实测准备清单路径修正 |
-| `docs/mechanism-candidates.md` | #5/#7 备注基于 Update 4 修正 |
-| `docs/workflow-review-2026-06-27.md` | 新建（评审材料）+ §9 评审反馈与采纳方案 |
+| `docs/decisions/investigation-note-probe-5.md` | 新建（Probe 5 实测）|
+| `docs/decisions/investigation-note-vscode-settings-inventory.md` | 新建（可设置选项盘点）|
+| `docs/decisions/investigation-note-marketplace-dev-mechanism.md` | 新建（4 subagent 调查 + 外源采纳 §5）|
+| `docs/decisions/ADR-002-project-shape.md` | Update 5 + 退休条件补 2 条社区活动触发器 |
+| `docs/decisions/ADR-002-p5-experiment-exit-review.md` | §2.4 stale 标注 |
+| `docs/refs/plugin-dev-quick-reference.md` | §0 stale 标注 |
+| `docs/evidence-governance.md` | 新增 §15 时效性模型 / §16 社区活动证据职责 / §17 调研可复现性 / §18 产源 |
+| `docs/dev-rules.md` | 新增 §1.13 时效性门控 / §1.14 "无 X"结论门控 |
+| `.cline/plugins/test-plugin/`（如存在）| Probe 5 plugin 文件 |
+
+> ⚠️ **git 未提交**——本会话所有改动尚未 commit，用户未明确指示提交。下次会话或用户要求时执行 `handoff:` commit。
 
 ---
 
@@ -104,22 +122,40 @@ Update 1-4 保留不变（历史可追溯），明确标注"predate Evidence Gov
 
 | 方向 | 说明 | 优先级 |
 |------|------|--------|
-| **Capability Probe 5 实测** | 验证手动放 plugin 文件到 `.cline/plugins/` 能否触发 VS Code 扩展执行 setup 函数。**作为新框架首个应用**——按 Investigation Note 格式记录证据链（Observation → Evidence → Hypothesis → Verified → Decision）。TRAE agent 准备文件，用户 reload window 后检查 `plugin-loaded.log`。详见 [ADR-001 Update 1](decisions/ADR-001-handoff-compact-memory.md) | **高** |
-| Capability Probe 1-4 | PostCompact hook / session_id / compact 程序化调用 / condense 消息 watcher | 中（Probe 5 后）|
-| **P5 Spike 恢复等待** | 恢复条件见 [ADR-004](decisions/ADR-004-p5-spike-pause.md)。Probe 5 通过 → 条件 2 满足 | 低（等待 Probe 5）|
-| research/06-usage.md 断链 | 旧链接指向 project-rules.md，是否更新待定 | 低 |
+| **读 `sdk/ARCHITECTURE.md`**（26KB）| Architecture Recon 核心材料，含 mermaid 分层图 + 6 package 职责 + 4 运行时流程 + 9 Design Seams | **最高——下次会话第一件事** |
+| **读 `custom-compaction.ts` 源码**（6.3KB）| U12 已解决——messageBuilder 是 compact 正确介入点，#5 的直接模板 | **高——重启 P5 Spike 前必读** |
+| **git commit** | 本会话改动未提交，待用户指示 | 高 |
+| **决定是否 git clone** | monorepo 仅 12.5 MB，clone 后 grep 源码不再需 WebFetch 截断 | 中 |
+| **P5 Spike 重启** | ADR-004 满足 + U12 解决，可直接以 custom-compaction.ts 为模板重设计 | 中 |
+| **Architecture Recon¹ ②-⑤** | 请求 Sequence Diagram / 测试入口 / Git History / 公共接口识别——但核心材料已有 ARCHITECTURE.md，2-5 可简化为"补读" | 中 |
+| **同步 ARCHITECTURE.md 到 investigation notes** | sdk/ARCHITECTURE.md 是权威架构地图，与本项目的多层文档结构需对齐 | 中 |
+| **剩余 VS Code 入口** | MCP Servers 独立按钮 / Account / New Task 对话界面 | 低 |
+| **外网提示词 1/2** | U6（主仓结构已确认 `apps/vscode` 存在）/ Marketplace 上架流程 | 低 |
 
-> **注意**：ADR-004 仍为 deferred。Probe 5 实测结果是恢复路径关键——若通过，#5 可在 VS Code 直接可用。
+> ¹ **Architecture Recon（架构侦察）** 是外部专家建议的核心方法——在进入任何大型项目前，先花半天到一天建立系统地图，再定位功能入口。本会话被指出最大的问题就是"一直在找功能入口（Feature Entry），而非先画数据流（Data Flow）"。调查顺序应为：**功能流程 → 哪个模块负责 → 模块接口 → 实现**，而不是 `grep → 命中 → 猜语义`。详见 conv history 2026-06-27 尾段。
 
-权威源：[evidence-governance.md](evidence-governance.md)、[reviewer-personas.md](reviewer-personas.md)、[dev-rules.md §1.5-§1.12](dev-rules.md)、[ADR-002 Update 4 + Methodology Note](decisions/ADR-002-project-shape.md)、[ADR-001 Update 1](decisions/ADR-001-handoff-compact-memory.md)、[ADR-004](decisions/ADR-004-p5-spike-pause.md)、[workflow-review-2026-06-27.md](workflow-review-2026-06-27.md)、[mechanism-candidates.md](mechanism-candidates.md)、[project-rules-search-orchestrator.md](project-rules-search-orchestrator.md)
+权威源：[evidence-governance.md（含新增 §15-§18）](evidence-governance.md)、[dev-rules.md（含新增 §1.13-§1.14）](dev-rules.md)、[reviewer-personas.md](reviewer-personas.md)、[ADR-002 Update 5](decisions/ADR-002-project-shape.md)、[investigation-note-marketplace-dev-mechanism.md](decisions/investigation-note-marketplace-dev-mechanism.md)、[investigation-note-vscode-settings-inventory.md](decisions/investigation-note-vscode-settings-inventory.md)、[investigation-note-probe-5.md](decisions/investigation-note-probe-5.md)、[ADR-004](decisions/ADR-004-p5-spike-pause.md)、[mechanism-candidates.md](mechanism-candidates.md)、[project-rules-search-orchestrator.md](project-rules-search-orchestrator.md)
 
 ---
 
 ## Handoff（下次会话第一句话建议）
 
 ```text
-先读 docs/dev-rules.md（注意新增 §1.5-§1.12 执行门控）与 docs/project-rules-search-orchestrator.md 各一次，遵守三份文档职责划分与防漂移约束。
+先读 docs/dev-rules.md（注意 §1.5-§1.14 执行门控）与 docs/project-rules-search-orchestrator.md 各一次，遵守三份文档职责划分与防漂移约束。
 然后读 docs/handoff.md，按下面的工作内容继续。
 ```
 
-接续上下文：本会话完成**三层证据治理结构 + 固定评审角色体系建立**。起因是 ADR-002 Update 1→2→3→4 连续 4 次颠覆事故，外部评审指出核心根因是"证据治理失败"（把单一证据直接升级为最终结论，跳过假设/验证/置信度管理），而非"调研规则不足"。已建立三层结构：Level 1 元规则（[evidence-governance.md](evidence-governance.md) 证据状态机 + [reviewer-personas.md](reviewer-personas.md) 5 固定评审角色）→ Level 2 执行门控（[dev-rules.md §1.5-§1.12](dev-rules.md) 8 条规则）→ Level 3 应用（ADR + Investigation Note）。evidence-governance.md §14 诚实记录所有部分均映射 EBSE/RCA/ADR 等成熟实践，无创新部分。reviewer-personas.md 定位为"成熟实践映射器"，核心约束"优先借鉴成熟实践，非重新发明"。dev-rules.md §1.12 规定执行 loop / 调用子代理时 TRAE agent 必须自行注入评审角色提示词。ADR-002 Methodology Note 标注 Update 1-4 保留不变，从 Update 5 起执行新框架。下次首要动作：**Capability Probe 5 实测**——作为新框架首个应用，按 Investigation Note 格式记录证据链，验证手动放 plugin 文件到 `.cline/plugins/` 能否触发 VS Code 扩展执行 setup。TRAE agent 准备最小 plugin 文件（`package.json` 含 `cline` 字段 + `index.ts` 含 setup 注册 messageBuilder/tool + 写日志），用户 reload window 后检查 `plugin-loaded.log`。
+接续上下文：本会话完成 **Cline 扩展能力盘点 + Marketplace 开发机制调查 + U12 关键问题解决**。Probe 5 实测证实 VS Code 扩展 4.0.0 已有 plugin 装载入口，ADR-004 恢复条件 2 满足。用 4 个并行 subagent 调查 Marketplace：后端 hybrid。"无开发记录"结论被 5 类反证证伪，新增 6 条治理规则。C3 hook 冲突通过 hooks 官方入口解决。
+
+**会话末段的转折点**：用户提出"为什么不拉取到本地研究"——确认 monorepo 结构仅 12.5 MB，`apps/vscode` 存在，`sdk/` 存在。更关键的是 `sdk/ARCHITECTURE.md`（26KB）是现成的架构地图，**直接满足 Architecture Recon 的核心需求**。同时直接 WebFetch `sdk/examples/plugins/custom-compaction.ts`（6.3KB，0 截断），**完全解决了 U12**——`registerMessageBuilder` 是 compact 的正确介入点，#5 可直接抄其模式。
+
+**会话末尾收到外部架构建议**：核心问题不是搜索能力，而是缺少 Architecture Recon 阶段。已拆解为 7 条待办（见下文）。
+
+**下次首要动作（按顺序）**：
+1. **读 `sdk/ARCHITECTURE.md`**（26KB）——完成 Architecture Recon 核心，不再从 0 画图
+2. **读 `custom-compaction.ts` 源码**（6.3KB）——确认 #5 的直接模板
+3. **确定是否 git clone 主仓**（12.5 MB，可大幅提速后续调查）
+4. 输出外网搜索（提示词 1/2/3，但核心 U12 已解决，提示词 3 优先级下降）
+5. 重启 P5 Spike（U12 已解决，#5 可复用 custom-compaction.ts 模式）
+
+**注意**：所有改动尚未提交 git。建议在下次会话第一步 git commit 本会话所有改动，然后再读 ARCHITECTURE.md。

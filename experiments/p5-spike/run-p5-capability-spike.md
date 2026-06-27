@@ -3,7 +3,7 @@
 **日期**：2026-06-26
 **designated_executor**：TRAE agent（代码编写 + 框架文档）→ 用户手动（CLI 安装 + 实跑验证）
 **时间窗口**：0.5–1 天工程量上限
-**状态**：partial Go（2026-06-26）— #6 session_start hook 已实证触发；#5 compact 双产物待长任务触发实证。先前 No-Go 判定已撤销（验证方法假阴性）
+**状态**：deferred（2026-06-27，实验环境前提动摇）— #6 session_start hook 已实证触发（结论保留）；#5 compact 双产物实证因 CLI 载体不稳定 + 实验环境与生产环境错位暂停。详见 [ADR-004](../../docs/decisions/ADR-004-p5-spike-pause.md)
 
 ---
 
@@ -128,9 +128,20 @@
 
 **关键修正结论**：Plugin 独占能力在 **CLI 3.0.30 上运行时可用**（与之前误判相反）。ADR-002"VS Code 必须载体"约束仍是另一独立事实（VS Code 扩展无装载入口），但 CLI 路径已被证明可跑通——这恢复了 Plugin 作为运行时自动化层的技术可行性。
 
-### 下一步（补全 #5 实证）
+### 2026-06-27 事件：#5 实证暂停（实验环境前提动摇）
 
-构造长任务触发 compact，验证 handoff.md + index.jsonl 是否写出。**该命令需用户在真实终端执行**（cline 交互式会话需 TTY，Agent 非交互终端会报 `EBADF: bad file descriptor` 卡死，见 §7 教训 2）。
+执行 #5 实证准备时发现 ADR-002 Validation Plan 选择 CLI 作为实验环境的前提被动摇。详见 [ADR-004](../../docs/decisions/ADR-004-p5-spike-pause.md)。
+
+| 事实 | 证据 |
+|------|------|
+| CLI 与 VS Code 扩展是两套独立版本号体系 | CLI 3.0.30→3.0.31 vs VS Code 扩展 3.89.2（`globalState.json` `clineVersion`）|
+| CLI 后台自动升级中断，bin shim 损坏 | `E:\node-global` 仅存临时残留（`.cline-*`），`cline` 命令不可用；`npm install -g cline@3.0.30` 修复后再次自动升至 3.0.31；`cline update` 无 disable 选项 |
+| CLI 3.0.31 run_commands 工具调用崩溃 | session `1782529691185_843jq`：deepseek-v4-flash 输出对象格式 `{command, args}`，cline core 期望字符串调 `.trimStart()` → TypeError，turn 1 即崩（`cline.log` 03:08:17）|
+| 实验环境(CLI)与生产环境(VS Code)错位 | VS Code 扩展不支持 plugin（ADR-002 Update 1），CLI 验证结论无法迁移 |
+
+**关键判断**：#5 未跑通不是机制失败——plugin 已加载（`session-start.log` 03:08:14 写入），`registerMessageBuilder` 注册路径与已实证的 `beforeRun` 在同一 plugin 对象，compact 未触发是载体崩溃（turn 1 即崩）阻断 token 累积。是实验环境前提动摇，不是 Plugin 机制证伪。
+
+**处置**：#5 实证暂停，P5 Spike 状态 deferred。#6 已实证结论保留。恢复条件见 ADR-004 §恢复条件。插件临时降阈值改动已回滚（`MAX_INPUT_TOKENS` 恢复 120_000）。
 
 ---
 

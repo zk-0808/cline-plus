@@ -244,6 +244,8 @@ OUTLINE §6 "Windows Hook 替代"原假设需要修正——**两者并存，非
 - **Plugin 代码规模超过 Skill 规模**（信号：Plugin 行数 > Skill 行数；P4 边界已漂移）
 - Cline 原生集成 Handoff / Resume / Workflow Guard（整个项目部分能力可退休）
 - SDK 架构发生重大变化（破坏性升级）
+- **Marketplace 上架 plugin 数 > 50**（社区活动信号——触发社区活动复查，依据 [evidence-governance.md §16](../evidence-governance.md)）
+- **npm @cline/sdk 周下载量 > 50 万**（社区活动信号——触发社区活动复查，依据 [evidence-governance.md §16](../evidence-governance.md)）
 
 届时重新评估 P1 / P3 的必要性，或考虑项目整体退休。
 
@@ -824,3 +826,122 @@ Update 3 的核心结论"VS Code 扩展代码层有完整 plugin 注册系统"**
 - Update 3 的 skill 装载 / 文件 hook 结论仍成立
 
 本 Update 记录官方文档对照后的路径与 manifest 格式修正，不构成整体决策推翻。
+
+---
+
+## Update 5 (2026-06-27): VS Code 扩展 plugin 装载入口实测 + Marketplace 机制摸清 + #5 命题边界确认
+
+> **方法论**：本 Update 严格遵循 [evidence-governance.md](../evidence-governance.md) 框架，所有结论标注 Observation / Inference / Evidence Type / Confidence / Remaining Unknown，不跳级。配套 Investigation Notes：
+> - [investigation-note-probe-5.md](investigation-note-probe-5.md) — Probe 5 实测
+> - [investigation-note-vscode-settings-inventory.md](investigation-note-vscode-settings-inventory.md) — VS Code 扩展可设置选项完整盘点
+> - [investigation-note-marketplace-dev-mechanism.md](investigation-note-marketplace-dev-mechanism.md) — Marketplace 开发机制并行调查（4 subagent）
+> - Agents Squad handoff store 源码核查（SE Reviewer subagent）
+
+### 事实变化（经多源核查 + 实测）
+
+**事实 1：VS Code 扩展 4.0.0 有 plugin 装载入口**（实测，高置信度）
+
+- Observation：用户在 VS Code Cline 扩展的 Customize 按钮中发现 plugin 管理面板，已安装 p5-spike-plugin + weather-metrics
+- Evidence Type：用户实测 UI 观察 + Customize 显示的安装路径
+- 推翻 Update 1 结论"VS Code 扩展未集成 plugin 装载入口"——该结论基于 v3.89.2 CHANGELOG 零 plugin 条目，遗漏了 v4.0.0 的 Customize 按钮 UI 层入口
+- Confidence：高
+
+**事实 2：VS Code 扩展读取 CLI 全局 plugin store**（实测，高置信度）
+
+- Observation：Customize UI 显示两个 plugin 的安装路径：
+  - `p5-spike-plugin` → `C:\Users\19936\.cline\plugins\_installed\local\p5-spike-plugin.ts-d7f2b02ac5d1\p5-spike-plugin.ts`（CLI local 安装）
+  - `weather-metrics` → `C:\Users\19936\.cline\plugins\_installed\remote\weather-metrics.ts-1770dbabbed0\weather-metrics.ts`（CLI remote URL 安装）
+- Inference：VS Code 扩展与 CLI 共享 `~/.cline/plugins/_installed/` 全局 store（非 workspace 级 `.cline/plugins/`）
+- Confidence：高
+
+**事实 3：Marketplace 后端是 hybrid 架构**（minified 源码 + 网络实测 + 官方仓库，高置信度）
+
+- 公开 catalog：`https://cline.github.io/marketplace/catalog.json`（200，未鉴权，202 条 entries：149 MCP + 15 plugin + 38 skill）
+- 鉴权 API：`https://api.cline.bot/v1/marketplace/*`（401，WorkOS 鉴权，语义未验证）
+- 上架机制按类型分化：MCP=GitHub Issue + 人工审核 / Plugin & Skill=PR + CI `npm run validate`
+- VS Code 扩展通过 extension host fetch catalog.json → postMessage 注入 webview 渲染
+- Confidence：高（多源交叉验证：源码字符串 + 网络状态码 + 官方仓库 CONTRIBUTING）
+
+**事实 4：社区开发活动已显著存在**（npm + GitHub + 官方 examples + Marketplace，高置信度）
+
+- Observation（5 类反证）：
+  - npm `@cline/sdk` 周下载 234,966 / `@cline/core` 239,780 / `cline` CLI 263,674
+  - GitHub 外部贡献者 abeatrix 至少 7 个 plugin development PR（2026-05-19~06-23 合并）
+  - 官方 plugin examples 11 个（含 weather-metrics/custom-compaction/agents-squad 等）
+  - 独立官方 plugin 仓库 `cline/typescript-lsp-plugin`
+  - `cline plugin install` 支持 4 种来源（file URL / git / npm / local）
+- Confidence：高
+- **Context §5"社区目前无 Plugin 实战经验沉淀"作废**（详见 [investigation-note-marketplace-dev-mechanism.md](investigation-note-marketplace-dev-mechanism.md) §C 号 RCA）
+
+**事实 5：Agents Squad handoff store 与 #5 不重叠**（一手源码 + 官方 README，高置信度）
+
+- Observation：Agents Squad plugin manifest `capabilities: ["tools"]`——仅注册 tools，**不使用 messageBuilder**
+- Agents Squad handoff store：`save_handoff({path, content})` / `read_handoff({path})`，文件系统 per-conversation 共享，LLM tool 触发，subagent 间协作（Blackboard pattern 实例）
+- #5 命题：compact 时通过 messageBuilder 产出 handoff.md + index.jsonl，self-continuity 机制
+- Inference：二者重叠度低——仅"handoff 命名"与"文件系统持久化"表面相似；触发机制、消费者、产物结构、检索能力四项均不重叠
+- Confidence：高（源码 manifest + README + schema 三重佐证）
+
+### Conflict Registry（含历史 + 本次新增）
+
+| # | 冲突 | 来源 A | 来源 B | 处置 |
+|---|------|--------|--------|------|
+| C1 | Plugin 是否支持 VSCode/JetBrains | docs: "not applicable for now" | GitHub README: "extends any Cline agent" + 4.0.0 实测 Customize 可用 | **本次解决**——实测证明 4.0.0 已支持，docs 滞后于版本 |
+| C2 | 扩展点数量 | docs Extension Glossary: 6 个 | GitHub README Capabilities 表: 8 个 | 以仓库 README 为完整契约 |
+| C3 | Hook 分类口径 | docs Hook Stages: 15 个阶段 | GitHub README Runtime hooks: 7 个 | 不同粒度，docs 未明确关系 |
+| C4 | MCP 提交渠道 | cline/mcp-marketplace: issue-based | cline/marketplace: PR-based | 两者并存未声明主从 |
+| C5 | examples 数量 | docs: 9 个 | GitHub README: 11 个 | docs 落后于仓库 |
+| C6（新）| "无开发记录"结论 | plugin-dev-quick-reference.md §0 + ADR-002 Context §5 | npm 23 万周下载 + 7 个外部 PR + 11 examples + 22 Marketplace plugin | 来源 A 宽义结论作废 |
+| C7（新）| Update 1 "VS Code 扩展未集成 plugin 装载入口" | v3.89.2 CHANGELOG 零 plugin 条目 | v4.0.0 Customize 实测可用 | **本次解决**——Update 1 仅基于 v3.89.2，遗漏 v4.0.0 |
+
+### 对历史 Update 的修正
+
+| 章节 | 原内容 | Update 5 修正 |
+|------|--------|--------------|
+| Context §4（VS Code 不可用硬约束） | "Plugin 不适用于 VS Code / JetBrains" | **v4.0.0 实测可用**（Customize 按钮 marketplace 安装），硬约束解除 |
+| Context §5（社区无实战沉淀） | "SDK v0.0.51，刚推出" | **作废**——社区开发活动已显著存在（详见事实 4）|
+| Update 1（VS Code 扩展未集成 plugin 装载入口） | "仍成立——VS Code 扩展未集成 plugin 装载入口" | **错误**——基于 v3.89.2，遗漏 v4.0.0 |
+| Update 2 发现 3（registerMessageBuilder 仍未在 VS Code 扩展实现） | "仍成立" | **错误**——Update 3 已纠正，本次再确认 |
+| Update 4（VS Code 扩展能否自动发现 `.cline/plugins/` 仍需实测） | "仍需 Capability Probe 实测" | **优先级降低**——全局 store 已可用，workspace 级自动扫描为补充验证 |
+
+### 对 mechanism-candidates #5 的影响
+
+**命题修正**（基于 Agents Squad 源码核查）：
+
+| 维度 | 原命题 | 修正后命题 |
+|------|--------|-----------|
+| 触发时机 | compact 流程中 | 不变 |
+| 注册扩展点 | messageBuilder | 不变 |
+| 消费者 | 同一 session compact 后的自己 | 不变 |
+| 产物结构 | handoff.md + index.jsonl | 不变 |
+| 与 Agents Squad 关系 | 未明确 | **明确边界**——#5 是 self-continuity，Agents Squad 是 inter-agent coordination，二者独立共存 |
+| 路径方案 | 待定 | **借鉴 Agents Squad**：`~/.cline/data/plugins/<plugin>/handoffs/<conversationId>/` + `SAFE_ID_RE` + `startsWith(dir/)` 穿越防护 |
+| 检索能力 | index.jsonl | **#5 独有增量**——Agents Squad 无索引/检索 |
+
+**核心结论**：#5 命题不变，但需显式声明与 Agents Squad 的边界。二者不应合并，应作为两个独立 plugin 共存。#5 应复用 Agents Squad 的文件路径方案与穿越防护模式，但 messageBuilder 注册 + compact 流程触发 + index.jsonl 检索索引三项是 #5 必须自建的增量。
+
+### 对 ADR-004 的影响
+
+**ADR-004 恢复条件 2 满足**——#5 不再依赖 CLI 载体，VS Code 扩展环境通过 Customize marketplace 直接可用。P5 Spike 可重启。
+
+### 后续动作
+
+1. **ADR-004 状态更新**：恢复条件 2 满足，可重启 P5 Spike，但命题需按本 Update §#5 命题修正调整
+2. **mechanism-candidates #5 状态更新**：从"候选（暂缓）"改为"候选"或"实验中"，备注边界与路径方案
+3. **plugin-dev-quick-reference.md §0 stale 标注**：加 stale 标记，注明已被本 Update 修正
+4. **ADR-002-p5-experiment-exit-review §2.4 stale 标注**：该节"社区无 Plugin 实战沉淀"论据作废（但 SDK 0.x 论据独立成立，§2.4 整体结论可能不变）
+5. **B 组项目规则补强**（建议新增 6 条规则，待用户 review）：
+   - `evidence-governance.md §15` 结论时效性模型（默认 14 天时效期 + ADR frontmatter 加 `evidence_as_of` + `expires_if_unchanged`）
+   - `dev-rules.md §1.13` 结论时效性门控
+   - `evidence-governance.md §16` 社区活动证据职责
+   - `evidence-governance.md §17` 调研可复现性（必须记录 query 列表）
+   - `dev-rules.md §1.14` "无 X"类结论门控（必须经 search-orchestrator 反证 + 3 类独立证据）
+   - `ADR-002 §退休条件补充`（社区活动信号触发器）
+
+### 本 Update 不变更的内容
+
+- ADR-002 整体方向（薄 Skills + 单点 WebSearch MCP + 经验文档 + Plugin 实验线）不变
+- ADR-002 status 仍为 active
+- ADR-002 §项目定位（L1/L2/L3 三层）不变
+- ADR-002 §退休条件 / Review Trigger 不变（但建议补充社区活动信号触发器）
+
+本 Update 记录 VS Code 扩展 4.0.0 plugin 装载入口实测 + Marketplace 机制摸清 + Agents Squad handoff store 边界确认，纠正 Update 1 的"VS Code 不可用"错误结论，不构成整体决策推翻。

@@ -1,10 +1,14 @@
-# Project Rules — search-orchestrator 开发期
+# Project Rules — search-orchestrator（功能专属开发期规则）
 
 > **范围**：仅在 search-orchestrator 这一功能开发期间生效。功能稳定后此文件可整体删除。
+>
+> **命名约定**：功能专属的开发期防漂移规则统一命名为 `project-rules-<功能短名>.md`，各功能各持一份，开发期间**只在本功能对应的这份文件里增删规则**。跨功能通用规则一律不进本文件，统一沉淀到 [`dev-rules.md`](dev-rules.md)（永久保留）。
 >
 > **加载方式**：本文件**不**通过 `.trae/rules/` 自动注入到系统提示词。新会话开始时，由用户在第一句话提醒模型阅读本文件一次即可。
 >
 > **原则**：只写防漂移的最小约束，不写"必读必写"硬规则。本文件本身就是 C 类（治理思考方式）的半机制化辅助。
+>
+> **与 [`dev-rules.md`](dev-rules.md) 的分工**：本文件只收录**绑定 search-orchestrator 功能**（`survey.md §9` 决策/实验/路线表）的防漂移约束，功能冻结后整体删除。跨功能通用的执行边界、handoff 通用触发器、状态值约定已迁至 `dev-rules.md`（永久保留）。
 
 ---
 
@@ -22,9 +26,9 @@
 
 ---
 
-## 五条防漂移约束
+## search-orchestrator 防漂移约束
 
-只在下列触发时机做对应动作，没触发不要主动改：
+只在下列触发时机做对应动作，没触发不要主动改。**约束 1–3 + 4.b 为本功能专属**；通用约束（4.a/4.c/git、约束5 执行边界、状态值约定）见 [`dev-rules.md`](dev-rules.md)：
 
 1. **落地新决策**（写入 `docs/decisions/D-*.md` 或 `ADR-*.md`）
    → 同步 `survey.md §9.1` 决策表加一行
@@ -38,54 +42,28 @@
 
 4. **触发写 handoff** —— 满足下列任一触发器才覆盖写 `docs/handoff.md`，没触发不要主动写。写入内容只保留本会话决策、净变化、下次会话第一句话；不重列长期清单。
 
-   - **触发器 4.a 用户口头要求**（无条件）
-     用户在对话中明确说「写 handoff」「交接」「结束会话」等。立即执行，不需要任何前置判断。
-     *元规则：不写进本文件以外的判断逻辑，由用户在对话层触发即可。*
+   - **触发器 4.a 用户口头要求**（无条件）+ **触发器 4.c 对话过长 + 话题已跳 + 上下文吃紧**（建议）+ **子条款 handoff 进入 git**：均为跨功能通用规则，已迁至 [`dev-rules.md §2`](dev-rules.md)。本文件不再重复，按链接执行。
 
-   - **触发器 4.b P 级任务完成**（自动）
+   - **触发器 4.b P 级任务完成**（自动，**search-orchestrator 专属**）
      `docs/search-orchestrator/survey.md §9.3` 路线项（含 Infra）的 status 跳转为 `active` / `rolled-back` / `deferred` / `superseded` 任一**终态**时，本会话即视为产出实质性进展，自动写 handoff。
      `proposed` 不算终态——决策草案落地不触发。
 
-   - **触发器 4.c 对话过长 + 话题已跳 + 上下文吃紧**（建议，不自动）
-     **同时**满足下列三条：
-     ① 本会话用户消息 ≥ 8 轮；
-     ② 当前轮所讨论的工作项与上一轮**无证据/决策依赖**（即：不引用上一轮的实验数据、决策 ID、文件改动）；
-     ③ 上下文窗口占用 ≥ 70%（即 token usage 估算已逼近模型上限，继续推进风险大）。
-     仅向用户**提议**写 handoff，由用户拍板，不自动覆盖。
-     *三条 AND 的设计意图*：① 防止短会话误报，② 防止同话题多轮调优误报，③ 防止前两条满足但 context 充裕时过早交接（损失会话内已建立的工作记忆）。
-
    *没有任一触发器命中时禁止写 handoff*。例如：刚完成上一份 handoff 列出的"下次具体动作"中的第一项 ≠ 触发器，本会话应继续推进剩余动作，而不是再写 handoff。
-
-   **子条款：handoff 进入 git**：每次覆盖写 `docs/handoff.md` 后，必须立即 git commit（含 handoff.md 及本会话产生的所有新文件和修改文件）。commit message 格式：`handoff: <一句话摘要>`。目的：出现异常时可回滚到任一 handoff 快照。
 
 5. **执行主体边界**（TRAE agent vs Cline SKILL）
 
-   当某步骤的 designated executor 是 Cline + SKILL 时（即需要 Goggle 过滤 / P3 三元组抽取 / 三档模式 / 同源去重等 SKILL 层机制），TRAE agent 不得直接用 WebSearch / WebFetch 等通用工具替代执行。
-
-   **判定规则**：若实验框架（run-N-*.md）的执行提示词是"复制到 Cline 执行"，则该步骤的执行主体是 Cline，不是 TRAE agent。TRAE agent 的 WebSearch / WebFetch 等价于"裸 search"层，缺少 SKILL 层的全部机制处理。
-
-   **违反时**：回滚 TRAE agent 产出的证据，交付提示词给用户在 Cline 中执行。
-
-   **子条款：执行产出归档路径**：Cline 执行提示词必须在开头声明输出文件的建议存放位置，格式为 `docs/<功能>/experiments/run-N-phase*-*.md`。若提示词未声明位置，Cline 执行模型会自主选择位置（如 `research/`），导致产出文件脱离实验目录治理。此子条款将 `ab-test-template.md:140` 的提示性语句提升为硬规则。
-
-   **子条款：cline 交互式会话需真实终端（TTY）**：凡需实际发起 cline 会话的命令（`cline -i` / `cline -v "..."` / 任何进入 agent loop 的调用），必须交由用户在真实终端执行，TRAE agent 不得在非交互终端代跑——否则报 `EBADF: bad file descriptor, write` 并挂起。TRAE agent 只负责非交互命令（install / config / 目录与文件检查）与结果判读。源由：P5 Spike 实跑（2026-06-26，experiments/p5-spike/run-p5-capability-spike.md §7 教训 2）。
-
-   **子条款：阴性结论须先排除验证方法错误**：以"失败/不存在/不可用"为依据下退出或否决类结论前，必须先用一个已知应成功的对照确认验证方法本身有效；共享同一前提的多条证据不算独立交叉验证。源由：P5 Spike No-Go 误判（2026-06-26，§7 教训 1——`config plugins` 的 `-c` 参数语义误解导致假阴性，连带"官方样例也失败"的伪交叉验证）。
-
-   *设计意图*：与"不在 SKILL 层做基础设施层的事"（handoff.md）、"绝不用规则解决运行时问题"（README.md）构成同构治理原则——不在错误的层做错误的事。
+   此约束全套（执行主体边界 + 执行产出归档路径 / TTY 真实终端 / 阴性结论须排除验证方法错误三个子条款）为跨功能通用规则，已迁至 [`dev-rules.md §1`](dev-rules.md)。本文件不再重复，按链接执行。
 
 ---
 
 ## 状态值约定
 
-`mechanism-candidates.md` 状态枚举见该文件 §状态约定，只能用：`候选` / `实验中` / `已机制化` / `永久C类` / `已退休`。不要发明新值（例如 `investigate-later`、`暂缓` 这类如需表达，用「候选（暂缓）— 触发条件：XXX」的注释形式）。
-
-决策 status 枚举见 `docs/README.md`：`proposed` / `active` / `deferred` / `superseded` / `rolled-back`。
+已迁至 [`dev-rules.md §3`](dev-rules.md)（`mechanism-candidates.md` 状态枚举 + 决策 status 枚举）。
 
 ---
 
 ## 本文件的生命周期
 
 - 触发删除条件：search-orchestrator 进入冻结期，不再有新决策/实验
-- 触发扩容条件：再多两个功能领域（如 plugin、handoff-v2）都遇到同类漂移问题，再考虑提升到通用治理层
-- 不做的事：不预写"未来可能用到"的规则
+- 通用治理层已分离：跨功能通用规则已提升至 [`dev-rules.md`](dev-rules.md)（永久保留）。本文件冻结期删除时，通用规则不受影响。
+- 不做的事：不预写"未来可能用到"的规则；不收录跨功能通用规则（那些归 `dev-rules.md`）

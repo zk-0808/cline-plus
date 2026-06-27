@@ -309,3 +309,89 @@ ADR 之前应有 Investigation Note 记录证据链，**不直接从搜索跳到
 **结论**：本框架**无创新部分**——所有组成部分均有成熟实践对应。本地扩展仅是"针对 AI agent 调研工作流的场景适配"（如 minified 代码风险、Confidence 简化为三档）。
 
 **反思**：本次设计过程中曾把"证据治理"当作新概念提出，实际是 EBSE + RCA + ADR Methodology 的组合应用。按 [reviewer-personas.md](reviewer-personas.md) 核心约束，应在最初就映射到 EBSE，而非自创术语。
+
+---
+
+## 15. 结论时效性模型
+
+> **源由**：2026-06-27 [Marketplace 开发机制并行调查](decisions/investigation-note-marketplace-dev-mechanism.md) C 号 Process Reviewer RCA——"无开发记录"结论 4 天后即过时（SDK 升 2 patch / Marketplace 上架 ~22 plugin），但无机制触发复查。
+
+涉及**外部生态**的结论（社区活跃度 / 包下载量 / 上架数 / GitHub 活动 / 官方文档版本）默认时效期 **14 天**。超期需复查或加 `stale` 标注。
+
+涉及**官方文档/版本号**的结论，时效期绑定为"下一版本发布"或 **30 天**（取先到者）。
+
+**ADR frontmatter 强制字段**（新增 ADR 必填，存量 ADR 在下次 Update 时补）：
+
+```yaml
+evidence_as_of: <YYYY-MM-DD>           # 结论形成日
+expires_if_unchanged: <YYYY-MM-DD>     # 默认 evidence_as_of + 14 天（外部生态）/ + 30 天（官方文档）
+```
+
+**超期处置**：
+1. 引用该 ADR 结论作为新决策论据前，**必须**先复查
+2. 复查通过：更新 `evidence_as_of` 与 `expires_if_unchanged`
+3. 复查失败：降级为 Hypothesis，登记 Conflict Registry
+4. 未复查：禁止作为新决策的论据（见 [dev-rules.md §1.13](dev-rules.md)）
+
+**成熟实践映射**：
+- 时效期模型 ↔ **Refresh Token 生命周期**（认证令牌的过期与刷新机制）+ **Nutrition Facts"as of"标注**（科学数据的有效期声明）
+
+---
+
+## 16. 社区活动证据职责
+
+> **源由**：§3 证据职责分工表未覆盖"社区活动"维度，导致 2026-06-23 调查把"无 how-to 博客"误等同为"无开发活动"（[investigation-note-marketplace-dev-mechanism.md](decisions/investigation-note-marketplace-dev-mechanism.md) C 号 RCA 一号根因：证据类型混淆）。
+
+补全 §3 表格：
+
+| 问题 | 应使用的证据类型 |
+|------|---------------|
+| 社区开发活动是否存在 | npm 包数量 + 周下载量 + GitHub issue/PR 数 + 第三方 fork/scope |
+| 社区 how-to 经验是否沉淀 | 中英文搜索引擎 + 掘金/知乎/CSDN/Dev.to/Medium |
+| 社区 plugin 是否上架 | 官方 Marketplace API 或 catalog.json |
+| 社区问题是否被响应 | GitHub issue 关闭率 + 响应时长 + Stack Overflow 标签活跃度 |
+
+**禁止**：用一种证据类型代替另一种。例如：
+- ❌ "无 how-to 博客" ⇒ "无开发活动"（证据类型混淆）
+- ❌ "npm 包存在" ⇒ "社区已沉淀经验"（包存在 ≠ 经验沉淀）
+- ✅ "无 how-to 博客" + "npm 周下载 < 100" + "GitHub PR 数 < 5" + "Marketplace 上架 0" ⇒ "社区活动稀少"（多源一致）
+
+**成熟实践映射**：
+- 社区活动多源验证 ↔ **EBSE 多源证据三角验证（Triangulation）** + **Mixed Methods Research**（定量 npm/GitHub 数据 + 定性博客/Issue 分析）
+
+---
+
+## 17. 调研可复现性
+
+> **源由**：2026-06-23 [plugin-dev-quick-reference.md §0](refs/plugin-dev-quick-reference.md) 仅自述"搜过 SDK plugin 开发的中英文社区经验、博客、踩坑记录"，未记录 query 列表——无法复现，且无法核查调查范围是否充分。
+
+调研类结论（"无 X" / "社区无 Y" / "找不到 Z"）**必须**记录以下可复现信息：
+
+| 字段 | 必填 | 示例 |
+|------|------|------|
+| query 列表 | ✅ | `"cline plugin development"`, `"cline SDK 教程"`, `"@cline/sdk 实战"` |
+| 搜索引擎 | ✅ | Google / Bing / DDG / npm search / GitHub search / 知乎搜索 |
+| 时间戳 | ✅ | 2026-06-23 14:30 Asia/Shanghai |
+| 命中数 | ✅ | 约 N 条结果（或"零结果"）|
+| 前 3 条命中摘要 | 选填 | 标题 + URL + 一句话相关性判断 |
+
+**禁止**：
+- 仅自述"搜过 X"而不记录 query 列表——无法复现的调研**不可写入 ADR**
+- 仅用一个 query 下"无 X"结论——至少 3 个不同角度的 query
+
+**Investigation Note 强制位置**：调研记录必须放在 [§10 Investigation Note](#10-investigation-note) 的 Observation 段，不可仅写在 ADR 的 Context 中。
+
+**成熟实践映射**：
+- 调研可复现性 ↔ **科学方法实验记录（Lab Notebook）** + **Systematic Literature Review（SLR）的检索协议**——Kitchenham & Charters (2007) 要求 SLR 明确记录检索式、数据库、时间范围、命中数
+
+---
+
+## 18. 产源说明（§15-§17 补充）
+
+| 本框架章节 | 成熟实践 | 本地扩展（AI 工作流特殊性）| 创新部分 |
+|----------|---------|--------------------------|---------|
+| §15 结论时效性模型 | **Refresh Token 生命周期** + **Nutrition Facts"as of"标注** | ADR frontmatter 加 `evidence_as_of` / `expires_if_unchanged` 字段 | 无 |
+| §16 社区活动证据职责 | **EBSE 三角验证（Triangulation）** + **Mixed Methods Research** | 针对 AI agent 调研场景的具体社区活动证据类型映射（npm/GitHub/Marketplace）| 无 |
+| §17 调研可复现性 | **SLR 检索协议（Kitchenham & Charters 2007）** + **Lab Notebook** | 强制 query 列表 + 时间戳 + 命中数三字段 | 无 |
+
+**结论**：§15-§17 无创新部分，均为成熟实践的本项目适配。
