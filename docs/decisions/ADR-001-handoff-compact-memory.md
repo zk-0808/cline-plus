@@ -138,16 +138,31 @@ Probe 5 是 ADR-002 Update 3 追加的核心验证项——若通过，则 #5（
 
 ### Probe 5 实测准备清单（TRAE agent 准备，用户执行）
 
-1. 创建 `<workspace>/.cline/test-plugin/` 目录
-2. 准备 `managed.json`（manifest 声明 capabilities，参考 dist/extension.js 第 543 行的 capability 检查逻辑）
-3. 准备最小 `index.js`（或 `index.ts`）plugin 文件，setup 函数：
-   - 调用 `registerMessageBuilder` 注册一个空 messageBuilder（验证注册接口可用）
-   - 调用 `registerTool` 注册一个测试工具（验证注册接口可用）
+> **路径与 manifest 格式已于 ADR-002 Update 4 修正**：plugin 文件放 `.cline/plugins/`（非 `.cline/<pluginName>/`），manifest 用 `package.json` 含 `cline` 字段（非 `managed.json`）。
+
+1. 创建 `<workspace>/.cline/plugins/test-plugin/` 目录
+2. 准备 `package.json`（manifest 声明 capabilities，参考官方文档格式）：
+   ```json
+   {
+     "name": "test-plugin",
+     "version": "0.0.1",
+     "cline": {
+       "plugins": [
+         { "paths": ["./index.ts"], "capabilities": ["tools", "messageBuilders", "hooks"] }
+       ]
+     }
+   }
+   ```
+3. 准备最小 `index.ts` plugin 文件（参考官方 [weather-metrics.ts](https://github.com/cline/cline/blob/main/sdk/examples/plugins/weather-metrics.ts) + [custom-compaction.ts](https://github.com/cline/cline/blob/main/sdk/examples/plugins/custom-compaction.ts) 母本），setup 函数：
+   - 调用 `api.registerMessageBuilder(...)` 注册一个空 messageBuilder（验证注册接口可用，capabilities 含 `messageBuilders`）
+   - 调用 `api.registerTool(...)` 注册一个测试工具（验证注册接口可用，capabilities 含 `tools`）
    - 写入日志文件 `plugin-loaded.log`（验证 setup 执行）
 4. 用户在 VS Code 中 reload window（`Ctrl+Shift+P` → `Developer: Reload Window`）
 5. 检查 `plugin-loaded.log` 是否生成
 6. 在 Cline 对话中检查测试工具是否可用
 7. 触发一次 compact（长对话），检查 messageBuilder 是否被调用
+
+**注意**：官方文档明确"VS Code 扩展不支持 plugin"（"This feature is not applicable on VSCode and JetBrains Extension for now"），但 VS Code 扩展代码层有完整 plugin 注册系统（ADR-002 Update 3 确认）。Probe 5 实测的是"代码层有实现但 UI 层未暴露命令"的情况下，手动放文件到 `.cline/plugins/` 能否触发自动发现——这是官方文档未明确说明的灰色地带。
 
 ### 后续动作
 
