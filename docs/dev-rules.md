@@ -147,6 +147,45 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 
 源由：2026-06-27 外部评审反馈——AI agent 设计工作流时容易"重新发明轮子"。本次自创"证据治理"概念，实际 EBSE（Evidence-Based Software Engineering）、RCA、ADR 等已有成熟方法可直接借鉴。
 
+### 1.12 子条款：子代理调用必须注入评审角色提示词
+
+执行 loop / 串行任务 / 调用 Task subagent 时，TRAE agent **必须自行**把对应评审角色提示词注入子代理的 query 参数，**不依赖**用户在对话层提醒。
+
+**注入规则**：
+
+1. **识别评审类型**：根据子代理任务性质，对照 §1.11 触发条件表选择角色
+   - 调研类任务 → Software Engineering Reviewer
+   - 工作流事故分析 → Process Reviewer
+   - 故障/稳定性 → Reliability Reviewer
+   - 安全相关 → Security Reviewer
+   - API/接口设计 → API Reviewer
+   - 跨领域 → 多角色分别注入（每个角色一个 subagent 调用）
+
+2. **注入方式**：在 Task 工具的 query 参数开头插入对应角色的提示词引用块（来自 [reviewer-personas.md §3](reviewer-personas.md)），格式：
+
+   ```
+   <角色提示词引用块>
+
+   ---
+
+   ## 任务
+   <实际任务描述>
+
+   ## 输出要求
+   按 reviewer-personas.md §1 区分：成熟实践 / 本地扩展 / 创新
+   ```
+
+3. **多角色并行**：跨领域复杂评审时，同一任务调用多个 subagent，每个注入不同角色提示词，分别输出（不混合）。
+
+4. **冲突处理**：若多角色意见冲突，按 [evidence-governance.md §6](evidence-governance.md) Conflict Registry 登记冲突，不裁决。
+
+**禁止**：
+- 调用子代理做评审类任务时不注入角色提示词
+- 依赖用户在对话层提醒"记得注入角色"
+- 把多角色意见混合在一个 subagent 输出中
+
+源由：用户 2026-06-27 指示"用户要求 loop 时把自行把提示词注入给子代理"——避免每次都要用户提醒，TRAE agent 应自动按 §1.11 触发条件识别角色并注入。
+
 ---
 
 ## 2. handoff 通用触发器
