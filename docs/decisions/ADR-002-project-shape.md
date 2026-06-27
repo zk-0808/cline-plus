@@ -349,6 +349,22 @@ Implementation
 
 ---
 
+> **Methodology Note (added 2026-06-27, after Update 4):**
+>
+> Updates 1–4 predate the [Evidence Governance framework](../evidence-governance.md) and therefore do not distinguish Observation / Evidence / Hypothesis / Verified / Decision states, nor do they annotate Confidence levels or maintain a Conflict Registry. They should be interpreted under the previous methodology.
+>
+> Specifically:
+> - Update 1 jumped from CHANGELOG (negative evidence) directly to Decision ("VS Code 扩展未集成 plugin")
+> - Update 2 jumped from minified code Grep to semantic conclusion (误判 zod schema)
+> - Update 3 jumped from minified code path concatenation to install-path conclusion (DGu 函数语义误读)
+> - Update 4 jumped from official docs to final conclusion (碰巧正确，但方法论仍错)
+>
+> From **Update 5 onward**, all conclusions must follow the Evidence Governance framework: each conclusion must annotate Observation / Inference / Evidence Type / Confidence / Remaining Unknown, and must not skip states (Observation → Evidence → Hypothesis → Verified → Decision).
+>
+> Historical Updates are preserved unchanged for traceability. See [workflow-review-2026-06-27.md](../workflow-review-2026-06-27.md) for the full root-cause analysis and external review.
+
+---
+
 ## Update 1 (2026-06-26): Cline Plugin VS Code 支持状态核查（含修正）
 
 ### 事实变化（经多源核查，含矛盾证据裁定）
