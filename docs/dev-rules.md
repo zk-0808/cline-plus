@@ -282,6 +282,34 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 
 ---
 
+## 5. 文件存放规范
+
+新增文件**必须**放入对应目录，**禁止**在根目录散落 .log / .ps1 / .sh / 未分类 .md。
+
+```
+docs/                     项目文档
+  decisions/              ADR + 调查笔记（Investigation Notes）
+  refs/                   架构参考 + 社区指南（对外可发布）
+  research/               搜索质量研究
+  search-orchestrator/    搜索编排器文档 + 实验记录
+scripts/                  工具脚本（patch、自动化）
+handoff-plugin/           Plugin 源码（独立 git 仓库）
+search-mcp-wrapper/       MCP wrapper（独立项目）
+skills/                   Cline skills
+experiments/              Spike 实验
+```
+
+**判定规则**：
+- 对外可发布的指南/参考 → `docs/refs/`
+- 内部决策记录（ADR / 调查笔记）→ `docs/decisions/`
+- 可执行脚本（.ps1 / .sh / .py 工具）→ `scripts/`
+- 运行时日志（.log）→ gitignore，不入库
+- 独立项目的源码 → 各自子目录（handoff-plugin/ / search-mcp-wrapper/）
+
+源由：2026-06-28 项目整理——根目录曾有 patch 脚本、测试日志、重复文档，缺乏存放规范导致每次新增文件都需人工判断位置。
+
+---
+
 ## 本文件的生命周期
 
 - 长期保留：本文件承载跨功能通用规则，不随任一功能开发期结束而删除。
