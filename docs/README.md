@@ -77,6 +77,6 @@ evidence:
 | 看机制落地评估 | [plugin/mechanism-landing-assessment.md](plugin/mechanism-landing-assessment.md) |
 | 看 search-orchestrator 开发期约束 | [search/project-rules.md](search/project-rules.md) |
 | 看所有决策时间线 | [decisions/README.md](decisions/README.md) |
-| 看搜索编排主题状态 | [search-orchestrator/README.md](search-orchestrator/README.md) |
+| 看搜索编排主题状态 | [search-orchestrator/README.md](search/search-orchestrator/README.md) |
 | 看待机制化的 A 类清单 | [mechanism-candidates.md](mechanism-candidates.md) |
 | 看归档摘要 | [ARCHIVE.md](ARCHIVE.md) |

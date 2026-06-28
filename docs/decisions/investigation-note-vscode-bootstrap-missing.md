@@ -5,10 +5,10 @@
 > **框架**：按 [evidence-governance.md §10](../evidence-governance.md) Investigation Note 模板执行。
 >
 > **关联**：
-> - [investigation-note-probe-5.md](investigation-note-probe-5.md) — 前置调查（本 Note 修正其 V3 结论）
+> - [investigation-note-probe-5.md](../archive/decisions/investigation-note-probe-5.md) — 前置调查（本 Note 修正其 V3 结论）
 > - [ADR-002 Update 5](ADR-002-project-shape.md) — Probe 5 修正后的结论
 > - [handoff.md](../handoff.md) — 上次会话遗留的"setup() 不执行"未解问题
-> - [handoff-plugin-architecture.md](../refs/handoff-plugin-architecture.md) §9 — Plugin 加载失败的已记录症状
+> - [handoff-plugin-architecture.md](../archive/plugin-refs/handoff-plugin-architecture.md) §9 — Plugin 加载失败的已记录症状
 
 ---
 

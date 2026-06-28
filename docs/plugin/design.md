@@ -2,7 +2,7 @@
 
 > **状态**：proposed（起草中）
 > **日期**：2026-06-27
-> **上游决策**：[ADR-001](decisions/ADR-001-handoff-compact-memory.md)（Accepted，A+B'+D' 方向）、[ADR-004](decisions/ADR-004-p5-spike-pause.md)（deferred，恢复条件 2 已满足）、**[ADR-005](decisions/ADR-005-split-compact-from-handoff.md)**（Accepted，Compaction 与 Handoff 拆分）
+> **上游决策**：[ADR-001](../decisions/ADR-001-handoff-compact-memory.md)（Accepted，A+B'+D' 方向）、[ADR-004](../decisions/ADR-004-p5-spike-pause.md)（deferred，恢复条件 2 已满足）、**[ADR-005](../decisions/ADR-005-split-compact-from-handoff.md)**（Accepted，Compaction 与 Handoff 拆分）
 > **前置验证**：Capability Probe 5（通过），custom-compaction.ts 源码确认，ARCHITECTURE.md §9 Design Seam 确认
 > **本设计不替代 ADR-001**——ADR-001 仍为方向性决策，本 Doc 落实 Implementation-level 细节。**ADR-005 修正了实现方式**：Compaction 与 Handoff 拆分为独立机制。
 
@@ -325,10 +325,10 @@ handoff 文件名格式：`{project_hash}-{timestamp}-{uuid}.md`
 
 | 文档 | 关系 |
 |------|------|
-| [ADR-001](decisions/ADR-001-handoff-compact-memory.md) | 上游方向决策（Accepted），本设计落实其 Implementation-level 细节 |
-| [ADR-004](decisions/ADR-004-p5-spike-pause.md) | 上游暂停决策（deferred），本设计的重启满足其恢复条件 2 |
-| [mechanism-candidates.md](mechanism-candidates.md) #5 | 本设计对应的机制候选，完成后标"已机制化" |
-| [investigation-note-probe-5.md](decisions/investigation-note-probe-5.md) | 前置验证证据 |
+| [ADR-001](../decisions/ADR-001-handoff-compact-memory.md) | 上游方向决策（Accepted），本设计落实其 Implementation-level 细节 |
+| [ADR-004](../decisions/ADR-004-p5-spike-pause.md) | 上游暂停决策（deferred），本设计的重启满足其恢复条件 2 |
+| [mechanism-candidates.md](../mechanism-candidates.md) #5 | 本设计对应的机制候选，完成后标"已机制化" |
+| [investigation-note-probe-5.md](../archive/decisions/investigation-note-probe-5.md) | 前置验证证据 |
 | [sdk/ARCHITECTURE.md](https://github.com/cline/cline/blob/main/sdk/ARCHITECTURE.md) | 系统架构权威源，本设计与之对齐 |
 | [custom-compaction.ts](https://github.com/cline/cline/blob/main/sdk/examples/plugins/custom-compaction.ts) | 直接模板，设计模式母本 |
 

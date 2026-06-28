@@ -1,7 +1,7 @@
 # 机制落地评估 — Mechanism Candidates 可行性分析
 
 > **日期**：2026-06-28
-> **关联**：[mechanism-candidates.md](mechanism-candidates.md)、[ADR-005](decisions/ADR-005-split-compact-from-handoff.md)
+> **关联**：[mechanism-candidates.md](../mechanism-candidates.md)、[ADR-005](../decisions/ADR-005-split-compact-from-handoff.md)
 > **方法**：Cline 源码分析（7 份本地文档）+ 主流 Agent 调研（Claude Code / Cursor / Windsurf / Copilot / Devin / OpenClaw / AgentMemory-Pro）
 
 ---

@@ -90,7 +90,7 @@
 ### M11. 失败处理
 
 **Tavily** 返回错误码：`400 / 401 / 429 / 432 / 433 / 500`，每个有明确语义（[B1](search-research-results.md)）。
-**DDG MCP** 当前只暴露 `BOT_DETECTED / HTTP_ERROR / TIMEOUT / UNKNOWN` 四种（见 [web-search-setup.md](../skills/search-orchestrator/references/web-search-setup.md)）。
+**DDG MCP** 当前只暴露 `BOT_DETECTED / HTTP_ERROR / TIMEOUT / UNKNOWN` 四种（见 [web-search-setup.md](../../../skills/search-orchestrator/references/web-search-setup.md)）。
 
 ### M12. 价格信号
 
@@ -282,39 +282,39 @@
 
 | 决策 ID | 状态 | 标题 |
 |---------|------|------|
-| [D-2026-06-23-search-adopt-goggles](../decisions/D-2026-06-23-search-adopt-goggles.md) | active | 采纳 Domain Goggles（P1） |
-| [D-2026-06-23-search-finalscore-coupling](../decisions/D-2026-06-23-search-finalscore-coupling.md) | active | Goggle × Source Weighting 联动 FinalScore（P1.5） |
-| [D-2026-06-24-search-rollback-diversity](../decisions/D-2026-06-24-search-rollback-diversity.md) | rolled-back | 回退 DiversityPenalty + R1 保底 |
-| [D-2026-06-24-search-defer-p2](../decisions/D-2026-06-24-search-defer-p2.md) | deferred | 搁置 P2 Query Rewrite + Fanout |
-| [D-2026-06-24-search-adopt-p3](../decisions/D-2026-06-24-search-adopt-p3.md) | active | 采纳 Evidence-bound Citation（P3，三档模式） |
-| [D-2026-06-24-search-adopt-p4-same-source-merge](../decisions/D-2026-06-24-search-adopt-p4-same-source-merge.md) | active | 采纳同源内容合并（P4 Same-Source Merge） |
-| [D-2026-06-24-search-revise-p4-metrics](../decisions/D-2026-06-24-search-revise-p4-metrics.md) | active | 修订 P4 评估指标（域名多样性降级为观察指标） |
-| [D-2026-06-24-search-infra-mcp-upgrade](../decisions/D-2026-06-24-search-infra-mcp-upgrade.md) | **rolled-back** | 启动 MCP 基础设施升级验证（中文 fetch 覆盖率）— Run #8a 否决 TLS 指纹假设 |
-| [D-2026-06-24-search-evaluate-p5-output-schema](../decisions/D-2026-06-24-search-evaluate-p5-output-schema.md) | superseded | 评估 P5 Output Schema v1（字段对齐 schema）— Run #9c 双盲证伪后被 Evidence Map / Claim Graph 重设计取代 |
-| [D-2026-06-25-search-redesign-p5-evidence-map](../decisions/D-2026-06-25-search-redesign-p5-evidence-map.md) | proposed | 重设计 P5：Evidence Map / Claim Graph（非字段对齐 schema）— Run #13 2/5 双盲证伪，保持 proposed |
-| [D-2026-06-25-search-adopt-p6-highlights](../decisions/D-2026-06-25-search-adopt-p6-highlights.md) | active | 采纳 P6 Highlights（fetch 后 verbatim 抽取 ≤500 token） |
-| [D-2026-06-26-search-adopt-mcp-throttle-wrapper](../decisions/D-2026-06-26-search-adopt-mcp-throttle-wrapper.md) | active | 采纳 MCP 反-bot 节流 wrapper（方案 C：强制 max_results≤10 + 跨调用状态 + 指数退避）— 对应 #24，11/11 集成测试 + Run #14 Phase 0b 功能性验证通过，已机制化 |
+| [D-2026-06-23-search-adopt-goggles](../../decisions/D-2026-06-23-search-adopt-goggles.md) | active | 采纳 Domain Goggles（P1） |
+| [D-2026-06-23-search-finalscore-coupling](../../decisions/D-2026-06-23-search-finalscore-coupling.md) | active | Goggle × Source Weighting 联动 FinalScore（P1.5） |
+| [D-2026-06-24-search-rollback-diversity](../../archive/decisions/D-2026-06-24-search-rollback-diversity.md) | rolled-back | 回退 DiversityPenalty + R1 保底 |
+| [D-2026-06-24-search-defer-p2](../../decisions/D-2026-06-24-search-defer-p2.md) | deferred | 搁置 P2 Query Rewrite + Fanout |
+| [D-2026-06-24-search-adopt-p3](../../decisions/D-2026-06-24-search-adopt-p3.md) | active | 采纳 Evidence-bound Citation（P3，三档模式） |
+| [D-2026-06-24-search-adopt-p4-same-source-merge](../../decisions/D-2026-06-24-search-adopt-p4-same-source-merge.md) | active | 采纳同源内容合并（P4 Same-Source Merge） |
+| [D-2026-06-24-search-revise-p4-metrics](../../decisions/D-2026-06-24-search-revise-p4-metrics.md) | active | 修订 P4 评估指标（域名多样性降级为观察指标） |
+| [D-2026-06-24-search-infra-mcp-upgrade](../../archive/decisions/D-2026-06-24-search-infra-mcp-upgrade.md) | **rolled-back** | 启动 MCP 基础设施升级验证（中文 fetch 覆盖率）— Run #8a 否决 TLS 指纹假设 |
+| [D-2026-06-24-search-evaluate-p5-output-schema](../../archive/decisions/D-2026-06-24-search-evaluate-p5-output-schema.md) | superseded | 评估 P5 Output Schema v1（字段对齐 schema）— Run #9c 双盲证伪后被 Evidence Map / Claim Graph 重设计取代 |
+| [D-2026-06-25-search-redesign-p5-evidence-map](../../decisions/D-2026-06-25-search-redesign-p5-evidence-map.md) | proposed | 重设计 P5：Evidence Map / Claim Graph（非字段对齐 schema）— Run #13 2/5 双盲证伪，保持 proposed |
+| [D-2026-06-25-search-adopt-p6-highlights](../../decisions/D-2026-06-25-search-adopt-p6-highlights.md) | active | 采纳 P6 Highlights（fetch 后 verbatim 抽取 ≤500 token） |
+| [D-2026-06-26-search-adopt-mcp-throttle-wrapper](../../decisions/D-2026-06-26-search-adopt-mcp-throttle-wrapper.md) | active | 采纳 MCP 反-bot 节流 wrapper（方案 C：强制 max_results≤10 + 跨调用状态 + 指数退避）— 对应 #24，11/11 集成测试 + Run #14 Phase 0b 功能性验证通过，已机制化 |
 
 ### 9.2 A/B 实验数据
 
 | 实验 | 主题 | 机制分 | 基础设施分 | 结论 |
 |------|------|--------|-----------|------|
-| [run-1-goggle](experiments/run-1-goggle.md) | P1 Goggle 首轮验证 | — | — | 4/5 ✅ 保留 |
-| [run-2-fanout](experiments/run-2-fanout.md) | P2 三路 fanout 首轮 | — | — | 3.6/5 ⚠️ 调参重跑 |
-| [run-3-fanout-tuned](experiments/run-3-fanout-tuned.md) | P2 调参后复测 | — | — | 2.6/5 ❌ 回炉 |
-| [run-4-p3-evidence-bound-citation](experiments/run-4-p3-evidence-bound-citation.md) | P3 首轮（中文 query） | 5/5 机制 | 1/5 基础设施 | 规则可行，fetch 瓶颈 |
-| [run-5-p3-retry](experiments/run-5-p3-retry.md) | P3 复测（英文 query） | 5/5 机制 | 5/5 基础设施 | ✅ 双维度通过 |
-| [run-6-p3-zh-retry](experiments/run-6-p3-zh-retry.md) | P3 复测（中文 query，排除波动） | 5/5 机制 | 1/5 基础设施 | ⚠️ 确认机制零误引用，fetch 层为中文站点稳定瓶颈 |
-| [run-7-p4-dedup](experiments/run-7-p4-dedup.md) | P4 同源内容合并首轮 | — | — | 机制通过：Merge Precision 100%, False Merge 0, Info Loss 0。指标修订见 D-2026-06-24-search-revise-p4-metrics |
-| [run-8a-mcp-backend](experiments/run-8a-mcp-backend.md) | MCP 后端切换验证（Node.js → Python curl_cffi） | — | 1/5 基础设施 | ❌ **TLS 指纹假设 disproven**。Run A/B 双轮 0/10，HTTP Success ≠ Content Success（juejin 全部返回 "Please wait..." JS Challenge 假页面）。回滚动作：MCP 切回 Node.js，中文场景永久 Tier C。新候选 M-22 Browser-backed Fetch |
-| [run-9-p5-output-schema](experiments/run-9-p5-output-schema.md) | P5 Output Schema 首轮验证（单源列表型证据集） | 1/5 设计失败 | — | ❌ **设计失败，非机制失败**。Run A 基线 Claim Coverage 100%、Info Loss 0%——指标天花板已被自由文本顶满，Run B schema 抽取无提升空间。根因：Run #6 单源列表型证据集（1 URL × 4 同源 claim）不触发 P5 核心收益场景（跨源字段对齐）。P5 决策维持 proposed，启动 Run #9b 多实体对比框架重做 |
-| [run-9b-p5-output-schema-v2](experiments/run-9b-p5-output-schema-v2.md) | P5 Output Schema 多实体对比验证（Gin/Echo/Fiber × 5 维度） | 3/5 有条件 | — | ⚠️ **有条件 active（外部评审决策 C）**。Conflict ID +40% 仅方向性信号（非双盲）；Field Alignment 天花板归因 P3 证据集已结构化；Output Length 已排除（纯格式差异）。Run #9c 须双盲 + 非结构化证据集，Conflict ID Δ < +15% 则降回 proposed |
-| [run-9c-p5-output-schema-v3](experiments/run-9c-p5-output-schema-v3.md) | P5 Output Schema 双盲验证（非结构化证据集） | 2/5 | — | ❌ **双盲证伪，降回 proposed**。Conflict ID Δ=-20%（自由文本 100% > schema 80%），Field Alignment Δ=-7%。核心发现：schema 结构可能限制跨维度冲突发现（执行者倾向只报告 schema 内字段间冲突，自由文本叙事流更灵活）。Schema 幻觉=0 护栏有效但不足以挽救机制收益 |
-| [run-10-p6-highlights](experiments/run-10-p6-highlights.md) | P6 Highlights verbatim 抽取保真度验证（PostgreSQL 17 vs MySQL 8.4） | 4/5 | — | ✅ **P6 升级 active**。Extractive Fidelity 92.3%（24/26），Paraphrase 7.7%（2/26），Untraceable 0。两条 paraphrase 模式：主语同义替换 + 跨语言归纳。提示词层 verbatim 抽取指令基本有效。SKILL 加载机制修复（symlink）后首条 P 级机制通过验证 |
-| [run-11-p4-semantic-merge](experiments/run-11-p4-semantic-merge.md) | P4 语义场景去重增益验证（LLM vs SimHash/Jaccard 基线，K8s sidecar 跨语言） | 4/5 | — | ✅ **P4 语义场景已验证（translation 子类）**。Baseline：P=1.00, R=0.20, F1=0.33（高精度低召回，FP=0）。P4 LLM：P=1.00, R=1.00, F1=1.00。Net Gain（Recall 差）+0.80。3 个 translation 对全部正确合并。Baseline translation Miss 属算法边界（lexical 不具备跨语言能力，文献一致）；3-8 verbatim Miss 属数据限制（仅摘要非全文，摘要级指纹≠文档级指纹）。降级 4/5：样本量仅 3 对（全部 translation），Net Gain +0.80 为上界估计（摘要限制低估 baseline verbatim 能力） |
-| [run-12-p4-summary-rewrite](experiments/run-12-p4-summary-rewrite.md) | P4 summary/rewrite 子类补评测（Next.js 15 async request APIs） | 5/5 | — | ✅ **P4 semantic-summary / semantic-rewrite 子类验证通过**。Run #12 初次 Python 3.13 Attempt 为 N/A（样本不足 + 全文归档不合格）；Run #12b 严格重跑后通过：GT positive=5（summary 3、rewrite 2），Baseline SimHash/Jaccard：P=1.00, R=0.00, F1=0.00；P4 LLM：P=1.00, R=1.00, F1=1.00；Net Gain +1.00；False Merge=0；Info Loss=0。P4 语义合并证据范围从 translation 扩展到 summary/rewrite |
-| [run-13-p5-evidence-map](experiments/run-13-p5-evidence-map.md) | P5 v2 Evidence Map / Claim Graph 双盲验证（Gateway API，非结构化证据集） | 2/5 | — | ❌ **保持 proposed**。Material Relation Recall：Run A 15/16=93.8%，Run B 16/16=100%，Δ=+6.3% < +15%。Cross-Dimension Recall 双方 12/12 天花板，Δ=0。安全指标（False Conflict / Unsupported Relation / Info Loss）双方均为 0。结构化中间表示再次未对自由文本展现决定性优势。唯一可复现增量：Gap Ledger 强制枚举证据缺口（捕获 Run A 漏掉的回滚 gap GT15）。衍生候选：后续应只验证“追加 Gap Ledger / 证据缺口枚举”最小机制，而非完整 Evidence Map |
-| [run-14-p5-gap-ledger](experiments/run-14-p5-gap-ledger.md) | P5 Gap Ledger 最小机制双盲验证（Cloudflare 反爬方案，gap 密集证据集 9 gap + 5 relation） | **4/5** | — | ✅ **P5 Gap Ledger 升级 active**。Gap Detection Recall Δ=+55.6%（33.3% → 88.9%），Implicit Gap Recall Δ=+40%（40% → 80%），Material Relation / Traceability / Unsupported / Info Loss 全部不退化。False Gap=1（Run B G15 把 cloudscraper“已淘汰”误标为“侦察用途待评估”，阻挡 5/5）。成本：篇幅 +36%（Gap Ledger 占主要增量，可接受）。Gap Ledger 最小机制作为 P5 唯一落地候选进入 SKILL.md。失败模式：追求 gap 召回时可能产生轻度 false gap，缓解措施=每项 gap 需引用 evidence id，evidence 充分则不应标 gap |
+| [run-1-goggle](../../archive/search/experiments/run-1-goggle.md) | P1 Goggle 首轮验证 | — | — | 4/5 ✅ 保留 |
+| [run-2-fanout](../../archive/search/experiments/run-2-fanout.md) | P2 三路 fanout 首轮 | — | — | 3.6/5 ⚠️ 调参重跑 |
+| [run-3-fanout-tuned](../../archive/search/experiments/run-3-fanout-tuned.md) | P2 调参后复测 | — | — | 2.6/5 ❌ 回炉 |
+| [run-4-p3-evidence-bound-citation](../../archive/search/experiments/run-4-p3-evidence-bound-citation.md) | P3 首轮（中文 query） | 5/5 机制 | 1/5 基础设施 | 规则可行，fetch 瓶颈 |
+| [run-5-p3-retry](../../archive/search/experiments/run-5-p3-retry.md) | P3 复测（英文 query） | 5/5 机制 | 5/5 基础设施 | ✅ 双维度通过 |
+| [run-6-p3-zh-retry](../../archive/search/experiments/run-6-p3-zh-retry.md) | P3 复测（中文 query，排除波动） | 5/5 机制 | 1/5 基础设施 | ⚠️ 确认机制零误引用，fetch 层为中文站点稳定瓶颈 |
+| [run-7-p4-dedup](../../archive/search/experiments/run-7-p4-dedup.md) | P4 同源内容合并首轮 | — | — | 机制通过：Merge Precision 100%, False Merge 0, Info Loss 0。指标修订见 D-2026-06-24-search-revise-p4-metrics |
+| [run-8a-mcp-backend](../../archive/search/experiments/run-8a-mcp-backend.md) | MCP 后端切换验证（Node.js → Python curl_cffi） | — | 1/5 基础设施 | ❌ **TLS 指纹假设 disproven**。Run A/B 双轮 0/10，HTTP Success ≠ Content Success（juejin 全部返回 "Please wait..." JS Challenge 假页面）。回滚动作：MCP 切回 Node.js，中文场景永久 Tier C。新候选 M-22 Browser-backed Fetch |
+| [run-9-p5-output-schema](../../archive/search/experiments/run-9-p5-output-schema.md) | P5 Output Schema 首轮验证（单源列表型证据集） | 1/5 设计失败 | — | ❌ **设计失败，非机制失败**。Run A 基线 Claim Coverage 100%、Info Loss 0%——指标天花板已被自由文本顶满，Run B schema 抽取无提升空间。根因：Run #6 单源列表型证据集（1 URL × 4 同源 claim）不触发 P5 核心收益场景（跨源字段对齐）。P5 决策维持 proposed，启动 Run #9b 多实体对比框架重做 |
+| [run-9b-p5-output-schema-v2](../../archive/search/experiments/run-9b-p5-output-schema-v2.md) | P5 Output Schema 多实体对比验证（Gin/Echo/Fiber × 5 维度） | 3/5 有条件 | — | ⚠️ **有条件 active（外部评审决策 C）**。Conflict ID +40% 仅方向性信号（非双盲）；Field Alignment 天花板归因 P3 证据集已结构化；Output Length 已排除（纯格式差异）。Run #9c 须双盲 + 非结构化证据集，Conflict ID Δ < +15% 则降回 proposed |
+| [run-9c-p5-output-schema-v3](../../archive/search/experiments/run-9c-p5-output-schema-v3.md) | P5 Output Schema 双盲验证（非结构化证据集） | 2/5 | — | ❌ **双盲证伪，降回 proposed**。Conflict ID Δ=-20%（自由文本 100% > schema 80%），Field Alignment Δ=-7%。核心发现：schema 结构可能限制跨维度冲突发现（执行者倾向只报告 schema 内字段间冲突，自由文本叙事流更灵活）。Schema 幻觉=0 护栏有效但不足以挽救机制收益 |
+| [run-10-p6-highlights](../../archive/search/experiments/run-10-p6-highlights.md) | P6 Highlights verbatim 抽取保真度验证（PostgreSQL 17 vs MySQL 8.4） | 4/5 | — | ✅ **P6 升级 active**。Extractive Fidelity 92.3%（24/26），Paraphrase 7.7%（2/26），Untraceable 0。两条 paraphrase 模式：主语同义替换 + 跨语言归纳。提示词层 verbatim 抽取指令基本有效。SKILL 加载机制修复（symlink）后首条 P 级机制通过验证 |
+| [run-11-p4-semantic-merge](../../archive/search/experiments/run-11-p4-semantic-merge.md) | P4 语义场景去重增益验证（LLM vs SimHash/Jaccard 基线，K8s sidecar 跨语言） | 4/5 | — | ✅ **P4 语义场景已验证（translation 子类）**。Baseline：P=1.00, R=0.20, F1=0.33（高精度低召回，FP=0）。P4 LLM：P=1.00, R=1.00, F1=1.00。Net Gain（Recall 差）+0.80。3 个 translation 对全部正确合并。Baseline translation Miss 属算法边界（lexical 不具备跨语言能力，文献一致）；3-8 verbatim Miss 属数据限制（仅摘要非全文，摘要级指纹≠文档级指纹）。降级 4/5：样本量仅 3 对（全部 translation），Net Gain +0.80 为上界估计（摘要限制低估 baseline verbatim 能力） |
+| [run-12-p4-summary-rewrite](../../archive/search/experiments/run-12-p4-summary-rewrite.md) | P4 summary/rewrite 子类补评测（Next.js 15 async request APIs） | 5/5 | — | ✅ **P4 semantic-summary / semantic-rewrite 子类验证通过**。Run #12 初次 Python 3.13 Attempt 为 N/A（样本不足 + 全文归档不合格）；Run #12b 严格重跑后通过：GT positive=5（summary 3、rewrite 2），Baseline SimHash/Jaccard：P=1.00, R=0.00, F1=0.00；P4 LLM：P=1.00, R=1.00, F1=1.00；Net Gain +1.00；False Merge=0；Info Loss=0。P4 语义合并证据范围从 translation 扩展到 summary/rewrite |
+| [run-13-p5-evidence-map](../../archive/search/experiments/run-13-p5-evidence-map.md) | P5 v2 Evidence Map / Claim Graph 双盲验证（Gateway API，非结构化证据集） | 2/5 | — | ❌ **保持 proposed**。Material Relation Recall：Run A 15/16=93.8%，Run B 16/16=100%，Δ=+6.3% < +15%。Cross-Dimension Recall 双方 12/12 天花板，Δ=0。安全指标（False Conflict / Unsupported Relation / Info Loss）双方均为 0。结构化中间表示再次未对自由文本展现决定性优势。唯一可复现增量：Gap Ledger 强制枚举证据缺口（捕获 Run A 漏掉的回滚 gap GT15）。衍生候选：后续应只验证“追加 Gap Ledger / 证据缺口枚举”最小机制，而非完整 Evidence Map |
+| [run-14-p5-gap-ledger](../../archive/search/experiments/run-14-p5-gap-ledger.md) | P5 Gap Ledger 最小机制双盲验证（Cloudflare 反爬方案，gap 密集证据集 9 gap + 5 relation） | **4/5** | — | ✅ **P5 Gap Ledger 升级 active**。Gap Detection Recall Δ=+55.6%（33.3% → 88.9%），Implicit Gap Recall Δ=+40%（40% → 80%），Material Relation / Traceability / Unsupported / Info Loss 全部不退化。False Gap=1（Run B G15 把 cloudscraper“已淘汰”误标为“侦察用途待评估”，阻挡 5/5）。成本：篇幅 +36%（Gap Ledger 占主要增量，可接受）。Gap Ledger 最小机制作为 P5 唯一落地候选进入 SKILL.md。失败模式：追求 gap 召回时可能产生轻度 false gap，缓解措施=每项 gap 需引用 evidence id，evidence 充分则不应标 gap |
 
 ### 9.3 最终路线状态
 

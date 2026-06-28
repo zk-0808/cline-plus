@@ -8,7 +8,7 @@
 
 ## 0. ~~重要前提：社区经验为空~~（⚠️ Stale，2026-06-27 作废）
 
-> **⚠️ Stale 标注（2026-06-27，[ADR-002 Update 5](../decisions/ADR-002-project-shape.md)）**：本节"社区经验为空"结论**作废**——经 [Marketplace 开发机制并行调查](../decisions/investigation-note-marketplace-dev-mechanism.md) 4-subagent 并行核查证伪：
+> **⚠️ Stale 标注（2026-06-27，[ADR-002 Update 5](../../decisions/ADR-002-project-shape.md)）**：本节"社区经验为空"结论**作废**——经 [Marketplace 开发机制并行调查](../../decisions/investigation-note-marketplace-dev-mechanism.md) 4-subagent 并行核查证伪：
 >
 > - npm `@cline/sdk` 周下载 **234,966**（2026-06-27 fetch）
 > - GitHub 外部贡献者 abeatrix **7 个 plugin development PR**（2026-05-19~06-23 合并）

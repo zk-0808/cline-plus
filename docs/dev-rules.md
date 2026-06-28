@@ -204,7 +204,7 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 **成熟实践映射**：
 - 结论时效性门控 ↔ **Refresh Token 验证**（使用前必须检查是否过期）+ **SLR 检索时间范围限定**（系统综述要求声明检索时间窗）
 
-源由：2026-06-27 [ADR-002-p5-experiment-exit-review §2.4](decisions/ADR-002-p5-experiment-exit-review.md) 引用"社区无 Plugin 实战沉淀"（2026-06-23 形成于 ADR-002 Context §5）作为舍弃 P5 论据，未复查——4 天后该结论已被 5 类反证证伪。
+源由：2026-06-27 [ADR-002-p5-experiment-exit-review §2.4](archive/decisions/ADR-002-p5-experiment-exit-review.md) 引用"社区无 Plugin 实战沉淀"（2026-06-23 形成于 ADR-002 Context §5）作为舍弃 P5 论据，未复查——4 天后该结论已被 5 类反证证伪。
 
 ### 1.14 子条款："无 X"类结论门控
 
@@ -223,7 +223,7 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 **成熟实践映射**：
 - "无 X"结论门控 ↔ **EBSE 三角验证（Triangulation）** + **科学方法的否定假设（Falsifiability）**——Karl Popper 强调可证伪性是科学结论的必要条件，"无 X"结论必须主动寻找反证
 
-源由：2026-06-23 [plugin-dev-quick-reference.md §0](refs/plugin-dev-quick-reference.md) 仅基于"搜博客"单一证据类型下"社区无 plugin 实战经验"结论，未查 npm/GitHub/官方 examples/Marketplace 任一独立证据源。
+源由：2026-06-23 [plugin-dev-quick-reference.md §0](plugin/refs/plugin-dev-quick-reference.md) 仅基于"搜博客"单一证据类型下"社区无 plugin 实战经验"结论，未查 npm/GitHub/官方 examples/Marketplace 任一独立证据源。
 
 ---
 

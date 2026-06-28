@@ -191,7 +191,7 @@
 
 | 日期 | 问题 | 映射的成熟实践 | 本地扩展 | 文档 |
 |------|------|--------------|---------|------|
-| 2026-06-27 | ADR-002 Update 1-4 连续颠覆 | EBSE（Evidence-Based Software Engineering）+ RCA（Root Cause Analysis）+ ADR Methodology | evidence-governance.md（针对 AI agent 调研工作流的 Observation/Inference 分离 + Confidence 标注 + Unknown 状态）| [workflow-review-2026-06-27.md](workflow-review-2026-06-27.md) |
+| 2026-06-27 | ADR-002 Update 1-4 连续颠覆 | EBSE（Evidence-Based Software Engineering）+ RCA（Root Cause Analysis）+ ADR Methodology | evidence-governance.md（针对 AI agent 调研工作流的 Observation/Inference 分离 + Confidence 标注 + Unknown 状态）| [workflow-review-2026-06-27.md](archive/workflow-review-2026-06-27.md) |
 
 ---
 

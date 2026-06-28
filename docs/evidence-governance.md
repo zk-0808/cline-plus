@@ -280,7 +280,7 @@ ADR 之前应有 Investigation Note 记录证据链，**不直接从搜索跳到
 
 ## 13. 源由与评审记录
 
-本框架由 [workflow-review-2026-06-27.md](workflow-review-2026-06-27.md) 的外部评审反馈催生。两份外部评审独立指出：
+本框架由 [workflow-review-2026-06-27.md](archive/workflow-review-2026-06-27.md) 的外部评审反馈催生。两份外部评审独立指出：
 
 1. **评审一**：核心根因是"证据治理失败"——没定义"不同证据分别能回答什么问题"；建议 Observation/Inference/Conclusion 分离 + Confidence 标注。
 2. **评审二**：核心根因是"证据状态管理失败"——从证据直接跳到结论，跳过 Hypothesis；建议 Observation → Evidence → Hypothesis → Verified → Decision 状态机。
@@ -363,7 +363,7 @@ expires_if_unchanged: <YYYY-MM-DD>     # 默认 evidence_as_of + 14 天（外部
 
 ## 17. 调研可复现性
 
-> **源由**：2026-06-23 [plugin-dev-quick-reference.md §0](refs/plugin-dev-quick-reference.md) 仅自述"搜过 SDK plugin 开发的中英文社区经验、博客、踩坑记录"，未记录 query 列表——无法复现，且无法核查调查范围是否充分。
+> **源由**：2026-06-23 [plugin-dev-quick-reference.md §0](plugin/refs/plugin-dev-quick-reference.md) 仅自述"搜过 SDK plugin 开发的中英文社区经验、博客、踩坑记录"，未记录 query 列表——无法复现，且无法核查调查范围是否充分。
 
 调研类结论（"无 X" / "社区无 Y" / "找不到 Z"）**必须**记录以下可复现信息：
 

@@ -5,7 +5,7 @@
 >
 > **关联**：
 > - [investigation-note-vscode-settings-inventory.md](investigation-note-vscode-settings-inventory.md) — Customize 面板实测发现 Marketplace 规模（~50 Skills / ~200 MCP / ~22 Plugins）
-> - 旧结论出处待 C 号 subagent 核查（推测在 [survey.md](../survey.md) 或 ADR-002 早期 Update）
+> - 旧结论出处待 C 号 subagent 核查（推测在 [survey.md](../search/search-orchestrator/survey.md) 或 ADR-002 早期 Update）
 
 ### 核心问题
 
