@@ -39,15 +39,17 @@ ADR-001 选定的方向是 A（复用 Cline Compact）+ B'（自动分级 Handof
 - **Git 可追踪**——状态有版本历史，可回滚
 - **人可读**——Markdown，不是二进制
 
-### 主流方案参考
+### 代表性系统参考
 
-| Agent | 会话内压缩 | 跨会话记忆 |
-|-------|----------|-----------|
+| 系统 | 会话内压缩 | 跨会话记忆 |
+|------|----------|-----------|
 | **Claude Code** | 4 层策略（时间微压缩 → 缓存微压缩 → 会话记忆 → 完整压缩） | CLAUDE.md（用户手写静态指令） |
-| **行业趋势（2026）** | 分层压缩已成标配 | 分层记忆（Working → Episodic → Semantic → Procedural） |
 | **AgentMemory-Pro** | — | 跨 Agent 持久化记忆引擎（注入 CLAUDE.md / .cursorrules 等） |
+| **通用模式** | 分层压缩（轻量 → 重量，渐进式） | 分层记忆（Working → Episodic → Semantic → Procedural） |
 
-Claude Code 的会话记忆（session memory）是在会话过程中持续提取的 10 段结构化记忆，compact 时直接用它替代 API 调用——这和我们的 handoff.md 在"结构化提取"上有相似之处，但目的不同：Claude Code 的 session memory 是为了**压缩**（减少 token），我们的 handoff 是为了**恢复**（让其他 agent 能接手）。
+> 注：以上仅说明设计空间的代表性方案，**不作为设计依据**。设计依据是用户工作模式实证（下一节）。系统版本会变，但 Token Management ≠ State Persistence 这个划分不会过时。
+
+Claude Code 的会话记忆（session memory）是在会话过程中持续提取的结构化记忆，compact 时直接用它替代 API 调用——这和我们的 handoff.md 在"结构化提取"上有相似之处，但目的不同：Claude Code 的 session memory 是为了**压缩**（减少 token），我们的 handoff 是为了**恢复**（让其他 agent 能接手）。
 
 ---
 
@@ -87,9 +89,16 @@ Handoff 是独立的状态恢复机制，不依赖 compact 触发。
 3. 会话过长 + 话题已跳 + 上下文吃紧——dev-rules.md §2 触发器 c
 4. P 级任务完成——project-rules.md 触发器 4.b
 
+**"状态显著变化"的操作性定义**（满足任一即建议触发）：
+- 架构决策被接受（ADR status 变为 Accepted）
+- 里程碑完成（Phase 结束、实验通过/证伪）
+- 工作树交接（切换到不同任务方向）
+- 长任务暂停（明确的 stop point）
+- 研究对象重新限定（dev-rules.md §1.9 Direction Drift 门控触发）
+
 **产物**：
 - `handoff.md`——结构化状态快照（当前格式，保留）
-- 不再产出 `index.jsonl`——索引层查询 Cline SQLite DB 或由用户维护
+- 不再维护独立的 `index.jsonl`——如果 Cline 未来暴露稳定的会话元数据查询接口，可接入；在此之前，索引由用户自行维护或不维护
 
 **注入机制**：
 - #6 session_start hook 的需求，改为写入 Cline 动态 `rules`
@@ -146,10 +155,24 @@ Handoff 是独立的状态恢复机制，不依赖 compact 触发。
 - 触发机制变复杂——从"compact 被动触发"变为"多条件主动触发"
 - index.jsonl 废弃——如果 Cline SQLite DB 不暴露查询能力，索引层需要替代方案
 
-### 退休条件
+### 本 ADR 应在以下条件满足时重新审视
 
-- 当 Cline 原生提供结构化的、人可读的会话状态快照时
-- 当 Cline 原生的 session memory 可被外部 agent 直接消费时
+- Cline 暴露稳定的 API，支持外部消费结构化的会话状态快照
+- Cline 提供可被外部 agent 直接读取的结构化 session memory
+
+### 未选择的方案
+
+**方案 A：保持 compact 绑定 handoff**
+- 实现简单（现有代码已验证）
+- 拒绝理由：耦合了两个无关关注点（token 管理 vs 状态持久化），compact 是 Cline 的事，handoff 是 Plugin 的事
+
+**方案 B：handoff 存入 SQLite**
+- 可利用 Cline 原生存储
+- 拒绝理由：不可移植（依赖 Cline 运行时）、不可 git 追踪（二进制数据库）、不 agent 无关（其他 agent 无法直接读取）
+
+**方案 C：index.jsonl 继续自建**
+- 与 handoff.md 配对，提供机器可读索引
+- 拒绝理由：增加了维护负担，且 Cline 已有 SQLite 存储会话元数据；自建索引与 Cline 原生存储职责重叠，待 Cline 暴露稳定接口后可直接接入
 
 ---
 
