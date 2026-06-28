@@ -1,17 +1,33 @@
-## Cline Plugin Development: Practical Guide & VS Code Extension Fix
+# Cline Plugin Development: Unofficial Developer Guide
 
-> **Audience**: Developers who want to build plugins for [Cline](https://github.com/cline/cline).
+> **⚠️ Unofficial Guide**
 >
-> **Scope**: Architecture facts discovered from source code analysis + hands-on testing with Cline CLI 3.0.31 and VS Code extension 4.0.0. This guide fills gaps left by the [official plugin docs](https://docs.cline.bot/customization/plugins).
+> This document is an independent technical guide based on:
+> - source code inspection
+> - runtime experiments
+> - plugin development experience
 >
-> **Date**: 2026-06-28
+> It is **not affiliated** with the Cline project. The behavior described here was observed in specific versions (see "Verified On" below) and may differ from the current official documentation.
+
+> **Verified On**
+>
+> | Component | Version | Status |
+> |-----------|---------|--------|
+> | Cline CLI | 3.0.31 | ✅ natively works |
+> | VS Code Extension | 4.0.0 | ✅ with workaround (see §4) |
+> | OS | Windows | tested |
+> | Date | 2026-06-28 | — |
+>
+> If you are using a different version, the information here may not apply. Please report your findings if you test on newer releases.
+
+> **Target Audience**: Developers who want to build plugins for [Cline](https://github.com/cline/cline).
 
 ---
 
 ## TL;DR
 
 1. Cline plugins run inside a **Node.js subprocess** — not a filesystem sandbox. Your `fs.writeFileSync()` writes to the host filesystem directly.
-2. **VS Code extension 4.0.0 has a bug**: `plugin-sandbox-bootstrap.js` is missing from the build output. Plugins silently fail to load. A one-command patch fixes this (see §4).
+2. **Observed limitation on VS Code Extension 4.0.0**: The `plugin-sandbox-bootstrap.js` file required for plugin sandbox startup is absent from the build output. Plugins silently fail to load. A workaround restores functionality (see §4).
 3. `build()` in a messageBuilder is called on **every turn**, not just during compaction. Keep it fast.
 4. TypeScript works out of the box via [jiti](https://github.com/unjs/jiti) — no build step needed.
 5. `console.log()` from your plugin **does not appear** in VS Code DevTools. Use file-based markers for debugging.
@@ -142,9 +158,19 @@ After applying the patch (§4), install via:
 
 ---
 
-## 4. VS Code Extension Plugin Support Patch
+## 4. VS Code Extension Workaround (4.0.0-specific)
 
-### 4.1 Root Cause
+> **Confidence levels**
+>
+> | Claim | Confidence | Basis |
+> |-------|-----------|-------|
+> | **Observation**: Bootstrap file absent from extension `dist/` | High | Filesystem search — zero hits for `plugin-sandbox*` |
+> | **Inference**: Build tooling does not emit bootstrap as standalone file | High | CLI counterpart ships the file; bundle contains loading code |
+> | **Workaround verified**: Copying bootstrap + deps restores plugin execution | High | Tested with 7 real compaction events, handoff.md + index.jsonl written correctly |
+>
+> If you test on a newer VS Code Extension version, this workaround may become unnecessary. Please check whether `plugin-sandbox-bootstrap.js` exists in the extension directory first.
+
+### 4.1 Root Cause (Hypothesis)
 
 VS Code extension 4.0.0's esbuild pipeline bundles all plugin loading code (`loadSandboxedPlugins`, `SubprocessSandbox`, `registerMessageBuilder`) into `dist/extension.js`, but **does not emit `plugin-sandbox-bootstrap.js` as a standalone file**.
 
@@ -152,15 +178,15 @@ The loading chain fails at `resolveBootstrap()` — it searches 5 candidate path
 
 **Result**: Sandbox subprocess never starts → 4-second timeout → `setup()` never executes.
 
-The official docs say: *"This feature is not applicable on VSCode and JetBrains Extension for now."* However, the code is fully present — it's a build pipeline oversight, not an intentional omission.
+The official docs state: *"This feature is not applicable on VSCode and JetBrains Extension for now."* Based on source code analysis, the plugin loading code is fully present in the extension bundle. The root cause we identified is the absence of the standalone bootstrap file in the build output — this differs from the CLI build, where the file is present.
 
 > 中文注：UI 的 Customize 面板能发现插件（显示"已加载"），但这只是文件发现（`discoverPluginModulePaths`），不等于 sandbox 激活。两者是独立的代码路径。
 
-### 4.2 The Fix
+### 4.2 The Workaround
 
-The CLI distribution correctly includes `plugin-sandbox-bootstrap.js`. The patch copies it (and required dependencies) into the VS Code extension.
+The CLI distribution correctly includes `plugin-sandbox-bootstrap.js`. The workaround copies it (and required dependencies) into the VS Code extension.
 
-**What the patch does**:
+**What the workaround does**:
 1. Locates your VS Code extension directory (`saoudrizwan.claude-dev-*`)
 2. Locates your CLI installation (`@cline/core`)
 3. Copies `plugin-sandbox-bootstrap.js` → extension's `dist/extensions/`
@@ -279,6 +305,58 @@ Subdirectories are scanned recursively. A valid plugin needs a `package.json` wi
 - [ ] Use file-based markers for debugging (§5.1)
 - [ ] Wrap all I/O in try-catch (§5.4)
 - [ ] Keep `build()` synchronous and fast (§1.3)
+
+---
+
+## 7. Architecture Recon & Debug Flow
+
+> This section summarizes the full plugin subsystem architecture. For a detailed navigational map with per-layer debugging, see the separate [Cline Plugin Architecture Atlas](cline-plugin-architecture-atlas.md).
+
+### 7.1 Plugin Lifecycle (7 Layers)
+
+Every plugin passes through these layers in order. A bug at any layer stops the chain.
+
+```
+Layer 1: Discovery     →  paths.ts                    Find plugin files on disk
+Layer 2: Install       →  plugin-install.ts           Download / clone / stage
+Layer 3: Load          →  plugin-loader.ts            In-process import + setup
+Layer 4: Module Import →  plugin-module-import.ts     jiti transpilation (TS→JS)
+Layer 5: Sandbox       →  plugin-sandbox-bootstrap.ts Subprocess entry point
+Layer 6: Runtime       →  subprocess-sandbox.ts       child_process IPC
+Layer 7: Registry      →  plugin-sandbox.ts (host)    Register builders/tools
+```
+
+### 7.2 Quick Debug Flow
+
+```
+Plugin not loading?
+  → Layer 3: Load (or Layer 5: Sandbox on VS Code)
+  → Check: does plugin-sandbox-bootstrap.js exist in extension dist/?
+  → File: plugin-sandbox.ts → resolveBootstrap()
+  → VS Code 4.0.0 only: bootstrap missing → apply §4 workaround
+
+setup() runs but registerMessageBuilder not called?
+  → Layer 5: Bootstrap
+  → Check: is setup() throwing before reaching registerMessageBuilder?
+  → File: plugin-sandbox-bootstrap.ts → initialize() → loadPluginDescriptor()
+
+registerMessageBuilder called but build() never invoked?
+  → Layer 7: Registry
+  → Check: is the builder name in the returned descriptors?
+  → File: plugin-sandbox.ts → registerMessageBuilders()
+
+build() invoked but output is wrong?
+  → Plugin code logic issue
+  → Check: messages array structure, shouldCompact threshold
+  → File: your plugin's src/index.ts
+
+Plugin times out on Windows?
+  → Layer 6: IPC Transport
+  → Check: CLINE_PLUGIN_IMPORT_TIMEOUT_MS (default 4000ms)
+  → Fix: set CLINE_PLUGIN_IMPORT_TIMEOUT_MS=30000
+```
+
+> 中文注：遇到任何 Plugin 问题，第一步是定位到生命周期哪一层，然后再去看对应的源码文件。Architecture Atlas 里有更完整的逐层排查流程。
 
 ---
 

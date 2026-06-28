@@ -1,10 +1,16 @@
-## Cline Plugin Architecture Atlas
+# Cline Plugin Architecture Atlas
 
-> **Purpose**: A navigational map of the Cline Plugin subsystem. When you encounter a plugin bug, start here — locate the lifecycle stage, then the file, then the function. Do not grep blindly.
+> **⚠️ Unofficial Guide**
 >
-> **Scope**: Cline CLI 3.0.31 / VS Code extension 4.0.0 / SDK v0.0.51
->
-> **Date**: 2026-06-28
+> This document is an independent technical reference based on source code inspection and runtime experiments. It is **not affiliated** with the Cline project. The details described here were verified on specific versions (see "Verified On" below) and may differ from newer releases.
+
+> **Verified On**
+> - Cline CLI 3.0.31
+> - VS Code Extension 4.0.0
+> - SDK v0.0.51
+> - Date: 2026-06-28
+
+> **Purpose**: A navigational map of the Cline Plugin subsystem. When you encounter a plugin issue, start here — locate the lifecycle stage, then the file, then the function.
 
 ---
 
