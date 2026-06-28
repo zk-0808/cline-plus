@@ -15,11 +15,11 @@
 
 本项目是 **Cline 之上的扩展层**，不是独立的 Agent 系统。Cline 已是相当完整的宿主（Plan/Act、Hooks、Memory Bank、Checkpoint、Rules、Subagents、Workflow、CLI），本项目只补 Cline 真正缺失的部分。
 
-> 项目定位的形态级决策见 [ADR-002](../2026-06-22-task-analysis/output/ADR-002-project-shape.md)：**面向 Cline 用户的开箱即用工作流增强配置——沉淀真实使用经验，并逐步将经验机制化，持续改善长期使用体验**。
+> 项目定位的形态级决策见 [ADR-002](decisions/ADR-002-project-shape.md)：**面向 Cline 用户的开箱即用工作流增强配置——沉淀真实使用经验，并逐步将经验机制化，持续改善长期使用体验**。
 >
 > 三层定位：**L1 开箱体验**（薄 Skills + 默认规则 + WebSearch MCP）/ **L2 经验沉淀**（项目护城河）/ **L3 经验机制化**（Plugin 作为实验线，**当前不进默认交付**——VS Code Cline 不支持 Plugin）。
 >
-> 经验机制化清单见 [mechanism-candidates.md](./mechanism-candidates.md)。Plugin 开发参考见 [plugin-dev-quick-reference.md](./plugin-dev-quick-reference.md)。
+> 经验机制化清单见 [mechanism-candidates.md](./mechanism-candidates.md)。Plugin 开发参考见 [plugin-dev-quick-reference.md](plugin/refs/plugin-dev-quick-reference.md)。
 
 ### 0.2 三个绝不
 

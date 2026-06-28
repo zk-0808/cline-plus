@@ -2,7 +2,7 @@
 
 > **状态**：proposed（起草中）
 > **日期**：2026-06-27
-> **上游决策**：[ADR-001](decisions/ADR-001-handoff-compact-memory.md)（Accepted，A+B'+D' 方向）、[ADR-004](decisions/ADR-004-p5-spike-pause.md)（deferred，恢复条件 2 已满足）、**[ADR-005](decisions/ADR-005-split-compact-from-handoff.md)**（Accepted，Compaction 与 Handoff 拆分）
+> **上游决策**：[ADR-001](../decisions/ADR-001-handoff-compact-memory.md)（Accepted，A+B'+D' 方向）、[ADR-004](../decisions/ADR-004-p5-spike-pause.md)（deferred，恢复条件 2 已满足）、**[ADR-005](../decisions/ADR-005-split-compact-from-handoff.md)**（Accepted，Compaction 与 Handoff 拆分）
 > **前置验证**：Capability Probe 5（通过），custom-compaction.ts 源码确认，ARCHITECTURE.md §9 Design Seam 确认
 > **本设计不替代 ADR-001**——ADR-001 仍为方向性决策，本 Doc 落实 Implementation-level 细节。**ADR-005 修正了实现方式**：Compaction 与 Handoff 拆分为独立机制。
 
@@ -193,15 +193,33 @@ schema 定义：
 
 ```
 handoff-plugin/
-├── package.json             ← manifest（声明 messageBuilders capabilities）
+├── package.json             ← manifest（声明 messageBuilders + rules + hooks capabilities）
 ├── src/
-│   ├── index.ts             ← plugin 入口（AgentPlugin 导出）
-│   ├── compaction.ts        ← 消息压缩逻辑（基于 custom-compaction.ts）
-│   ├── handoff-writer.ts    ← handoff.md 生成
-│   ├── index-writer.ts      ← index.jsonl 追加
+│   ├── index.ts             ← plugin 入口 + setup() 注册三类能力
+│   ├── compaction.ts        ← 消息压缩逻辑（基于 custom-compaction.ts，保留给 compact-observer）
+│   ├── tool-recorder.ts     ← 统一工具调用记录器（beforeTool/afterTool 数据源）
+│   ├── rules-injector.ts    ← handoff.md 动态注入（rules.content 函数）
 │   └── types.ts             ← 类型定义
 └── README.md
 ```
+
+### 4.2 模块职责
+
+| 模块 | 职责 | Cline 能力 | 对应候选 |
+|------|------|-----------|----------|
+| `compact-observer` | 观察 compact 事件，仅日志记录，**不写 handoff** | messageBuilders | #5 |
+| `rules-injector` | 动态读取最新 handoff.md 注入新会话 rules | rules | #6 |
+| `tool-recorder` | 统一采集工具调用 (name, args, duration, success, timestamp) | hooks (beforeTool + afterTool) | #1 + #4 |
+| `compaction.ts` | token 估算 + shouldCompact 判定（保留，供 compact-observer 使用） | — | — |
+
+### 4.3 文件命名规范
+
+handoff 文件名格式：`{project_hash}-{timestamp}-{uuid}.md`
+- `project_hash`：工作区路径 SHA256 前 4 字符，防止跨项目串味
+- `timestamp`：ISO 8601 精确到秒（文件名安全字符）
+- `uuid`：6 位随机字符，防并发冲突
+
+`findLatestHandoff()` 按 project hash + 最近 mtime 选取。
 
 ### 4.2 集成点
 
@@ -307,10 +325,10 @@ handoff-plugin/
 
 | 文档 | 关系 |
 |------|------|
-| [ADR-001](decisions/ADR-001-handoff-compact-memory.md) | 上游方向决策（Accepted），本设计落实其 Implementation-level 细节 |
-| [ADR-004](decisions/ADR-004-p5-spike-pause.md) | 上游暂停决策（deferred），本设计的重启满足其恢复条件 2 |
-| [mechanism-candidates.md](mechanism-candidates.md) #5 | 本设计对应的机制候选，完成后标"已机制化" |
-| [investigation-note-probe-5.md](decisions/investigation-note-probe-5.md) | 前置验证证据 |
+| [ADR-001](../decisions/ADR-001-handoff-compact-memory.md) | 上游方向决策（Accepted），本设计落实其 Implementation-level 细节 |
+| [ADR-004](../decisions/ADR-004-p5-spike-pause.md) | 上游暂停决策（deferred），本设计的重启满足其恢复条件 2 |
+| [mechanism-candidates.md](../mechanism-candidates.md) #5 | 本设计对应的机制候选，完成后标"已机制化" |
+| [investigation-note-probe-5.md](../archive/decisions/investigation-note-probe-5.md) | 前置验证证据 |
 | [sdk/ARCHITECTURE.md](https://github.com/cline/cline/blob/main/sdk/ARCHITECTURE.md) | 系统架构权威源，本设计与之对齐 |
 | [custom-compaction.ts](https://github.com/cline/cline/blob/main/sdk/examples/plugins/custom-compaction.ts) | 直接模板，设计模式母本 |
 

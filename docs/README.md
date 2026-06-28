@@ -16,10 +16,14 @@ docs/
 │   └── search-orchestrator/        搜索编排器文档 + 实验记录
 │
 ├── plugin/                         Plugin 相关文档
-│   ├── design.md                   设计文档
+│   ├── design.md                   设计文档（ADR-005 更新）
+│   ├── mechanism-landing-assessment.md  机制落地评估（11 条候选可行性）
 │   └── refs/                       全局参考（不属任何功能）
+├── evidence-governance.md        证据治理框架（Level 1 元规则）
+├── reviewer-personas.md          评审角色集（Level 1 元规则）
 ├── handoff.md                    会话快照（本会话决策 / 净变化 / 下次第一句话）
 ├── mechanism-candidates.md       经验机制化清单（A 类未来代码化的候选）
+├── ARCHIVE.md                    根目录文档归档摘要
 │
 ├── decisions/                    所有决策：ADR-*（战略）+ D-*（运营）
 │   └── README.md                 决策索引表
@@ -67,7 +71,12 @@ evidence:
 |------|------|
 | 看项目工程纪律 | [PROJECT_DEV_OUTLINE.md](PROJECT_DEV_OUTLINE.md) |
 | 看跨功能通用防漂移规则 | [dev-rules.md](dev-rules.md) |
+| 看证据治理框架 | [evidence-governance.md](evidence-governance.md) |
+| 看评审角色集 | [reviewer-personas.md](reviewer-personas.md) |
+| 看 Plugin 设计文档 | [plugin/design.md](plugin/design.md) |
+| 看机制落地评估 | [plugin/mechanism-landing-assessment.md](plugin/mechanism-landing-assessment.md) |
 | 看 search-orchestrator 开发期约束 | [search/project-rules.md](search/project-rules.md) |
 | 看所有决策时间线 | [decisions/README.md](decisions/README.md) |
-| 看搜索编排主题状态 | [search-orchestrator/README.md](search-orchestrator/README.md) |
+| 看搜索编排主题状态 | [search-orchestrator/README.md](search/search-orchestrator/README.md) |
 | 看待机制化的 A 类清单 | [mechanism-candidates.md](mechanism-candidates.md) |
+| 看归档摘要 | [ARCHIVE.md](ARCHIVE.md) |

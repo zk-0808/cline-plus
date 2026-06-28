@@ -4,7 +4,7 @@
 > **框架**：按 [evidence-governance.md §10](../evidence-governance.md) Investigation Note 模板记录。
 >
 > **关联**：
-> - [investigation-note-probe-5.md](investigation-note-probe-5.md) — Probe 5 实测发现 VS Code 扩展有 plugin 装载入口，催生本盘点
+> - [investigation-note-probe-5.md](../archive/decisions/investigation-note-probe-5.md) — Probe 5 实测发现 VS Code 扩展有 plugin 装载入口，催生本盘点
 > - [ADR-002 Update 3](ADR-002-project-shape.md) — 之前的 VS Code 扩展原生能力调研（仅覆盖 commands/skills/hooks/plugin 结构）
 > - [ADR-002 Update 4](ADR-002-project-shape.md) — 路径与 manifest 修正
 >

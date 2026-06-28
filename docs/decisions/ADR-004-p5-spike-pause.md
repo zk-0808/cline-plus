@@ -61,7 +61,7 @@ ADR-003 §环境事实已记录此区分，但 ADR-002 Validation Plan 未充分
 - 即使 CLI 验证成功，VS Code 支持 plugin 后仍需重验
 - 等于在"非生产载体"上验证"生产载体才需要的能力"
 
-[ADR-002-p5-experiment-exit-review §3.3](ADR-002-p5-experiment-exit-review.md) 已指出此张力（"实验环境 CLI 与生产环境 VS Code 仍分离，实验结论难以直接迁移"），但当时作为"反对舍弃"的论据被保留。今天的事实 2+3 使该张力从"理论担忧"变为"实操阻塞"。
+[ADR-002-p5-experiment-exit-review §3.3](../archive/decisions/ADR-002-p5-experiment-exit-review.md) 已指出此张力（"实验环境 CLI 与生产环境 VS Code 仍分离，实验结论难以直接迁移"），但当时作为"反对舍弃"的论据被保留。今天的事实 2+3 使该张力从"理论担忧"变为"实操阻塞"。
 
 ---
 

@@ -206,7 +206,7 @@ OUTLINE §6 "Windows Hook 替代"原假设需要修正——**两者并存，非
 
 > **经验库的首要目标不是归档，而是发现可机制化经验并推动其退休。**
 
-具体载体见 [`mechanism-candidates.md`](mechanism-candidates.md)——以"现存经验 → 当前位置 → 类别 → 理想机制 → 状态"五列简表组织，不做更复杂分类。
+具体载体见 [`mechanism-candidates.md`](../mechanism-candidates.md)——以"现存经验 → 当前位置 → 类别 → 理想机制 → 状态"五列简表组织，不做更复杂分类。
 
 ### 与 ADR-001 的对齐
 
@@ -363,7 +363,7 @@ Implementation
 >
 > From **Update 5 onward**, all conclusions must follow the Evidence Governance framework: each conclusion must annotate Observation / Inference / Evidence Type / Confidence / Remaining Unknown, and must not skip states (Observation → Evidence → Hypothesis → Verified → Decision).
 >
-> Historical Updates are preserved unchanged for traceability. See [workflow-review-2026-06-27.md](../workflow-review-2026-06-27.md) for the full root-cause analysis and external review.
+> Historical Updates are preserved unchanged for traceability. See [workflow-review-2026-06-27.md](../archive/workflow-review-2026-06-27.md) for the full root-cause analysis and external review.
 
 ---
 
@@ -400,7 +400,7 @@ Implementation
 
 ### 对外部评审材料的影响
 
-[ADR-002-p5-experiment-exit-review.md](ADR-002-p5-experiment-exit-review.md)（2026-06-26 撰写）基于"VS Code 不可用"前提，该前提**经核查仍成立**：
+[ADR-002-p5-experiment-exit-review.md](../archive/decisions/ADR-002-p5-experiment-exit-review.md)（2026-06-26 撰写）基于"VS Code 不可用"前提，该前提**经核查仍成立**：
 
 | 评审材料章节 | 原论据 | Update 后状态 |
 |-------------|--------|--------------|
@@ -832,7 +832,7 @@ Update 3 的核心结论"VS Code 扩展代码层有完整 plugin 注册系统"**
 ## Update 5 (2026-06-27): VS Code 扩展 plugin 装载入口实测 + Marketplace 机制摸清 + #5 命题边界确认
 
 > **方法论**：本 Update 严格遵循 [evidence-governance.md](../evidence-governance.md) 框架，所有结论标注 Observation / Inference / Evidence Type / Confidence / Remaining Unknown，不跳级。配套 Investigation Notes：
-> - [investigation-note-probe-5.md](investigation-note-probe-5.md) — Probe 5 实测
+> - [investigation-note-probe-5.md](../archive/decisions/investigation-note-probe-5.md) — Probe 5 实测
 > - [investigation-note-vscode-settings-inventory.md](investigation-note-vscode-settings-inventory.md) — VS Code 扩展可设置选项完整盘点
 > - [investigation-note-marketplace-dev-mechanism.md](investigation-note-marketplace-dev-mechanism.md) — Marketplace 开发机制并行调查（4 subagent）
 > - Agents Squad handoff store 源码核查（SE Reviewer subagent）

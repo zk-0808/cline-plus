@@ -54,7 +54,7 @@ x = retired        对应规则/提示词已确认删除，整行移入归档区
 | 4 | 重复循环要主动跳出 | 提示词 / Skill | A | loop-guard plugin（基于工具调用相似度） | 候选 |
 | 5 | 长会话要主动 compact + 写 handoff | Skill / 提示词 | A | **拆分**（[ADR-005](decisions/ADR-005-split-compact-from-handoff.md)）：Compaction 归 Cline 原生，Handoff 归 Plugin 独立触发 | **实验中（重构中）** — ADR-005 决定将 Compaction 与 Handoff 拆分为两个独立机制。Phase 2 全链路验证通过（2026-06-28）但产物定位调整：compact 时不再产出 handoff.md（那是 Cline 的事），handoff 改为独立触发器（用户指令 / 决策信号 / 定时）。详见 [ADR-005](decisions/ADR-005-split-compact-from-handoff.md) | |
 | 6 | 跨会话续作要先读上次 handoff | 提示词 / Skill | A | **写入 Cline 动态 rules**（[ADR-005](decisions/ADR-005-split-compact-from-handoff.md)）：读 handoff.md 注入新会话 rules | 候选（重构中）— ADR-005 将 #6 从独立 session_start hook 改为写入 Cline 动态 rules。handoff.md 内容注入到新会话的 rules capability 中，不依赖 index.jsonl。触发条件：见 [ADR-004](decisions/ADR-004-p5-spike-pause.md) | |
-| 7 | Windows 不支持 Cline 早期 Hook | OUTLINE §6.1 | B | SDK plugin hook（已确认存在，需 Phase 2 验证 Windows 可用性） | 候选（验证后或可标"已退休"）。**[ADR-002 Update 3](decisions/ADR-002-project-shape.md) 确认：VS Code 扩展 4.0.0 代码层有 Windows hook 支持（`findWindowsHook` + `<hooksDir>/<event>.ps1` + `isGlobalHooksDir` 匹配 `/cline/Hooks/i`），放文件即可被发现。待 Windows 实测确认后标已退休** |
+| 7 | Windows 不支持 Cline 早期 Hook | OUTLINE §6.1 | B | SDK plugin hook（已确认存在，需 Phase 2 验证 Windows 可用性） | 候选（待验证）— 外部评审指出：官方 hook 文件无扩展名、放 `.clinerules/hooks/`（项目级）或 `~/Documents/Cline/Rules/Hooks/`（全局），`.ps1` / `.cline/Hooks/` 写法与官方不符。Windows `.ps1` 支持查无实据，需实测确认。[Cline v3.36 Hooks](https://cline.ghost.io/cline-v3-36-hooks) |
 | 8 | 调研先行 / 五问门控 | OUTLINE §3 | **C** | 不可机制化 | 永久C类 |
 | 9 | 证据优于推测 / 问题定义优于方案 | constitution / OUTLINE | **C** | 不可机制化 | 永久C类 |
 | 10 | A/B/C 分类纪律 | OUTLINE §1 | **C** | 不可机制化 | 永久C类 |
