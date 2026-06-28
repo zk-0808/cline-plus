@@ -167,7 +167,7 @@ The CLI distribution correctly includes `plugin-sandbox-bootstrap.js`. The patch
 4. Copies `@cline/shared`, `@cline/core`, `jiti` → extension's `node_modules/`
 5. Sets `CLINE_PLUGIN_IMPORT_TIMEOUT_MS=30000` (Windows only; the default 4s timeout is too short on Windows per [Issue #11065](https://github.com/cline/cline/issues/11065))
 
-**Patch scripts** (included alongside this document):
+**Patch scripts** (in `scripts/` directory):
 - **Windows**: `patch-vscode-plugin-support.ps1`
 - **macOS/Linux**: `patch-vscode-plugin-support.sh`
 
