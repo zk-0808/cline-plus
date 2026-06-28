@@ -1,14 +1,13 @@
-# Handoff — 项目结构与文档体系定型
+# Handoff — ADR-005 Compaction 与 Handoff 拆分
 
 ## 本会话决策
 
 | 决策 | 状态 |
 |------|------|
-| docs/ 按产品线分组（search/ + plugin/），治理层集中 | ✅ 已执行（commit `e83958a`） |
-| `git mv` 权限错误改用 `cp -r` + `rm -rf` 绕过 | ✅ 解决 |
-| .gitignore 排除路径同步更新 | ✅ `!docs/search/search-orchestrator/experiments/` |
-| 80 个文件的内部链接批量修正 | ✅ 验证无残留断链 |
-| dev-rules.md §5 目录树更新 | ✅ 反映新结构 |
+| [ADR-005](decisions/ADR-005-split-compact-from-handoff.md) 拆分 Compaction 与 Handoff | ✅ Accepted |
+| handoff-plugin 子模块 README.md 链接修正（docs/ 重组后路径） | ✅ 本地已提交（未推送） |
+| GitHub Issue 草稿：VS Code bootstrap 缺失 | ✅ 已起草（`docs/decisions/draft-issue-bootstrap-missing.md`） |
+| mechanism-candidates #5/#6 更新 | ✅ 已同步 |
 
 ## 跨会话累计成果
 
@@ -29,29 +28,32 @@
 - Architecture Atlas（7 层 Plugin 生命周期地图）
 - Architecture Recon QoderWork Skill（可复用方法论）
 - 文件存放规范（dev-rules.md §5）
-- **docs/ 按产品线重组**（本次）
+- docs/ 按产品线重组
+- **ADR-005：Compaction 与 Handoff 拆分**（本次）
 
 ## 当前项目结构
 
 ```
-E:\cline++\
+cline-plus/
 ├── docs/
 │   ├── dev-rules.md              跨功能治理规则
 │   ├── evidence-governance.md    证据状态机
 │   ├── reviewer-personas.md      评审人格
-│   ├── mechanism-candidates.md   机制候选清单
+│   ├── mechanism-candidates.md   机制候选清单（#5/#6 已更新）
 │   ├── handoff.md                本文件
-│   ├── decisions/                ADR + 调查笔记（集中）
+│   ├── decisions/                ADR + 调查笔记
+│   │   ├── ADR-005-split-compact-from-handoff.md  ← 新增
+│   │   └── draft-issue-bootstrap-missing.md       ← Issue 草稿
 │   ├── search/                   搜索产品线
 │   │   ├── project-rules.md      开发期防漂移约束
 │   │   ├── search-orchestrator/  实验记录（40+ runs）
 │   │   ├── research/             搜索质量研究（8 篇）
 │   │   └── blog/                 社区博文
 │   └── plugin/                   Plugin 产品线
-│       ├── design.md             handoff-plugin 设计文档
+│       ├── design.md             handoff-plugin 设计文档（已更新 ADR-005 引用）
 │       └── refs/                 架构参考（5 篇）
 ├── scripts/                      patch 脚本（ps1 + sh）
-├── handoff-plugin/               Plugin 源码（子模块，dirty — README.md 链接待提交）
+├── handoff-plugin/               Plugin 源码（子模块，local commit 待推送）
 ├── search-mcp-wrapper/           MCP wrapper
 ├── skills/                       Cline skills
 └── experiments/p5-spike/         P5 Spike 实验
@@ -61,14 +63,16 @@ E:\cline++\
 
 | 方向 | 说明 | 优先级 |
 |------|------|--------|
-| **handoff-plugin 子模块提交** | README.md 链接已更新（`docs/plugin/design.md`），需在子模块内 `git commit` 然后父仓库更新引用 | 高 |
-| **Cline 官方 Issue** | VS Code 扩展 bootstrap 缺失是否已有 Issue / 是否需报告 | 低 |
-| **Plugin 功能迭代** | detect-compact 之外的 message builder（如 session-start / error-summary） | 中 |
-| **测试产物清理** | `C:\handoff-plugin-debug.log` + 7 个测试 handoff.md + index.jsonl 旧记录 | 低 |
+| **handoff-plugin 重构** | 按 ADR-005 拆分：compact-observer（只观察）+ handoff-writer（独立触发） | 高 |
+| **handoff-plugin 子模块推送** | README.md 链接修正 + 父仓库引用，需 GitHub 认证 | 高 |
+| **GitHub Issue 提交** | VS Code bootstrap 缺失，草稿已就绪，需用户手动提交 | 中 |
+| **#6 注入机制实测** | 验证 Cline rules capability 能否动态注入 handoff.md 内容 | 中 |
+| **Plugin 功能迭代** | 新 message builder 类型（error-summary 等）| 低 |
+| **测试产物清理** | `C:\handoff-plugin-debug.log` + 旧 handoff 记录 | 低 |
 
 ## 权威源
 
-[dev-rules.md](dev-rules.md) · [evidence-governance.md](evidence-governance.md) · [ADR-002 Update 6](decisions/ADR-002-project-shape.md) · [investigation-note-vscode-bootstrap-missing.md](decisions/investigation-note-vscode-bootstrap-missing.md) · [plugin/refs/handoff-plugin-architecture.md](plugin/refs/handoff-plugin-architecture.md) · [plugin/refs/cline-plugin-architecture-atlas.md](plugin/refs/cline-plugin-architecture-atlas.md)
+[dev-rules.md](dev-rules.md) · [evidence-governance.md](evidence-governance.md) · [ADR-005](decisions/ADR-005-split-compact-from-handoff.md) · [design.md](plugin/design.md) · [mechanism-candidates.md](mechanism-candidates.md)
 
 ---
 
@@ -79,9 +83,9 @@ E:\cline++\
 然后读 docs/handoff.md，按下面的工作内容继续。
 ```
 
-接续上下文：项目已完成搜索编排器 14 轮实验 + Handoff Plugin 全链路验证 + docs/ 产品线重组。当前状态——Plugin 源码与文档结构均已定型，子模块有一处未提交的 README.md 链接更新。
+接续上下文：ADR-005 已确定 Compaction 与 Handoff 拆分方向。handoff-plugin 需要重构——当前 compact 绑定的代码拆成 compact-observer（只观察）+ handoff-writer（独立触发器）。mechanism-candidates #5/#6 已同步更新。
 
 **下次首要动作**：
-1. 在 `handoff-plugin/` 子模块内 commit README.md 变更，父仓库更新 submodule 引用
-2. 评估 Plugin 功能迭代方向（新 message builder 类型）
-3. 考虑是否向 Cline 官方报告 VS Code bootstrap 缺失
+1. handoff-plugin 重构：拆 `detect-compact` 为 `compact-observer` + 独立 handoff 触发机制
+2. 验证 Cline rules capability 能否动态注入 handoff.md 内容（#6 注入机制）
+3. 推送子模块 + 父仓库（需 GitHub 认证）
