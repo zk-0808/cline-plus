@@ -12,6 +12,28 @@
 
 ---
 
+> ### ⚠️ 不可抗力声明：VS Code 扩展 Plugin 运行时不可用（2026-06-29 确认）
+>
+> **结论**：Cline VS Code 扩展 4.0.x 全系列不支持 Plugin 系统。**CLI 3.0.30+ 是当前唯一可用的 Plugin 运行环境。** 本设计文档所有 Phase 的实施与验证均须在 CLI 端进行。
+>
+> **证据链与时间线**：
+>
+> | 日期 | 版本 | 事件 | 证据 |
+> |------|------|------|------|
+> | 2026-06-26 | v4.0.0 | esbuild 打包遗漏 `plugin-sandbox-bootstrap.js`，`setup()` 永不执行 | [investigation-note-vscode-bootstrap-missing.md](../decisions/investigation-note-vscode-bootstrap-missing.md)（8 条证据交叉验证，V2 高置信度） |
+> | 2026-06-28 | v4.0.1 | 官方回滚到 3.89.2 pre-SDK 代码基，plugin 系统不存在 | [D-2026-06-28-cline-v401-sdk-rollback.md](../decisions/D-2026-06-28-cline-v401-sdk-rollback.md)；release notes: "Roll the stable VS Code extension back to the pre-SDK-migration codebase" |
+> | 2026-06-29 | v4.0.2 | 继承回滚，`extension.js` 无任何 plugin 代码 | 实测：`extension.js` 零命中 `plugin-sandbox` / `registerMessageBuilder` |
+> | 2026-06-29 | — | GitHub issue #11944 提交，Linear CLINE-2584 关联，作者未回复 SDK 迁移时间线 | handoff.md 本会话决策 |
+> | 2026-06-29 | CLI 3.0.33 | `setup()` 执行确认（marker 写入），v0.5.0 三能力（messageBuilders + rules + hooks）全链路加载 | 本会话实测 |
+>
+> **对本设计的影响**：
+> - Phase 1–4 的"VS Code 扩展端验证"全部替换为"CLI 端验证"
+> - Phase 4（VS Code 扩展端验证闭环）推迟到 SDK 迁移重新合入稳定版后
+> - §2.2 Probe 5 结论"VS Code 扩展 4.0.0 通过 Customize marketplace 加载"已被 v4.0.1 回滚推翻（UI 发现 ≠ sandbox 激活）
+> - §2.3 ADR-004 恢复条件 ② 需重新评估：CLI 端满足，VS Code 端不满足
+
+---
+
 ## 1. Executive Summary
 
 本设计文档实现 ADR-001 选定的三方向（A 复用 Cline Compact + B' 自动分级 Handoff + D' 可版本化索引层）中，#5 compact 双产物自动化的架构设计与实现路径。
