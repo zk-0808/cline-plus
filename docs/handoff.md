@@ -36,6 +36,27 @@
 4. **index.ts 职责过重** — snapshot 生成逻辑（80 行）应拆到独立模块
 5. **#4 Loop Guard 缺注入层** — 检测完成（N-gram/振荡/持续错误），但只 console.warn，模型看不到
 
+### 同步脚本
+
+跨环境协作（本地 ↔ 云端 agent）后，用同步脚本安全拉取远端变更，不丢本地未提交改动：
+
+| 脚本 | 用法 | 环境 |
+|------|------|------|
+| `scripts/sync.sh` | `bash scripts/sync.sh [项目路径]` | Git Bash / WSL |
+| `scripts/sync.ps1` | `.\scripts\sync.ps1 [-Project "E:\cline++"]` | PowerShell |
+
+默认项目路径为 `E:/cline++`，可传参覆盖。
+
+**使用时机**：云端 agent 推送变更后，本地开始工作前执行一次。
+
+**执行流程**：检查本地状态 → 自动 stash → fetch → rebase/ff → 恢复 stash → 子模块同步 → 输出摘要。
+
+**冲突处理**：
+- rebase 冲突：自动中止 rebase，需手动 `git rebase origin/main`
+- stash pop 冲突：改动保留在 stash 中，用 `git stash list` 查看后手动 `git stash pop stash@{N}`
+
+**摘要提示**：同步完成后如果 `handoff.md` 有变更，脚本会提示"建议阅读"。
+
 ## 未完成项 / 后续动作
 
 | 方向 | 说明 | 优先级 |
