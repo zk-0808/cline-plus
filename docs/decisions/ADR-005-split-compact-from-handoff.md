@@ -68,6 +68,17 @@ Claude Code 的会话记忆（session memory）是在会话过程中持续提取
 | **存储** | Cline 内部管理 | 文件系统 + git |
 | **负责方** | Cline 原生 | Plugin / 用户指令 |
 
+### 命名决议
+
+为避免概念混淆，两个机制使用不同的术语：
+
+| 术语 | 含义 | 产物 | 存储位置 |
+|------|------|------|---------|
+| **context snapshot** | 窗口内压缩产物 | 自动生成的上下文摘要 | `~/.cline/data/snapshot/` |
+| **handoff** | 跨会话状态快照 | 用户手写的状态交接文档 | `docs/handoff.md`（git 追踪） |
+
+**理由**：两者虽然都是"状态摘要"，但目的、触发方式、消费者完全不同。共享 "handoff" 一词导致代码注释、函数名、文件名误导后续维护者。Plugin 源码和文档中，窗口内压缩产物统一使用 "context snapshot" / "snapshot"。
+
 ### Compaction 层（Cline 原生负责）
 
 Plugin 不干预 Cline 的 compact 流程。`registerMessageBuilder` 可用于观察（日志、指标），但不产出 handoff。

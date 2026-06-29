@@ -1,80 +1,65 @@
-# Handoff — Plugin 全模块实现 + beforeTool 改写
+# Handoff — 命名决议 + Context Snapshot 设计讨论
 
 ## 本会话决策
 
 | 决策 | 状态 |
 |------|------|
-| [ADR-005](decisions/ADR-005-split-compact-from-handoff.md) Compaction 与 Handoff 拆分 | ✅ Accepted + 外部评审修订 |
-| [mechanism-landing-assessment.md](plugin/mechanism-landing-assessment.md) 11 条候选落地评估 | ✅ 完成（含 3 处事实修正 + 3 处设计补丁） |
-| handoff-plugin 完整实现 | ✅ 6 模块 1113 行，64 tests 全通过 |
-| tool-recorder.ts | ✅ #1 慢调用监控 + #4 循环检测（N-gram/振荡/持续错误） |
-| rules-injector.ts | ✅ #6 动态 handoff 注入 + findLatestHandoff + 文件命名规范 |
-| shell-wrapper.ts | ✅ #2 PowerShell NoProfile + #3 UTF-8 编码注入（幂等改写） |
-| index.ts 重构 | ✅ 注册 messageBuilders + rules + hooks 三类能力 |
-| @cline/core + @cline/shared 类型桩 | ✅ 编译时类型 + 运行时 stub |
-| 文档归档 | ✅ 55 个文件 → `docs/archive/`，8 个 ARCHIVE 摘要留在原位 |
-| 断链修复 | ✅ 80 处 → 0 断链 |
-| GitHub Issue 提交 | ✅ VS Code bootstrap 缺失 |
-| mechanism-candidates #5/#6/#7 状态同步 | ✅ 已更新 |
+| ADR-005 方向确认正确 | ✅ 用户确认 |
+| 命名决议：窗口内压缩产物 = "context snapshot"，跨会话状态快照 = "handoff" | ✅ 已落地到 ADR-005 + 全部源码 + 文档 |
+| Plugin 重命名：auto-handoff → context-snapshot | ✅ PLUGIN_NAME / rule name / dir path / function names 全部更新 |
+| 64 tests 全通过 | ✅ 重命名后验证 |
+| Cline 源码探查规划 | 📋 规划完成，待执行（需先确认源码获取方式） |
 
-## Plugin 架构
+## 本会话净变化
 
-```
-handoff-plugin/src/
-├── index.ts             ← 入口：compact-observer + rules-injector + shell-wrapper + hooks
-├── compaction.ts (167行) ← token 估算 + shouldCompact
-├── tool-recorder.ts (321行) ← #1 慢调用 + #4 循环检测
-├── rules-injector.ts (155行) ← #6 动态 handoff 注入
-├── shell-wrapper.ts (163行) ← #2 PowerShell 安全参数 + #3 UTF-8 编码
-└── types.ts (84行)      ← ToolRecord / LoopPattern / IndexEntry
+### 命名统一（ADR-005 命名决议）
 
-handoff-plugin/test/
-├── tool-recorder.test.ts    ← 14 tests
-├── rules-injector.test.ts   ← 16 tests
-├── plugin-lifecycle.test.ts ← 9 tests
-└── shell-wrapper.test.ts    ← 25 tests
+"handoff" 和 "context snapshot" 是两个不同概念，之前共享一个名字导致混淆：
 
-handoff-plugin/types/@cline/  ← 编译时 type stubs + 运行时 JS stubs
-```
+| 术语 | 含义 | 产物 | 存储位置 |
+|------|------|------|---------|
+| **context snapshot** | 窗口内压缩产物 | 自动生成的上下文摘要 | `~/.cline/data/snapshot/` |
+| **handoff** | 跨会话状态快照 | 用户手写的状态交接文档 | `docs/handoff.md`（git 追踪） |
 
-## 机制落地进度
+已更新范围：
+- 源码：`index.ts` / `rules-injector.ts` / `types.ts`（函数名、变量名、注释、rule name、存储路径）
+- 测试：`rules-injector.test.ts` / `plugin-lifecycle.test.ts`
+- 文档：`design.md`（标题 + 术语约定 + 存储路径 + 模块表）、`mechanism-landing-assessment.md`（Q4 + 汇总表 + Phase 1）
+- ADR-005：新增 "命名决议" 小节
+- `package.json`：version 0.3.0 → 0.4.0，description 更新
 
-| # | 机制 | 状态 | 实现位置 |
-|---|------|------|---------|
-| #1 | Terminal Watchdog (降级) | ✅ 已实现 | tool-recorder.ts getSlowCalls() |
-| #2 | PowerShell NoProfile | ✅ 已实现 | shell-wrapper.ts injectPowerShellFlags() |
-| #3 | UTF-8 编码注入 | ✅ 已实现 | shell-wrapper.ts injectUtf8Encoding() |
-| #4 | Loop Guard 检测 | ✅ 检测层已实现 | tool-recorder.ts detectLoopPatterns() |
-| #4 | Loop Guard 提示词注入 | ❌ 待实现 | 需要 beforeModel hook 注入层 |
-| #5 | Handoff compact observer | ✅ 已实现 | index.ts messageBuilder |
-| #6 | 跨会话记忆注入 | ✅ 已实现 | rules-injector.ts + index.ts rule |
-| #7 | Windows File Hooks | ❌ 待验证 | 需实测 Cline File Hooks |
+### 设计讨论核心发现
+
+1. **compact 是 Cline 会话内唯一能重置上下文的机制** — plugin 借此时机写 snapshot，compact 后通过 rules 注入回来，实现无缝续作
+2. **代码与 ADR-005 不完全对齐** — messageBuilder 仍在 compact 触发时写 snapshot（当前实现），ADR-005 说 compact-observer 应只观察不产出。但这个矛盾在 compact 是唯一介入点的约束下可能是合理的
+3. **snapshot 内容质量不足** — 当前用正则关键词匹配 + 120 字符截取，不够支撑 compact 后的无缝续作
+4. **index.ts 职责过重** — snapshot 生成逻辑（80 行）应拆到独立模块
+5. **#4 Loop Guard 缺注入层** — 检测完成（N-gram/振荡/持续错误），但只 console.warn，模型看不到
 
 ## 未完成项 / 后续动作
 
 | 方向 | 说明 | 优先级 |
 |------|------|--------|
-| **#6 注入验证** | 实测 Cline rules.content 动态函数能否正常注入 | 高 |
-| **Loop Guard 提示词注入** | #4 beforeModel hook 检测重复后注入警告（detection 完成，缺注入层） | 中 |
-| **File Hooks 验证** | #7 TaskStart 事件文件名/路径/扩展名实测 | 中 |
-| **推送** | 分支 `feat/adr-005-compact-handoff-split` 待推送 | 高 |
+| **Cline 源码探查** | 搞清 /compact 执行链、checkpoint 机制、messageBuilder 调用时机、rules 注入频率 | 🔴 高 — 所有后续设计依赖此探查结果 |
+| **snapshot 内容设计** | 探查完成后重新设计：语义级摘要（非正则提取）、体积控制（2K-4K token）、生命周期管理 | 🔴 高 — 依赖探查 |
+| **#4 beforeModel 注入** | 读 detectLoopPatterns() 结果注入 messages（代码层面缺失，设计完整） | 🟡 中 — 不依赖探查 |
+| **推送分支** | `feat/adr-005-compact-handoff-split` | 🟡 中 |
 
 ## 权威源
 
-[dev-rules.md](dev-rules.md) · [ADR-005](decisions/ADR-005-split-compact-from-handoff.md) · [mechanism-landing-assessment.md](plugin/mechanism-landing-assessment.md) · [design.md](plugin/design.md) · [mechanism-candidates.md](mechanism-candidates.md)
+[dev-rules.md](dev-rules.md) · [ADR-005](decisions/ADR-005-split-compact-from-handoff.md) · [mechanism-landing-assessment.md](plugin/mechanism-landing-assessment.md) · [design.md](plugin/design.md)
 
 ---
 
 ## Handoff（下次会话第一句话建议）
 
 ```text
-先读 docs/dev-rules.md（注意 §1.5-§1.14 执行门控）与 docs/search/project-rules.md 各一次，遵守三份文档职责划分与防漂移约束。
-然后读 docs/handoff.md，按下面的工作内容继续。
+先读 docs/dev-rules.md（注意 §1.5-§1.14 执行门控）与 docs/handoff.md，按下面的工作内容继续。
 ```
 
-接续上下文：ADR-005 已落地，handoff-plugin 6 模块完整实现（1113 行），64 tests 全通过。#1-#6 中仅 #4 提示词注入层未完成（检测层已就绪）。#7 Windows File Hooks 待实测。
+接续上下文：命名决议已落地（context snapshot vs handoff），6 模块 64 tests 全通过。下一步是 Cline 源码探查——搞清 /compact 和 checkpoint 的原生机制，然后重新设计 snapshot 内容和注入策略。
 
 **下次首要动作**：
-1. 推送分支（需 GitHub 认证）
-2. 实测 #6 注入：验证 Cline rules.content 动态函数能否在新会话中注入 handoff 内容
-3. 实现 #4 Loop Guard 提示词注入（beforeModel hook）
+1. Cline 源码探查：/compact 执行链、checkpoint、messageBuilder 调用时机、rules 注入频率
+2. 基于探查结果重新设计 context snapshot 内容生成
+3. 实现 #4 beforeModel 提示词注入（不依赖探查，可并行）

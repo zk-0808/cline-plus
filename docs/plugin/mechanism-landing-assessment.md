@@ -13,7 +13,7 @@
 | **rules** | ✅ `api.registerRule(rule)` | rule 内容支持动态函数解析；但 setup() 只调用一次，运行时不可修改已注册的 rule | #6 注入机制 |
 | **hooks** | ✅ 7 种：beforeRun / afterRun / beforeModel / afterModel / beforeTool / afterTool / onEvent | `session_start` **不在** plugin hooks 中；File Hooks 支持 TaskStart 事件 | #1 watchdog、#4 loop-guard |
 | **afterTool** | ✅ 已确认存在 | 参数含 success/failure 状态；可用于计时和日志；**不能**直接检测超时（工具已返回） | #1 watchdog |
-| **messageBuilder** | ✅ `build(messages) → messages` | 同步、每轮调用、**无 session metadata**（无 session_id） | #5 handoff |
+| **messageBuilder** | ✅ `build(messages) → messages` | 同步、每轮调用、**无 session metadata**（无 session_id） | #5 context snapshot |
 | **SQLite** | ❓ 未找到文档 | `~/.cline/sessions/`（SQLite）schema 未公开，plugin 无法稳定访问 | 索引层 |
 | **File Hooks** | ⚠️ 官方确认 6 种（PreToolUse / PostToolUse / UserPromptSubmit / TaskStart / TaskResume / TaskCancel） | 文件名精确匹配 hook 类型、**不带扩展名**；路径为 `.clinerules/hooks/`（项目级）或 `~/Documents/Cline/Rules/Hooks/`（全局）；Windows `.ps1` 支持查无实据 | #6 session start、#7 Windows |
 | **session_id** | ❌ plugin API 不暴露 | 无替代方案；可用 `randomUUID()` 自生成（当前做法） | #5 索引 |
@@ -23,7 +23,7 @@
 1. **`session_start` 不在 plugin hooks 中**——但 File Hooks 的 `TaskStart` 事件可以替代（文件名 `TaskStart`，无扩展名，放 `.clinerules/hooks/`）
 2. **rules 支持动态函数**——`content` 字段可以是函数，每次注入时动态解析，这是 #6 注入的可行路径
 3. **afterTool 有时间戳**——可用于 #1 watchdog 的"工具调用耗时统计"，但不能中断正在运行的工具
-4. **SQLite 不可用**——schema 未公开，plugin 不应依赖；handoff 检索退化为文件遍历，需定义 "latest" 语义
+4. **SQLite 不可用**——schema 未公开，plugin 不应依赖；snapshot 检索退化为文件遍历，需定义 "latest" 语义
 
 ---
 
@@ -75,15 +75,15 @@
 
 **共同模式**：分层注入（全局 → 项目 → 个人 → 自动），按需加载减少上下文浪费。所有系统都采用"文件即配置"范式。
 
-**对 #6 的结论**：Cline 的 `rules` capability 支持动态函数解析——`content` 可以是函数，每次注入时读取最新 handoff.md 内容。这是 #6 的可行路径。实现方式：
+**对 #6 的结论**：Cline 的 `rules` capability 支持动态函数解析——`content` 可以是函数，每次注入时读取最新 context snapshot 内容。这是 #6 的可行路径。实现方式：
 
 ```typescript
 api.registerRule({
-    name: "handoff-context",
+    name: "snapshot-context",
     content: () => {
-        // 动态读取最新 handoff.md
-        const handoffPath = findLatestHandoff();
-        return handoffPath ? readFileSync(handoffPath, "utf-8") : "";
+        // 动态读取最新 snapshot
+        const snapshotPath = findLatestSnapshot();
+        return snapshotPath ? readFileSync(snapshotPath, "utf-8") : "";
     }
 });
 ```
@@ -92,12 +92,12 @@ api.registerRule({
 
 **"latest"语义定义**（评审补充）：
 
-handoff 文件命名格式：`{project_hash}-{timestamp}-{uuid}.md`
+snapshot 文件命名格式：`{project_hash}-{timestamp}-{uuid}.md`
 - `project_hash`：工作区路径的短 hash（4 字符），防止跨项目串味
 - `timestamp`：ISO 8601 精确到秒
 - `uuid`：防并发冲突
 
-`findLatestHandoff()` 按 project + 最近 timestamp 选取，解决多 task 并发写 handoff 时的归属问题。
+`findLatestSnapshot()` 按 project + 最近 timestamp 选取，解决多 task 并发写 snapshot 时的归属问题。
 
 ---
 
@@ -109,8 +109,8 @@ handoff 文件命名格式：`{project_hash}-{timestamp}-{uuid}.md`
 | **#2** | PowerShell NoProfile | beforeTool 可改写命令 | Cursor 容器隔离 | ✅ 可落地 | beforeTool hook 拦截 execute_command，注入 `-NoProfile -NonInteractive` |
 | **#3** | UTF-8 编码注入 | beforeTool 可改写命令 | Claude Code AST 解析 | ✅ 可落地 | beforeTool hook 注入 `chcp 65001`（Windows）或 `export LANG=en_US.UTF-8` |
 | **#4** | Loop Guard | beforeTool+afterTool 可记录序列 | OpenClaw 四维检测 | ⚠️ 部分 | 检测 + 提示词注入（beforeModel）；**顽固性错误兜底**：N 次注入无效后交由 Cline max iterations 兜底，plugin 不越界 |
-| **#5** | Handoff（拆分后） | messageBuilder 可观察 compact | — | ✅ 已验证 | 按 ADR-005 重构：compact-observer + 独立触发器 |
-| **#6** | 记忆注入 | rules 动态函数 + File Hooks TaskStart | Claude Code 四层架构 | ✅ 可落地 | rules.content 函数动态读 handoff.md；File Hooks TaskStart 做额外初始化 |
+| **#5** | Context Snapshot（拆分后） | messageBuilder 可观察 compact | — | ✅ 已验证 | 按 ADR-005 重构：compact-observer + 独立触发器 |
+| **#6** | 记忆注入 | rules 动态函数 + File Hooks TaskStart | Claude Code 四层架构 | ✅ 可落地 | rules.content 函数动态读 snapshot；File Hooks TaskStart 做额外初始化 |
 | **#7** | Windows Hook | File Hooks 支持 TaskStart（无扩展名） | — | ❓ 待验证 | 官方 hook 文件无扩展名、放 `.clinerules/hooks/TaskStart`；`.ps1` / `.cline/Hooks/` 写法与官方不符，Windows 支持查无实据 |
 | **#14** | 自研 compact 已失败 | — | — | ✅ 已转向 | 接入 Cline messageBuilder，ADR-005 确认不再自研 |
 | **#20** | 反证检索 | — | — | ❌ 不可代码化 | 检索策略问题，需换后端（Tavily/Exa），暂缓 |
@@ -121,14 +121,14 @@ handoff 文件命名格式：`{project_hash}-{timestamp}-{uuid}.md`
 
 ## 4. 推荐实施顺序
 
-### Phase 1：Handoff 重构（ADR-005 落地）
+### Phase 1：Context Snapshot 重构（ADR-005 落地）
 
 ```
 compact-observer（只观察 compact 事件，日志记录）
     +
-独立 handoff 触发器（用户指令 / 决策信号 / File Hooks TaskStart）
+独立 snapshot 触发器（用户指令 / 决策信号 / File Hooks TaskStart）
     +
-rules 动态注入（handoff.md 内容注入新会话）
+rules 动态注入（snapshot 内容注入新会话）
 ```
 
 **涉及候选**：#5（重构） + #6（注入） + #7（File Hooks 验证）
@@ -217,3 +217,4 @@ beforeModel hook：
 |------|---------|------|
 
 | 2026-06-28 | 3 处事实修正（变量名/Cursor 机制/File Hooks 事件名与路径）+ 3 处设计补丁（Loop Guard 兜底/handoff 命名语义/统一 tool-call-recorder）| 外部评审 |
+| 2026-06-29 | 命名统一：窗口内压缩产物从 "handoff" 改为 "context snapshot"（ADR-005 命名决议落地） | 设计评审 |
