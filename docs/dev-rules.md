@@ -225,6 +225,29 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 
 源由：2026-06-23 [plugin-dev-quick-reference.md §0](plugin/refs/plugin-dev-quick-reference.md) 仅基于"搜博客"单一证据类型下"社区无 plugin 实战经验"结论，未查 npm/GitHub/官方 examples/Marketplace 任一独立证据源。
 
+### 1.15 子条款：执行环境可用性门控（不可抗力声明）
+
+当外部执行环境（VS Code 扩展 / CLI / SDK / 平台服务）的可用性发生**非预期变化**（官方回滚 / API 废弃 / 打包缺陷 / 服务下线），构成**不可抗力**——所有依赖该环境的设计、实施计划和验证步骤必须立即冻结并重新评估。
+
+**触发后动作**：
+
+1. 在相关 design.md / assessment.md 中插入不可抗力声明块，包含：完整证据链（时间线 + 版本号 + 证据引用）、对现有设计的具体影响
+2. 将所有依赖该环境的验证步骤标记为"受限"或"推迟"，指定替代验证路径（如 CLI 端替代 VS Code 端）
+3. 登记待跟进项（GitHub issue / 官方 changelog 监控），明确恢复条件
+
+**禁止**：
+- 在已知环境不可用的情况下，继续编写或执行依赖该环境的验证步骤
+- 用 workaround 结果等同于"环境可用"（workaround 可用 ≠ 官方支持路径可用）
+- 省略证据链直接声明"不可用"（必须按 §1.6 双来源验证）
+
+**当前生效的不可抗力声明**（2026-06-29）：
+
+| 环境 | 状态 | 替代路径 | 恢复条件 |
+|------|------|---------|---------|
+| VS Code 扩展 4.0.x（plugin 系统）| 不可用 | CLI 3.0.30+ | SDK 迁移重新合入稳定版（issue #11944）|
+
+源由：2026-06-28 VS Code 扩展 v4.0.0 bootstrap 缺失 → v4.0.1 官方回滚到 pre-SDK 代码基 → v4.0.2 继承回滚，Plugin 系统在 VS Code 端完全不存在。CLI 端为唯一可用运行环境。完整证据链见 [investigation-note-vscode-bootstrap-missing.md](decisions/investigation-note-vscode-bootstrap-missing.md) + [D-2026-06-28-cline-v401-sdk-rollback.md](decisions/D-2026-06-28-cline-v401-sdk-rollback.md) + [design.md 不可抗力声明](plugin/design.md)。
+
 ---
 
 ## 2. handoff 通用触发器
