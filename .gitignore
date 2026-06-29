@@ -57,3 +57,4 @@ experiments/
 *.log
 logs/
 .cline-repo/
+docs/project-status-report.md
