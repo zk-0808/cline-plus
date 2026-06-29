@@ -63,23 +63,37 @@
 
 ## 3. Functional Design
 
-### 3.1 核心流程
+### 3.1 核心流程（2026-06-29 源码探查修正）
 
 ```
 Cline Agent Turn
     ↓
-@cline/agents turn-preparation
+SessionRuntimeOrchestrator.executeRunInternal()
     ↓
-  run lifecycle hooks
+  composeSystemPrompt()              ← rules 注入（每 turn 重新解析）
     ↓
-  allow message history rewrite  ←  registerMessageBuilder 在此介入
+  AgentRuntime.run()
     ↓
-    messageBuilder.build(messages)  →  compact 判定 → 双产物写入 → 返回修改后 messages
+  prepareTurnForModelRequest()
     ↓
-@cline/core API-safety message builder（最终保护）
+  prepareTurn 闭包（orchestrator.createRuntimePrepareTurn）
     ↓
-provider 调用
+    prepareProviderMessagesForApi(messages)
+      ↓
+      plugin messageBuilder.build()  ← registerMessageBuilder 在此介入（compact 前！）
+      ↓
+      API-safety buildForApi()       ← core 最终保护（truncation/repair）
+    ↓
+    compact 策略判定（用 apiMessages 做 token 估算）
+      ↓
+      if needsCompact → compact → 替换 state.messages
+    ↓
+  hooks.beforeModel 循环             ← #4 beforeModel 在此注入
+    ↓
+  provider 调用
 ```
+
+**关键发现（§6 Task A）**：plugin messageBuilder 在 compact 判定**之前**执行。plugin build() 修改消息内容会影响 compact 的 token 估算。compact-observer 的 build() 收到的是 compact 前的原始消息，需自行判断是否写 snapshot。
 
 ### 3.2 触发条件
 
@@ -176,7 +190,7 @@ schema 定义：
 |------|------|
 | snapshot 写入失败（权限/磁盘满）| 记录错误到 console，不影响消息返回 |
 | index.jsonl 写入失败 | 同上，snapshot 仍写入（部分产出 > 无产出）|
-| messageBuilder.build() 抛出异常 | Cline core 的 API-safety builder 继续运行，不阻塞对话 |
+| messageBuilder.build() 抛出异常 | **（2026-06-29 修正）** sandbox 层 catch + retry + 返回原始 messages；API-safety builder 在 plugin builder 之后，plugin 异常不会到达它。见 §6 Task C 发现 3 |
 | 路径不存在 | 尝试创建目录（`mkdirSync` recursive），失败后跳过写入 |
 | VS Code 扩展不扫描全局 store | 退回 workspace 级 `.cline/plugins/` 路径（待实测） |
 
@@ -342,9 +356,9 @@ snapshot 文件名格式：`{project_hash}-{timestamp}-{uuid}.md`
 
 | # | 问题 | 状态 | 如何解决 |
 |---|------|------|---------|
-| Q1 | VS Code 扩展 4.0.0 中 `registerMessageBuilder` 注册的 builder 是否在 compact 时被调用？ | 待验证 | Phase 1 实测 |
+| Q1 | VS Code 扩展 4.0.0 中 `registerMessageBuilder` 注册的 builder 是否在 compact 时被调用？ | ✅ 已验证（源码探查）| **是，但在 compact 判定之前**。调用链：prepareTurn 闭包 → prepareProviderMessagesForApi → plugin MB.build() → API-safety buildForApi() → compact 策略判定。plugin MB 收到的是 compact 前的原始消息。|
 | Q2 | 全局 store `~/.cline/plugins/installed/local/` 的安装路径是否对 VS Code 扩展和 CLI 共用？ | ✅ 已确认（Probe 5）| 是——p5-spike-plugin 安装后 VS Code 扩展可见 |
-| Q3 | `build()` 中写文件是否需考虑并发安全（多个 plugin builder 同时执行）？ | 待评估 | 不紧急——custom-compaction.ts 无并发处理，先保持一致 |
+| Q3 | `build()` 中写文件是否需考虑并发安全（多个 plugin builder 同时执行）？ | ✅ 已验证（源码探查）| **单 session 内无并发**：messageBuilder 串行执行（for...of + await）。跨 session 写同一文件（如 index.jsonl）需 append 模式，但风险极低。|
 | Q4 | 存储路径首选 `~/.cline/data/snapshot/` 是否已由 `@cline/shared` 的 storage helper 支持？ | 待确认 | 落地时从 `@cline/shared` 源码确认或硬编码 |
 | Q5 | #6 session_start hook 是否在 VS Code 扩展中工作？ | 待验证 | 与 #5 验证解耦，#6 需 #5 产出数据后才能验证 |
 
