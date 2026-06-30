@@ -44,6 +44,19 @@ CLI v3.0.31（2026-06-27）Release Notes 中包含：
 | 未来风险 | ⚠️ 可能复发 | 当 SDK 迁移再次合入稳定版时，需重新检查 bootstrap 机制是否被正确配置 |
 | plugin-bundled skills | 📝 值得关注 | Cline 生态的 skills 规范化方向，与 skills-mcp-server 的长期方向一致 |
 
+## 对项目路径的影响：转 CLI 的触发原因
+
+v4.0.1 回滚**是项目从 VS Code 扩展转 CLI 验证 plugin 的直接触发原因**。因果链：
+
+1. **v4.0.0（2026-06-25）**：Cline VS Code 扩展首次集成 SDK，引入 Customize marketplace + Plugins 系统（[CHANGELOG 4.0.0](https://github.com/cline/cline/blob/main/CHANGELOG.md#400) 明确列出 "Cline Plugins" 能力）
+2. **v4.0.0 回归问题**：用户反馈 4.0.0 出现多个回归 bug（terminal 可靠性、chat 提交、provider 配置等）
+3. **v4.0.1 回滚（2026-06-28）**：官方将 VS Code 扩展稳定版代码回退到 3.89.2 pre-SDK 代码基，以修复回归。**plugin 系统（Customize marketplace）随回滚消失**
+4. **项目路径转向**：VS Code 端 plugin 装载入口消失 → context-snapshot 插件在 VS Code 端无法加载 → 项目转向 CLI（3.0.x）作为唯一可用 plugin 运行环境（详见 [investigation-note-cli-plugin-verification.md](investigation-note-cli-plugin-verification.md)）
+
+**当前状态**：VS Code Marketplace 显示 4.0.4（2026-06-30 更新），但 4.0.x 稳定线仍是 3.89.2 代码基（v4.0.1 回滚后的代码路径）。SDK 迁移工作在 `main` 分支独立进行，尚未重新合入稳定版。所以"VS Code 扩展 4.0.x 不支持插件"的表述仍成立（见 [dev-rules.md §1.15](../dev-rules.md)）。
+
+**恢复条件**：当 Cline 官方将 SDK 迁移重新合入稳定版（预期 v4.1.0 或更高），VS Code 端 plugin 系统恢复后，可重新评估是否将验证工作迁回 VS Code 扩展。
+
 ## 参考
 
 - [investigation-note-vscode-bootstrap-missing.md](investigation-note-vscode-bootstrap-missing.md) — v4.0.0 bootstrap 缺失根因分析

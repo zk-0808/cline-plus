@@ -20,6 +20,7 @@
 
 | ID | 日期 | 主题 | 状态 | 标题 |
 |----|------|------|------|------|
+| [D-2026-06-28-cline-v401-sdk-rollback](D-2026-06-28-cline-v401-sdk-rollback.md) | 2026-06-28 | global | active | Cline v4.0.1 SDK 迁移回滚事件记录 — v4.0.0 引入 Plugins + Customize marketplace 但出现回归，v4.0.1 回退到 3.89.2 pre-SDK 代码基。**此事件是项目从 VS Code 扩展转 CLI 验证 plugin 的直接触发原因**（VS Code 端 plugin 系统随回滚消失） |
 | [ADR-004-p5-spike-pause](ADR-004-p5-spike-pause.md) | 2026-06-27 | global | deferred | P5 Plugin Spike 暂停（实验环境前提动摇）— CLI 载体不稳定（自动升级中断+bin 损坏+run_commands 崩溃）+ 实验环境(CLI)与生产环境(VS Code)错位。#6 已实证结论保留 |
 | [D-2026-06-26-search-adopt-mcp-throttle-wrapper](D-2026-06-26-search-adopt-mcp-throttle-wrapper.md) | 2026-06-26 | search-orchestrator | active | 采纳 MCP 反-bot 节流 wrapper（方案 C：强制 max_results≤10 + 跨调用状态 + 指数退避）— 对应 #24，Run #14 功能性验证通过（3 次熔断正确触发指数退避，fetch 独立通道不受影响） |
 | [D-2026-06-25-search-redesign-p5-evidence-map](D-2026-06-25-search-redesign-p5-evidence-map.md) | 2026-06-25 | search-orchestrator | proposed | 重设计 P5：Evidence Map / Claim Graph（非字段对齐 schema） |
