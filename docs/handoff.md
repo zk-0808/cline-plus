@@ -1,101 +1,137 @@
-# Handoff — 源码探查完成 + #4 beforeModel 实现 + VS Code 插件不可用确认
+# Handoff — v0.6.0 重构完成：ADR-005 命名落地 + P0 Snapshot Writer + P1 修复
 
 ## 本会话决策
 
 | 决策 | 状态 |
 |------|------|
-| Cline SDK 源码从 GitHub 拉取（19 文件），4 Task 探查全部完成 | ✅ |
-| design.md §8 Q1/Q3 已回答，§3.1 流程图已修正 | ✅ |
-| #4 beforeModel 提示词注入已实现（v0.5.0） | ✅ |
-| VS Code 扩展 4.0.x 不支持插件（回滚到 3.89.2 pre-SDK） | ✅ 确认 |
-| GitHub issue #11944 待用户补充评论 | ⬜ |
+| 3-pass 子代理全量审查（架构 / 逻辑 / 设计一致性）| ✅ 发现 16 问题 |
+| ADR-005 命名全面落地：handoff → snapshot | ✅ 源码零残留 |
+| P0 修复：snapshot-writer.ts 实现（5 节模板 + 磁盘写入）| ✅ |
+| P1 修复：统一路径 / Loop Guard 兜底 / beforeModel meta marker / afterTool LIFO | ✅ |
+| 死代码清理 ~90 行 | ✅ |
+| TypeScript 编译零错误 | ✅ |
+| VS Code 扩展 4.0.x 不支持插件（回滚到 3.89.2 pre-SDK）| ✅ 已确认 |
+| CLI 3.0.30+ 是当前唯一可用插件运行环境 | ✅ 已确认 |
+| GitHub issue #11944 待跟进 | ⬜ |
 
 ## 本会话净变化
 
-### 1. Cline Runtime 源码探查（4 Task）
+### 1. 3-Pass 代码审查
 
-**Task A — compact 执行链**：
-- plugin messageBuilder.build() 在 compact 判定**之前**执行
-- 调用链：`orchestrator.prepareProviderMessagesForApi（plugin MB + API-safety）→ compact 策略判定`
-- plugin MB 修改消息内容会影响 compact token 估算
+| Pass | 审查维度 | 核心发现 |
+|------|---------|---------|
+| Pass 1 | 架构 | 死代码 ~90 行、路径定义重复、PLUGIN_NAME 不一致 |
+| Pass 2 | 逻辑 | afterTool 并发匹配 FIFO 错误、beforeModel 误判风险、空 catch |
+| Pass 3 | 设计一致性 | ADR-005 命名对齐度 20%、snapshot 写入是死代码、Loop Guard 无兜底 |
 
-**Task B — checkpoint**：
-- Cline 有完整 shadow-git checkpoint 系统，每 tool use 后自动触发
-- 不需要自建 checkpoint
+### 2. 全量重构（v0.5.0 → v0.6.0）
 
-**Task C — messageBuilder**：
-- 每 turn 一次，串行执行，单 session 无并发
-- sandbox 有 catch+retry 降级，API-safety 不兜底 plugin 异常
+**重命名**（全部 5 源文件）：
+- `PLUGIN_NAME`: `"auto-handoff"` → `"context-snapshot"`
+- 输出目录: `~/.cline/data/handoff/` → `~/.cline/data/snapshot/`
+- 12+ 处函数/变量名: `*Handoff*` → `*Snapshot*`
+- Rule 名: `handoff-context` → `snapshot-context`
+- package name: `handoff-plugin` → `context-snapshot`
 
-**Task D — rules**：
-- 每 turn 注入 system prompt（composeSystemPrompt），content 函数每 turn 重新调用
+**新模块**：
+- `constants.ts`（10 行）— 统一定义 `PLUGIN_NAME` + `getSnapshotDir()`
+- `snapshot-writer.ts`（213 行）— P0 核心功能：5 节模板生成 + 磁盘写入
+  - 模板：会话标题 / 决策表 / 净变化 / 未完成项表 / 权威源
+  - compact-observer 在 `needsCompact=true` 时调用 `writeSnapshot()`
 
-### 2. design.md 修正
+**P1 修复**：
+- Loop Guard：`MAX_LOOP_WARNINGS=3`，超过后停止注入，交由 Cline max iterations
+- beforeModel：`__plugin_loop_warning__` meta marker 替代字符串匹配
+- afterTool：LIFO 搜索 + pending ID 随机后缀，修复并发匹配
+- 错误处理：所有 catch 块添加 `console.error`，消除空 catch
 
-- §3.1 流程图：修正为完整调用链（MB → API-safety → compact → beforeModel）
-- §3.4 降级行为：修正异常描述（sandbox fallback，非 API-safety）
-- §8 Q1/Q3：已回答
+**清理**：
+- 移除 `generateHandoffContent()`、`writeHandoff()`、`getHistory()`、`getSlowCalls()`
+- 移除 `SnapshotOptions`、tool-recorder 死导入、`DURATION_WARN_MS`
+- 净变化：-52 行（91 增 / 143 删）
 
-### 3. #4 beforeModel 实现
+**基础设施**：
+- 安装 `@types/node` + `typescript` 作为 devDependencies
+- 创建 `@cline/core` + `@cline/shared` 类型声明 stub
+- tsconfig.json: `types: ["node"]` + `paths` 映射
 
-`handoff-plugin/src/index.ts` 新增 `hooks.beforeModel`：
-- 检查 `toolRecorder.detectRepetition(5, 3)`
-- 检测到循环 → 注入 user message 警告
-- 去重：检查最后一条消息是否已含 "LOOP DETECTED"
-- 插件版本升至 v0.5.0
+### 3. 不可抗力声明（上轮完成，本轮保留）
 
-### 4. VS Code 插件支持状态
+已写入 3 个活跃决策文档：
+- `docs/plugin/design.md` — 证据链表格（v4.0.0→v4.0.1→v4.0.2→issue #11944→CLI 3.0.33）
+- `docs/plugin/mechanism-landing-assessment.md` — 运行时约束声明
+- `docs/dev-rules.md` — §1.15 执行环境可用性门控
 
-- **v4.0.1**：回滚到 3.89.2（pre-SDK），plugin 系统不存在
-- **v4.0.2**：继承回滚，extension.js 无任何 plugin 代码
-- **CLI 3.0.30+**：SDK 版本，plugin 全功能可用
-- **根因**：release notes 确认 "Roll the stable VS Code extension back to the pre-SDK-migration codebase"
-- **GitHub issue #11944**：已提交，Linear bot 关联 CLINE-2584，作者未回复
+### 4. CLI 验证结果（上轮完成，本轮保留）
+
+| 验证项 | 结果 |
+|--------|------|
+| setup() 执行 | ✅ marker 文件写入 |
+| messageBuilder.build() 调用 | ✅ 每 turn 执行 |
+| compact 检测 | ✅ shouldCompact 返回 needsCompact=true |
+| token 估算 bug 修复 | ✅ Math.ceil(text.length/4) + default case JSON.stringify |
+| beforeModel 实测 | ⬜ 待构造循环场景 |
+| rules 注入实测 | ⬜ 待新 session 验证 |
+| snapshot 文件写入实测 | ⬜ 待长对话触发 compact |
 
 ## 产出文件
 
 | 文件 | 变更 |
 |------|------|
-| `docs/decisions/investigation-note-cline-runtime-probe.md` | §5/§6 已填充（4 Task 结果 + 关键发现）|
-| `docs/plugin/design.md` | §3.1/§3.4/§8 已更新 |
+| `handoff-plugin/src/constants.ts` | 🆕 共享常量 |
+| `handoff-plugin/src/snapshot-writer.ts` | 🆕 P0 snapshot 生成 + 写入 |
+| `handoff-plugin/src/index.ts` | 重写：接入 snapshot writer + Loop Guard 兜底 + meta marker |
+| `handoff-plugin/src/rules-injector.ts` | 重写：全量重命名 + 统一路径 |
+| `handoff-plugin/src/tool-recorder.ts` | 清理：移除死代码 + LIFO 匹配 |
+| `handoff-plugin/src/types.ts` | 清理：移除 SnapshotOptions |
+| `handoff-plugin/package.json` | 重命名 + devDeps |
+| `handoff-plugin/tsconfig.json` | types + paths 配置 |
 | `docs/handoff.md` | 本文件 |
-| `handoff-plugin/src/index.ts` | 新增 beforeModel hook |
-| `handoff-plugin/package.json` | v0.5.0 |
-| `.gitignore` | .cline-repo/ |
 
 ## Commits
 
-| Hash | Message |
-|------|---------|
-| `ae2f896` | feat(#4): beforeModel loop guard in context-snapshot plugin |
-| `6b1e04b` | handoff: runtime probe complete, design.md corrected |
-| `5e13c34` | probe: complete 4-task Cline runtime source investigation |
+### 本会话新增
+
+| Hash | Repo | Message |
+|------|------|---------|
+| `565968a` | handoff-plugin | refactor: ADR-005 full rename + P0 snapshot writer + P1 bug fixes |
+| `16b6660` | cline++ (parent) | chore: update handoff-plugin to context-snapshot v0.6.0 |
+
+### 历史（上轮）
+
+| Hash | Repo | Message |
+|------|------|---------|
+| `6db3a68` | handoff-plugin | fix: token estimation bugs in compact-observer |
+| `8e10507` | cline++ | verify: CLI plugin chain verified + token estimation bugs fixed |
+| `623d700` | cline++ | docs: add force majeure declaration — VS Code ext 4.0.x plugin unavailable |
 
 ## 未完成项 / 后续动作
 
 | 方向 | 说明 | 优先级 |
 |------|------|--------|
-| **VS Code 插件验证** | 等 SDK 迁移重新合入 VS Code 扩展后验证 | 🔴 高 — 阻塞所有 VS Code 端验证 |
-| **CLI 端验证插件** | 用 `cline -i` 跑完整 plugin 链（compact-observer + beforeModel + rules） | 🔴 高 — 当前唯一可行路径 |
-| **重新设计 snapshot 内容生成** | 基于探查发现（MB 在 compact 前），决定 compact-observer 如何判断写 snapshot | 🟡 中 |
-| **GitHub issue #11944 跟进** | 用户补充评论后等作者回复 SDK 迁移时间线 | 🟡 中 |
-| **PROJECT_DEV_OUTLINE §5.3 更新** | checkpoint 验证项已回答 | 🟢 低 |
+| **CLI 实测 snapshot 写入** | 长对话触发 compact → 验证 `~/.cline/data/snapshot/` 产出文件 | 🔴 高 |
+| **CLI 实测 Loop Guard 兜底** | 构造循环场景 → 验证 3 次警告后停止注入 | 🔴 高 |
+| **CLI 实测 rules 注入** | 新 session 启动 → 验证读历史 snapshot 注入 system prompt | 🟡 中 |
+| **README.md 同步** | ~15 处 handoff 引用待更新 | 🟢 低 |
+| **GitHub issue #11944 跟进** | 等作者回复 SDK 迁移时间线 | 🟡 中 |
+| **design.md §3.3.2 标注废弃** | index.jsonl 已被 ADR-005 废弃，文档未标注 | 🟢 低 |
+| **Snapshot 模板精度迭代** | 当前决策/未完成项提取基于简单正则，精度有限 | 🟢 低 |
 
 ## 权威源
 
-[dev-rules.md](dev-rules.md) · [investigation-note-cline-runtime-probe.md](decisions/investigation-note-cline-runtime-probe.md) · [design.md](plugin/design.md) · [ADR-005](decisions/ADR-005-split-compact-from-handoff.md)
+[dev-rules.md](dev-rules.md) · [design.md](plugin/design.md) · [ADR-005](decisions/ADR-005-split-compact-from-handoff.md) · [mechanism-landing-assessment.md](plugin/mechanism-landing-assessment.md) · [investigation-note-cli-plugin-verification.md](decisions/investigation-note-cli-plugin-verification.md)
 
 ---
 
 ## Handoff（下次会话第一句话建议）
 
 ```text
-先读 docs/dev-rules.md（注意 §1.5-§1.14 执行门控）与 docs/handoff.md，按下面的工作内容继续。
+先读 docs/dev-rules.md（注意 §1.15 不可抗力门控）与 docs/handoff.md，按下面的工作内容继续。
 ```
 
-接续上下文：4 Task 源码探查完成，#4 beforeModel 已实现，VS Code 扩展 4.0.x 确认不支持插件（回滚到 pre-SDK）。CLI 3.0.30+ 是当前唯一可用的插件运行环境。
+接续上下文：context-snapshot plugin v0.6.0 重构完成，ADR-005 命名落地，P0 snapshot writer 实现，TypeScript 编译零错误。CLI 3.0.30+ 是唯一可用运行环境。
 
 **下次首要动作**：
-1. **CLI 端验证插件全链路**：用 `cline -i` 跑一个长对话任务，验证 compact-observer + beforeModel + rules-injector 三个能力是否正常工作
-2. **重新设计 snapshot 内容生成**：基于探查发现（MB 在 compact 前执行），plugin 的 compact-observer build() 收到的是 compact 前的原始消息，需自行判断是否写 snapshot
-3. **issue #11944 跟进**：等作者回复 SDK 迁移时间线
+1. **CLI 实测 snapshot 写入**：`cline -i` 跑长对话 → 检查 `~/.cline/data/snapshot/` 是否产出 snapshot 文件
+2. **CLI 实测 Loop Guard**：构造重复工具调用场景 → 验证兜底计数生效
+3. **同步已装插件**：`cp handoff-plugin/src/* ~/.cline/plugins/installed/local/context-snapshot/src/`
