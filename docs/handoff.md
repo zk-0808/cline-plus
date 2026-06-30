@@ -13,6 +13,9 @@
 | VS Code 扩展 4.0.x 不支持插件（回滚到 3.89.2 pre-SDK）| ✅ 已确认 |
 | CLI 3.0.30+ 是当前唯一可用插件运行环境 | ✅ 已确认 |
 | GitHub issue #11944 待跟进 | ⬜ |
+| codec bug issue 已提交到 cline/cline（#11944 之外的独立 issue）| ✅ |
+| Cline VS Code 4.0.2-4.0.4 判读：仍是 pre-SDK 代码基，ClinePass 渐进式合入，Plugins 未回归 | ✅ |
+| Plugin Dev Planning Framework SOP 已建立 | ✅ |
 
 ## 本会话净变化
 
@@ -81,6 +84,14 @@
 | 双重 setup | 每次会话 setup() 被调两次（`workspace=(unknown)` + `workspace=E:\cline++`），snapshot 文件成对产生 | 重复写入 + 浪费 token，但功能正常 | 🟡 中（待确认是否 Cline hub 模式正常架构）|
 | plugin console.log 不可见 | v0.6.0 的 `console.log` 输出未出现在 `plugin-loaded.log`，Cline 重定向到不可见位置 | 调试困难，后续需改用文件写入 | 🟢 低（不影响功能）|
 
+### 6. 治理建设 + VS Code 扩展 4.0.4 判读（本轮新增）
+
+| 项 | 内容 |
+|----|------|
+| **Plugin Dev Planning Framework SOP** | 🆕 [docs/plugin/plugin-dev-sop.md](plugin/plugin-dev-sop.md) — 写代码前的思考框架。整合 v0.6.0 4 处契约违反教训 + console.log 不可见事故。核心设计：①档位路由（常量/内部/契约三档，该松的松该死的死）②出口判据用"答得上"而非"做了没" ③Debug 前置：读源码优先于让用户跑命令 ④契约速查表（hooks/rules/messageBuilders/setup ctx 对应 .d.ts 路径）⑤验证档 A/B/C 与 codec bug 风险对齐 |
+| **Cline VS Code 4.0.2-4.0.4 判读** | 4.0.2-4.0.4 仍是 pre-SDK 代码基（3.89.2）。diff 零 plugin API 痕迹（`registerMessageBuilder`/`AgentRuntimeHooks`/`registerTool` 全无匹配）。ClinePass 功能渐进式合入（4.0.2 add → 4.0.3 enable → 4.0.4 fully remove flag），说明 SDK 迁移仍在 main 分支推进，官方选择拆碎功能逐个移植到稳定版而非一次性合入。Plugins 系统（4.0.0 的 Customize marketplace）尚未回归。结论：dev-rules §1.15 "VS Code 4.0.x 不支持插件" 仍成立，CLI 3.0.x 作为唯一 plugin 运行环境的判断不变 |
+| **codec bug issue 已提交** | [draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md) 草稿已转成正式 issue 提交到 cline/cline（独立于 #11944） |
+
 ## 产出文件
 
 | 文件 | 变更 |
@@ -103,6 +114,10 @@
 |------|------|---------|
 | `565968a` | handoff-plugin | refactor: ADR-005 full rename + P0 snapshot writer + P1 bug fixes |
 | `16b6660` | cline++ (parent) | chore: update handoff-plugin to context-snapshot v0.6.0 |
+| `4d3b91f` | cline++ | docs: codec bug investigation + Senior Agent Developer reviewer role + v0.6.0 verification |
+| `7e6992a` | cline++ | docs: Loop Guard verification + contract fixes + dual-setup v2 |
+| `6d2ef08` | cline++ | docs: clarify v4.0.1 SDK rollback as the trigger for CLI pivot |
+| `586ac92` | cline++ | docs: add Plugin Dev Planning Framework SOP |
 
 ### 历史（上轮）
 
@@ -145,10 +160,11 @@
 先读 docs/dev-rules.md（注意 §1.15 不可抗力门控）与 docs/handoff.md，按下面的工作内容继续。
 ```
 
-接续上下文：context-snapshot plugin v0.6.0 全部 6 项核心功能实测通过——setup marker ✅ + messageBuilder ✅ + compact 检测 ✅ + rules 注入 ✅ + snapshot 写入 ✅（workaround 验证）+ Loop Guard 检测层 ✅（注入层因 §1.15 codec bug 阻塞）。本轮完成契约修复（4 处：workspacePath / rule.id / beforeTool 签名 / afterTool 签名，对照 `@cline/shared/dist/agent.d.ts` + `contribution-registry.d.ts`）。dual-setup 调查 v2 已就绪（Likely：Cline hub 模式架构，第 1 ToolCallRecorder 实例孤立）。codec bug issue 草稿已就绪待提交。
+接续上下文：context-snapshot plugin v0.6.0 全部 6 项核心功能实测通过——setup marker ✅ + messageBuilder ✅ + compact 检测 ✅ + rules 注入 ✅ + snapshot 写入 ✅（workaround 验证）+ Loop Guard 检测层 ✅（注入层因 §1.15 codec bug 阻塞）。本轮完成契约修复（4 处：workspacePath / rule.id / beforeTool 签名 / afterTool 签名，对照 `@cline/shared/dist/agent.d.ts` + `contribution-registry.d.ts`）。dual-setup 调查 v2 已就绪（Likely：Cline hub 模式架构，第 1 ToolCallRecorder 实例孤立）。codec bug issue 已提交到 cline/cline。Plugin Dev Planning Framework SOP 已建立（[docs/plugin/plugin-dev-sop.md](plugin/plugin-dev-sop.md)），整合 v0.6.0 契约违反教训为规划阶段思考框架。VS Code 扩展 4.0.2-4.0.4 判读：仍是 pre-SDK 代码基，ClinePass 渐进式合入但 Plugins 系统未回归，CLI 仍是唯一 plugin 运行环境。
 
 **下次首要动作**：
-1. **提交 codec bug issue**：用户确认 [draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md) 后提交到 cline/cline
+1. **跟进已提交的 codec bug issue**：等 cline/cline 官方回复（issue 已提交，草稿在 [draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md)）
 2. **跟进 GitHub issue #11944**：等作者回复 SDK 迁移时间线（影响 §1.15 第一条不可抗力恢复）
 3. **（可选）dual-setup 升级到 Verified**：需 Cline 官方说明或源码证据确认 hub 模式架构
 4. **（可选）Loop Guard 注入层端到端验证**：待 codec bug 修复后重跑场景 B 走完 beforeModel 返回路径
+5. **（可选）监控 VS Code 扩展后续 release**：关键词 `Plugins` / `Customize marketplace` / `registerMessageBuilder` — 出现任一即触发"VS Code 端 plugin 系统恢复"判定，届时可考虑合并 CLI 与 VS Code 路径
