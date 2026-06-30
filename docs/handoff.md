@@ -72,7 +72,7 @@
 | token 估算 bug 修复 | ✅ Math.ceil(text.length/4) + default case JSON.stringify |
 | rules 注入实测 | ✅ **通过** — 注入含 XYZ789 标记的 snapshot，Cline 新 session 正确答出决策表 |
 | snapshot 文件写入实测 | ✅ **通过**（workaround 验证）— 临时降阈值到 1000 tokens 触发 compact，产出 12 个 .md 文件，5 节模板生成正确，文件名格式 `{hash}-{ts}-{uuid}.md` 正确。验证后已改回 120K tokens 原阈值。**注意**：真实 90K tokens 长对话触发路径仍受 §1.15 codec bug 阻塞，本次通过 workaround 验证功能可用性，不等同环境完整可用 |
-| beforeModel (Loop Guard) 实测 | ⚠️ 未触发 — detectRepetition 阈值未达（需 15 次相同工具序列），非功能失败，待重新构造场景 |
+| beforeModel (Loop Guard) 实测 | ✅ **检测层通过** — detectRepetition 在 history=15 时正确返回 `repeating=true, count=4, pattern=[read_files,run_commands,read_files,run_commands,read_files]`（[instrument.log](file:///C:/Users/19936/.cline/data/snapshot/loop-guard-instrument.log) 行 111, 114）。H1-H4 全部排除（hook 被调 ✅ / toolName 正确 ✅ / 模型未优化 ✅ / 所有 success 调用进 history ✅）。注入层（beforeModel 返回 messages 修改）因 §1.15 codec bug 在步骤 15 后立即崩溃，逻辑简单（`messages.push + return`）非功能 bug。详见 [loop-guard-scenario-design.md](experiments/loop-guard-scenario-design.md) v2 |
 
 ### 5. 本轮新发现的问题（不影响核心验证）
 
@@ -117,8 +117,8 @@
 | 方向 | 说明 | 优先级 |
 |------|------|--------|
 | **提交 cline/cline issue** | codec bug issue 草稿已就绪（[draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md)），待用户确认后提交 | 🟡 中 |
-| **CLI 实测 Loop Guard 兜底** | 重新构造场景：需 15 次完全相同工具序列，避免 MCP / 避免长输出 | 🟡 中 |
-| **调查双重 setup** | 每次 setup() 被调两次（workspace=(unknown) + workspace=E:\cline++），snapshot 成对产生。待确认是否 Cline hub 模式正常架构 | 🟡 中 |
+| ~~**CLI 实测 Loop Guard 兜底**~~ | ✅ **本轮完成** — 检测层 Verified（detectRepetition 正确识别 repeating=true count=4），注入层因 §1.15 codec bug 阻塞。instrument.log 已留存于 `~/.cline/data/snapshot/loop-guard-instrument.log`，instrument 代码已从源码清理 | — |
+| ~~**调查双重 setup**~~ | ✅ **本轮完成** — [investigation-note-dual-setup.md v2](decisions/investigation-note-dual-setup.md) 已就绪。结论：dual-setup 为 Likely（Cline hub 模式架构，缺官方说明升级到 Verified）；副作用：build 双倍 + ToolCallRecorder 双实例（第 1 实例 p6jk2z 孤立零 hook 调用，第 2 实例 qe86yg 活跃）| — |
 | **GitHub issue #11944 跟进** | 等作者回复 SDK 迁移时间线（影响 §1.15 第一条不可抗力恢复）| 🟡 中 |
 | **README.md 同步** | ~15 处 handoff 引用待更新 | 🟢 低 |
 | **design.md §3.3.2 标注废弃** | index.jsonl 已被 ADR-005 废弃，文档未标注 | 🟢 低 |
@@ -145,10 +145,10 @@
 先读 docs/dev-rules.md（注意 §1.15 不可抗力门控）与 docs/handoff.md，按下面的工作内容继续。
 ```
 
-接续上下文：context-snapshot plugin v0.6.0 全部核心功能实测通过——setup marker ✅ + rules 注入 ✅ + snapshot 写入 ✅（workaround 验证）。Loop Guard 未触发（场景构造问题，非功能 bug）。codec bug 已定位到 `agent-message-codec.ts` 的 `agentMessageToMessageWithMetadata` / `agentMessagesToMessages` 无 `Array.isArray` 守卫，issue 草稿已就绪待提交。新发现双重 setup 问题（snapshot 成对产生），待确认是否 Cline hub 模式正常架构。
+接续上下文：context-snapshot plugin v0.6.0 全部 6 项核心功能实测通过——setup marker ✅ + messageBuilder ✅ + compact 检测 ✅ + rules 注入 ✅ + snapshot 写入 ✅（workaround 验证）+ Loop Guard 检测层 ✅（注入层因 §1.15 codec bug 阻塞）。本轮完成契约修复（4 处：workspacePath / rule.id / beforeTool 签名 / afterTool 签名，对照 `@cline/shared/dist/agent.d.ts` + `contribution-registry.d.ts`）。dual-setup 调查 v2 已就绪（Likely：Cline hub 模式架构，第 1 ToolCallRecorder 实例孤立）。codec bug issue 草稿已就绪待提交。
 
 **下次首要动作**：
 1. **提交 codec bug issue**：用户确认 [draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md) 后提交到 cline/cline
-2. **重新构造 Loop Guard 场景**：让 Cline 连续 15 次完全相同工具调用（避免 MCP / 避免长输出，规避 codec bug）
-3. **调查双重 setup**：检查是否 Cline hub 模式正常架构（daemon + 主实例），若是则加守卫跳过 `workspace=(unknown)` 实例的 messageBuilder 注册
-4. **跟进 GitHub issue #11944**：等作者回复 SDK 迁移时间线（影响 §1.15 第一条不可抗力恢复）
+2. **跟进 GitHub issue #11944**：等作者回复 SDK 迁移时间线（影响 §1.15 第一条不可抗力恢复）
+3. **（可选）dual-setup 升级到 Verified**：需 Cline 官方说明或源码证据确认 hub 模式架构
+4. **（可选）Loop Guard 注入层端到端验证**：待 codec bug 修复后重跑场景 B 走完 beforeModel 返回路径
