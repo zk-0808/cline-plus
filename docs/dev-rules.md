@@ -240,13 +240,23 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 - 用 workaround 结果等同于"环境可用"（workaround 可用 ≠ 官方支持路径可用）
 - 省略证据链直接声明"不可用"（必须按 §1.6 双来源验证）
 
-**当前生效的不可抗力声明**（2026-06-29）：
+**当前生效的不可抗力声明**（2026-06-30 更新）：
 
 | 环境 | 状态 | 替代路径 | 恢复条件 |
 |------|------|---------|---------|
 | VS Code 扩展 4.0.x（plugin 系统）| 不可用 | CLI 3.0.30+ | SDK 迁移重新合入稳定版（issue #11944）|
+| CLI 3.0.34 `agent-message-codec.ts` 守卫缺失 | **部分受限**（长对话/异常 MCP tool_result 触发崩溃） | 分层推进：仅低风险实测（setup marker / rules 注入 / Loop Guard 短场景）| 上游修复 `agentMessageToMessageWithMetadata` / `agentMessagesToMessages` 加 `Array.isArray` 守卫 + 补测试 |
 
-源由：2026-06-28 VS Code 扩展 v4.0.0 bootstrap 缺失 → v4.0.1 官方回滚到 pre-SDK 代码基 → v4.0.2 继承回滚，Plugin 系统在 VS Code 端完全不存在。CLI 端为唯一可用运行环境。完整证据链见 [investigation-note-vscode-bootstrap-missing.md](decisions/investigation-note-vscode-bootstrap-missing.md) + [D-2026-06-28-cline-v401-sdk-rollback.md](decisions/D-2026-06-28-cline-v401-sdk-rollback.md) + [design.md 不可抗力声明](plugin/design.md)。
+**CLI 3.0.34 codec bug 影响范围**：
+- 🔴 **搁置**：snapshot 写入实测（需 90K tokens 长对话，正是 bug 触发场景）
+- 🟡 **带观察推进**：Loop Guard 实测（构造场景时避免 MCP 工具 + 避免长输出，用小文件简单 read_file 重复）
+- 🟢 **可推进**：setup marker / rules 注入（短交互，不触发长对话路径）
+
+**workaround 不等同环境可用**（§1.15 禁止条款）：workaround 期间实测结果仅证明"避开 bug 的路径可用"，不证明"环境完整可用"。
+
+源由 1：2026-06-28 VS Code 扩展 v4.0.0 bootstrap 缺失 → v4.0.1 官方回滚到 pre-SDK 代码基 → v4.0.2 继承回滚，Plugin 系统在 VS Code 端完全不存在。CLI 端为唯一可用运行环境。完整证据链见 [investigation-note-vscode-bootstrap-missing.md](decisions/investigation-note-vscode-bootstrap-missing.md) + [D-2026-06-28-cline-v401-sdk-rollback.md](decisions/D-2026-06-28-cline-v401-sdk-rollback.md) + [design.md 不可抗力声明](plugin/design.md)。
+
+源由 2：2026-06-30 用户报 `Error: n.content.map is not a function. (In 'n.content.map(eK)', 'n.content.map' is undefined)` 三次（duckduckgo 超时 / run_commands 843+ 行 / read E:\cline++\docs 后）。源码定位见 [investigation-note-cli-codec-content-map-bug.md](decisions/investigation-note-cli-codec-content-map-bug.md)。
 
 ---
 
