@@ -126,8 +126,8 @@
 
 | 方向 | 说明 | 优先级 |
 |------|------|--------|
-| **A1 修复 beforeModel content 类型** | [index.ts:146](context-snapshot/src/index.ts#L146) 注入 content 为 string，应改为 array 类型。Verified 根因见 [investigation-note O8](decisions/investigation-note-cli-codec-content-map-bug.md) | 🔴 **P0** |
-| **A2 V2-A 静态审计** | tsc --noEmit + 契约对照，纳入 A1 content 类型审计 | 🔴 **P0** |
+| **A1 修复 beforeModel content 类型** | [index.ts:146](context-snapshot/src/index.ts#L146) 注入 content 为 string，应改为 array 类型。Verified 根因见 [investigation-note O8](decisions/investigation-note-cli-codec-content-map-bug.md)。**任务书**：[subagent-task-A1-A2.md](plugin/subagent-task-A1-A2.md)，适合云端子代理并行 | 🔴 **P0** |
+| **A2 V2-A 静态审计** | tsc --noEmit + 契约对照，纳入 A1 content 类型审计。**任务书**：同 A1 | 🔴 **P0** |
 | **A5 V6 替代实现** | afterTool 检测循环 + registerRule 动态更新 rule 内容，绕过 codec bug 路径 | 🟡 P1 |
 | **A3 W2 handoff.md schema 化** | 三字段（id/confidence/depends_on）升级，详见 [external-review-round2-handoff.md](plugin/external-review-round2-handoff.md) | 🟡 P1 |
 | **A4 W1 v0.7.0 提取器** | 结构化提取替代简单正则，详见 [snapshot-extractor-design.md](plugin/snapshot-extractor-design.md) | 🟡 P1 |
