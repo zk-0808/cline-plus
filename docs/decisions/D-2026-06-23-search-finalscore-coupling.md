@@ -3,6 +3,7 @@ id: D-2026-06-23-search-finalscore-coupling
 date: 2026-06-23
 topic: search-orchestrator
 status: active
+lifecycle: 永久保留——决策记录，状态由 status 枚举驱动。
 supersedes: []
 superseded_by: []
 evidence:

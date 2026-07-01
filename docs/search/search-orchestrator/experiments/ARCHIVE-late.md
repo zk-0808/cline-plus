@@ -1,6 +1,7 @@
 # 归档摘要 — 搜索实验 run-9 到 run-14
 
 > **生成日期**：2026-06-28
+> **生命周期**：永久保留——归档索引。
 > **覆盖范围**：P5 Output Schema（v1→v2→v3）、P6 Highlights、P4 语义合并（translation + summary/rewrite）、P5 Evidence Map、P5 Gap Ledger
 > **归档性质**：摘要索引，不移动/删除原始文件
 

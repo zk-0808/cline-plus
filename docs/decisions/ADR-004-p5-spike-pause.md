@@ -52,6 +52,7 @@ ADR-003 §环境事实已记录此区分，但 ADR-002 Validation Plan 未充分
 根因：cline 3.0.31 的 `run_commands` 工具期望 command 为字符串并调用 `.trimStart()`，deepseek-v4-flash 输出为对象 → TypeError。**turn 1 即崩，无法累积 token 到 compact 阈值**。
 
 > 诚实记录：此崩溃的直接原因是模型工具调用格式与 cline core 期望不匹配，换模型（如 glm-5.2）可能不崩，不一定是 CLI 根本性缺陷。但"CLI 自动升级中断 + bin 损坏"（事实 2）是独立的 CLI 稳定性问题。两者叠加使 #5 实证无法稳定执行。
+> **生命周期**：永久保留——决策记录，状态由 status 枚举驱动。
 
 ### 事实 4：实验环境（CLI）与生产环境（VS Code）错位
 

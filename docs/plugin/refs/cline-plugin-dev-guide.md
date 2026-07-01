@@ -1,6 +1,7 @@
 # Cline Plugin Development: Unofficial Developer Guide
 
 > **⚠️ Unofficial Guide**
+> **生命周期**：永久保留——开发参考文档，SDK 大版本变更时更新。
 >
 > This document is an independent technical guide based on:
 > - source code inspection

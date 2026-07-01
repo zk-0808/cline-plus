@@ -2,6 +2,7 @@
 
 **文件**: `docs/plugin/deep-research-task-2-verification-paths.md`
 **状态**: active
+**生命周期**: 任务绑定——深度研究评审闭环后归档。
 **evidence_as_of**: 2026-07-01
 **背景依据**: `docs/handoff.md §4`（已实测 6 项核心功能）、`docs/decisions/investigation-note-cli-codec-content-map-bug.md`（codec bug 完整证据链）、`docs/dev-rules.md §1.15`（不可抗力约束）
 

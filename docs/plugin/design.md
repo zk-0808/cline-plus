@@ -1,6 +1,7 @@
 # Context Snapshot Plugin Design Doc
 
 > **状态**：proposed（起草中）
+> **生命周期**：版本绑定——随 context-snapshot 版本迭代，新版定稿后旧版归档。
 > **日期**：2026-06-27
 > **上游决策**：[ADR-001](../decisions/ADR-001-handoff-compact-memory.md)（Accepted，A+B'+D' 方向）、[ADR-004](../decisions/ADR-004-p5-spike-pause.md)（deferred，恢复条件 2 已满足）、**[ADR-005](../decisions/ADR-005-split-compact-from-handoff.md)**（Accepted，Compaction 与 Handoff 拆分）
 > **前置验证**：Capability Probe 5（通过），custom-compaction.ts 源码确认，ARCHITECTURE.md §9 Design Seam 确认

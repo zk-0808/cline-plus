@@ -1,6 +1,7 @@
 # Draft: GitHub Issue — Plugin sandbox bootstrap not bundled in VS Code extension 4.0.0
 
 > **Status**: Draft — 待用户确认后提交到 github.com/cline/cline/issues
+> **生命周期**：事件绑定——issue 提交后归档。
 > **表单来源**: https://github.com/cline/cline/issues/new?template=bug_report.yml
 
 ---

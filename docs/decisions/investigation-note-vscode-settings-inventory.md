@@ -1,6 +1,8 @@
 ## Investigation Note: VS Code 扩展 4.0.0 可设置选项完整盘点
 日期：2026-06-27
 
+> **生命周期**：事件绑定——VS Code 扩展 plugin 系统恢复后归档。
+
 > **框架**：按 [evidence-governance.md §10](../evidence-governance.md) Investigation Note 模板记录。
 >
 > **关联**：

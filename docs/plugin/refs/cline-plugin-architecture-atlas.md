@@ -1,6 +1,7 @@
 # Cline Plugin Architecture Atlas
 
 > **⚠️ Unofficial Guide**
+> **生命周期**：永久保留——架构参考文档，SDK 大版本变更时更新。
 >
 > This document is an independent technical reference based on source code inspection and runtime experiments. It is **not affiliated** with the Cline project. The details described here were verified on specific versions (see "Verified On" below) and may differ from newer releases.
 

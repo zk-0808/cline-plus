@@ -2,6 +2,8 @@
 
 日期：2026-06-30
 
+> **生命周期**：事件绑定——codec bug 修复 + CLI 版本升级后归档。
+
 > **框架**：按 [evidence-governance.md §10](../evidence-governance.md) Investigation Note 模板执行。
 >
 > **关联**：

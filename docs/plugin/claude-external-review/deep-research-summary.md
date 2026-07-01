@@ -2,6 +2,7 @@
 
 **文件**: `docs/plugin/deep-research-summary.md`
 **状态**: active
+**生命周期**: 任务绑定——深度研究评审闭环后归档。
 **evidence_as_of**: 2026-07-01
 **背景依据**: `docs/plugin/deep-research-task-1-runtime-modules.md` 到 `docs/plugin/deep-research-task-5-roadmap.md`
 

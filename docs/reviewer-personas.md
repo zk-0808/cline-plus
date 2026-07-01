@@ -1,6 +1,7 @@
 # Reviewer Personas（固定评审角色集）
 
 > **层级**：Level 1 元规则——与 [evidence-governance.md](evidence-governance.md) 同层。
+> **生命周期**：永久保留——跨功能通用元规则。
 >
 > **定位**：**成熟实践映射器（best-practice mapper）**——首要任务不是给出新规则，而是回答"这个问题在软件工程里有没有类似问题？别人通常怎么治理？哪些部分可以直接借鉴，哪些才需要创新？"
 >

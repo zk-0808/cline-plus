@@ -139,6 +139,7 @@ Probe 5 是 ADR-002 Update 3 追加的核心验证项——若通过，则 #5（
 ### Probe 5 实测准备清单（TRAE agent 准备，用户执行）
 
 > **路径与 manifest 格式已于 ADR-002 Update 4 修正**：plugin 文件放 `.cline/plugins/`（非 `.cline/<pluginName>/`），manifest 用 `package.json` 含 `cline` 字段（非 `managed.json`）。
+> **生命周期**：永久保留——决策记录，状态由 status 枚举驱动。
 
 1. 创建 `<workspace>/.cline/plugins/test-plugin/` 目录
 2. 准备 `package.json`（manifest 声明 capabilities，参考官方文档格式）：

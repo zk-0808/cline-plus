@@ -1,5 +1,7 @@
 # Search Orchestrator — 主题状态总览
 
+> **生命周期**：功能绑定——search-orchestrator，功能稳定后归档。
+
 `search-orchestrator` skill 的所有产物入口。SKILL 本身位于 [`../../skills/search-orchestrator/SKILL.md`](../../../skills/search-orchestrator/SKILL.md)。
 
 ## 当前状态（2026-06-25）
