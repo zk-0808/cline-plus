@@ -292,6 +292,23 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 
 每次覆盖写 `docs/handoff.md` 后，必须立即 git commit（含 handoff.md 及本会话产生的所有新文件和修改文件）。commit message 格式：`handoff: <一句话摘要>`。目的：出现异常时可回滚到任一 handoff 快照。
 
+### 2.2 子条款：handoff 未完成项表强制三字段
+
+handoff.md 的「未完成项 / 后续动作」表**必须**包含以下三列：
+
+| 字段 | 规则 | 示例 |
+|------|------|------|
+| **id** | 稳定短 ID，小写字母 + 数字 + 连字符，不超 20 字符。可复用 ADR 编号 / mechanism-candidates 编号 / 任务书编号 | `a1-content-fix` / `m4-loop-guard` / `i-codec-bug` |
+| **confidence** | 取值与 [evidence-governance.md §4](evidence-governance.md) 一致：`Verified` / `Likely` / `Hypothesis` | `Verified` |
+| **depends_on** | 指向其他稳定 ID（逗号分隔），**禁止**自然语言描述 | `codec-bug-fix` 而非 “等 codec bug 修复” |
+
+**设计意图**（来源：[external-review-round2-handoff.md Q3/Q5](plugin/external-review-round2-handoff.md)）：
+- `id` 稳定 → `depends_on` 可遍历 → 依赖图可从 blocker_ref 边即时重建，不需要独立载体
+- `confidence` 复用 evidence-governance 词汇表 → snapshot（机械投影）和 handoff（叙事投影）共享同一套置信语义
+- 三字段是 agent 已有判断的结构化输出，不增加认知负担，30 秒约束不受威胁
+
+**agent 自动填，人工可覆写**。格式纪律由本规则 + handoff 模板保障。
+
 ---
 
 ## 3. 状态值约定

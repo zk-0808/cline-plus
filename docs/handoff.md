@@ -9,6 +9,7 @@
 | A1：修复 beforeModel content 类型（string → ContentBlock[]）| ✅ index.ts 两处修改 |
 | A2：V2-A 静态审计 | ✅ tsc --noEmit 零错误，5 步骤通过 |
 | A5：V6 Loop Guard 实现 | ✅ afterTool 检测 + registerRule 动态注入，beforeModel hook 移除 |
+| A3：handoff.md schema 化 | ✅ dev-rules §2.2 新增三字段强制（id/confidence/depends_on）+ 未完成项表重写 |
 | F1 发现：compaction.ts buildCompactionSummary 同样返回 string content | ⚠️ 记录，受 §1.15 阻塞 |
 | dev-rules §6：文档生命周期标注规则 | ✅ 新增 + 63 文件全量补标 |
 | 任务书归档 | ✅ subagent-task-A1-A2.md → docs/archive/subagent-tasks/ |
@@ -86,16 +87,16 @@
 
 ## 未完成项 / 后续动作
 
-| 方向 | 说明 | 优先级 |
-|------|------|--------|
-| **A3 W2 handoff.md schema 化** | 三字段（id/confidence/depends_on）升级，详见 [external-review-round2-handoff.md](plugin/external-review-round2-handoff.md) | 🟡 P1 |
-| **A4 W1 v0.7.0 提取器** | 结构化提取替代简单正则，详见 [snapshot-extractor-design.md](plugin/snapshot-extractor-design.md) | 🟡 P1 |
-| **V6 CLI 实测** | Loop Guard 注入层 + 检测层端到端验证（§1.15 codec bug 仍存在，需构造短场景避免触发）| 🟡 P1 |
-| **提交 cline/cline issue** | codec bug issue 草稿已就绪（[draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md)）| 🟡 中 |
-| **GitHub issue #11944 跟进** | 等作者回复 SDK 迁移时间线 | 🟡 中 |
-| **F1 compaction.ts string content** | buildCompactionSummary 同类 bug，受 §1.15 阻塞 | 🟡 中 |
-| **补证 H2/H3** | image 分支 undefined 丢弃 + 下游连锁风险（Hypothetical）| 🟢 低 |
-| **监控 VS Code 扩展后续 release** | 关键词 `Plugins` / `Customize marketplace` / `registerMessageBuilder` | 🟢 低 |
+| id | 方向 | 说明 | 优先级 | confidence | depends_on |
+|----|------|------|--------|-----------|------------|
+| `a3-handoff-schema` | A3 W2 handoff.md schema 化 | ✅ 已完成。三字段强制 + dev-rules §2.2 新增 | ~~🟡 P1~~ ✅ | Verified | — |
+| `a4-extractor` | A4 W1 v0.7.0 提取器 | 结构化提取替代简单正则，详见 [snapshot-extractor-design.md](plugin/snapshot-extractor-design.md) | 🟡 P1 | Likely | — |
+| `v6-cli-test` | V6 CLI 实测 | Loop Guard 注入层 + 检测层端到端验证（§1.15 codec bug 仍存在，需构造短场景避免触发）| 🟡 P1 | Likely | `m4-loop-guard` |
+| `codec-issue` | 提交 cline/cline issue | codec bug issue 草稿已就绪（[draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md)）| 🟡 中 | Verified | — |
+| `issue-11944` | GitHub issue #11944 跟进 | 等作者回复 SDK 迁移时间线 | 🟡 中 | Verified | — |
+| `f1-compaction` | F1 compaction.ts string content | buildCompactionSummary 同类 bug，受 §1.15 阻塞 | 🟡 中 | Likely | `codec-bug-fix` |
+| `h2-h3-evidence` | 补证 H2/H3 | image 分支 undefined 丢弃 + 下游连锁风险（Hypothetical）| 🟢 低 | Hypothesis | — |
+| `vscode-monitor` | 监控 VS Code 扩展 release | 关键词 `Plugins` / `Customize marketplace` / `registerMessageBuilder` | 🟢 低 | Verified | `issue-11944` |
 
 ## 权威源
 
@@ -109,11 +110,10 @@
 先读 docs/dev-rules.md（注意 §1.15 不可抗力门控 + V6 实现状态）与 docs/handoff.md，按下面的工作内容继续。
 ```
 
-接续上下文：A1/A2/A5 全部完成（beforeModel content 类型修复 + 静态审计通过 + V6 Loop Guard 实现）+ dev-rules §6 文档生命周期规则建立 + 63 文件全量补标。本会话核心增量是 V6——loop warning 注入路径从 beforeModel（message codec）迁移到 registerRule（system prompt），彻底绕开 codec bug。
+接续上下文：A1/A2/A5 全部完成（beforeModel content 类型修复 + 静态审计通过 + V6 Loop Guard 实现）+ A3 完成（handoff schema 化，三字段强制）+ dev-rules §6 文档生命周期规则建立 + 63 文件全量补标。本会话核心增量是 V6——loop warning 注入路径从 beforeModel（message codec）迁移到 registerRule（system prompt），彻底绕开 codec bug。
 
 **下次首要动作**（按优先级）：
-1. **🟡 P1：A3 W2 handoff.md schema 化**（三字段升级）
-2. **🟡 P1：A4 W1 v0.7.0 提取器**（结构化提取替代正则）
-3. **🟡 P1：V6 CLI 实测**（构造短场景验证 Loop Guard 端到端）
-4. **🟡 中：提交 codec bug issue + 跟进 #11944**
-5. **🟡 中：F1 compaction.ts string content 修复**
+1. **🟡 P1：A4 W1 v0.7.0 提取器**（结构化提取替代正则）
+2. **🟡 P1：V6 CLI 实测**（构造短场景验证 Loop Guard 端到端）
+3. **🟡 中：提交 codec bug issue + 跟进 #11944**
+4. **🟡 中：F1 compaction.ts string content 修复**
