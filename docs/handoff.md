@@ -1,109 +1,113 @@
-# Handoff — v0.6.0 重构完成：ADR-005 命名落地 + P0 Snapshot Writer + P1 修复
+# Handoff — v0.6.x 收尾完成 + Claude 评审闭环 + O8 Verified 发现
 
 ## 本会话决策
 
 | 决策 | 状态 |
 |------|------|
-| 3-pass 子代理全量审查（架构 / 逻辑 / 设计一致性）| ✅ 发现 16 问题 |
-| ADR-005 命名全面落地：handoff → snapshot | ✅ 源码零残留 |
-| P0 修复：snapshot-writer.ts 实现（5 节模板 + 磁盘写入）| ✅ |
-| P1 修复：统一路径 / Loop Guard 兜底 / beforeModel meta marker / afterTool LIFO | ✅ |
-| 死代码清理 ~90 行 | ✅ |
-| TypeScript 编译零错误 | ✅ |
-| VS Code 扩展 4.0.x 不支持插件（回滚到 3.89.2 pre-SDK）| ✅ 已确认 |
-| CLI 3.0.30+ 是当前唯一可用插件运行环境 | ✅ 已确认 |
-| GitHub issue #11944 待跟进 | ⬜ |
-| codec bug issue 已提交到 cline/cline（#11944 之外的独立 issue）| ✅ |
-| Cline VS Code 4.0.2-4.0.4 判读：仍是 pre-SDK 代码基，ClinePass 渐进式合入，Plugins 未回归 | ✅ |
-| Plugin Dev Planning Framework SOP 已建立 | ✅ |
+| handoff 机制化规划梳理（ADR-005 + dev-rules §2 + mechanism-candidates #5/#6）| ✅ 7 层规划盘点完成 |
+| 外部评审材料归档（handoff 机制化 3 份）| ✅ external-review-handoff-foundation / response / round2 |
+| v0.6.x 收尾：README 全面更新 | ✅ 术语统一为 Context Snapshot |
+| v0.6.x 收尾：design.md 与 ADR-005 一致性修订 | ✅ 7 处修正，index.jsonl 标注 DEPRECATED |
+| v0.6.x 收尾：目录重命名 handoff-plugin/ → context-snapshot/ | ✅ 52 处引用分类处理，活跃文档零残留 |
+| v0.7.0 提取器设计文档 | ✅ snapshot-extractor-design.md（4 提取器 + 数据模型）|
+| Claude 深度研究任务书 | ✅ cline-plus-deep-research-brief.md |
+| Claude 深度研究产出归档（6 份）| ✅ claude-external-review/ |
+| GPT 深度研究产出归档（1 份）| ✅ gpt-external-review/ |
+| Claude 评审闭环（3 轮子代理并行审查）| ✅ 25 条意见全部处理（12 采纳 / 8 部分采纳 / 2 拒绝 / 4 待验证）|
+| O8 发现：beforeModel 注入 content 为 string 类型 | ✅ Verified（4 来源），codec bug 双触发路径确认 |
+| 5 个决策文档同步更新（O8 + V6 替代路径）| ✅ 证据链一致 |
 
 ## 本会话净变化
 
-### 1. 3-Pass 代码审查
+### 1. handoff 机制化规划盘点
 
-| Pass | 审查维度 | 核心发现 |
-|------|---------|---------|
-| Pass 1 | 架构 | 死代码 ~90 行、路径定义重复、PLUGIN_NAME 不一致 |
-| Pass 2 | 逻辑 | afterTool 并发匹配 FIFO 错误、beforeModel 误判风险、空 catch |
-| Pass 3 | 设计一致性 | ADR-005 命名对齐度 20%、snapshot 写入是死代码、Loop Guard 无兜底 |
+梳理出 7 层规划现状：
+- **术语分层**（ADR-005 已决）：context snapshot（plugin 自动）vs handoff（人工撰写）
+- **写入触发**（dev-rules §2）：触发器 a（用户指令）+ c（长会话+话题跳+70% 上下文）
+- **文档模板**（snapshot-writer.ts）：5 节结构，基于简单正则（v0.7.0 待升级）
+- **周边机制**（mechanism-candidates）：#5 实验中、#6 候选
+- **索引层**：ADR-005 已废弃 index.jsonl
+- **实现状态**：v0.6.0 六项核心功能实测通过
+- **规划缺口**：触发器不全 / 模板精度 / #5#6 停滞 / design.md 未标废弃（已修复）
 
-### 2. 全量重构（v0.5.0 → v0.6.0）
+### 2. 外部评审交互（3 轮）
 
-**重命名**（全部 5 源文件）：
-- `PLUGIN_NAME`: `"auto-handoff"` → `"context-snapshot"`
-- 输出目录: `~/.cline/data/handoff/` → `~/.cline/data/snapshot/`
-- 12+ 处函数/变量名: `*Handoff*` → `*Snapshot*`
-- Rule 名: `handoff-context` → `snapshot-context`
-- package name: `handoff-plugin` → `context-snapshot`
+| 轮次 | 内容 | 产出 |
+|------|------|------|
+| 第 1 轮 | 外部评审指出三大特色 + 三大隐患 + 最小一步建议 | external-review-handoff-foundation.md |
+| 项目方回应 | 提出对象边界问题 + 8 个待回答问题 | response-to-external-review-handoff.md |
+| 第 2 轮 | 评审反提议"单一语义对象模型 + 双投影" + Q1-Q8 逐条回答 | external-review-round2-handoff.md |
 
-**新模块**：
-- `constants.ts`（10 行）— 统一定义 `PLUGIN_NAME` + `getSnapshotDir()`
-- `snapshot-writer.ts`（213 行）— P0 核心功能：5 节模板生成 + 磁盘写入
-  - 模板：会话标题 / 决策表 / 净变化 / 未完成项表 / 权威源
-  - compact-observer 在 `needsCompact=true` 时调用 `writeSnapshot()`
+**关键结论**：评审指出 handoff.md 和 context snapshot 是同一语义对象模型的两种投影（机械投影 vs 叙事投影），应共享 ID 空间和 confidence 词汇表。项目方接受此视角，但决定正式开发时持续改进，不预生成 schema 草案。
 
-**P1 修复**：
-- Loop Guard：`MAX_LOOP_WARNINGS=3`，超过后停止注入，交由 Cline max iterations
-- beforeModel：`__plugin_loop_warning__` meta marker 替代字符串匹配
-- afterTool：LIFO 搜索 + pending ID 随机后缀，修复并发匹配
-- 错误处理：所有 catch 块添加 `console.error`，消除空 catch
+### 3. v0.6.x 收尾
 
-**清理**：
-- 移除 `generateHandoffContent()`、`writeHandoff()`、`getHistory()`、`getSlowCalls()`
-- 移除 `SnapshotOptions`、tool-recorder 死导入、`DURATION_WARN_MS`
-- 净变化：-52 行（91 增 / 143 删）
+| 项目 | 变更 |
+|------|------|
+| [README.md](context-snapshot/README.md) | 全面重写：handoff → Context Snapshot，路径更新，version 0.5.0→0.6.0，新增 §1.15 声明 |
+| [design.md](plugin/design.md) | 7 处修正：§3.3.1 模板标题、§3.3.2 index.jsonl DEPRECATED、§3.3.3 路径、§3.4 降级表、§3.5 #6 关系、Phase 3 取消、Q3 移除 |
+| 目录重命名 | handoff-plugin/ → context-snapshot/，.gitmodules + 10 个文档引用更新，安装脚本修正 |
+| [snapshot-extractor-design.md](plugin/snapshot-extractor-design.md) | v0.7.0 设计：SnapshotData 数据模型 + Extractor<T> 接口 + 4 提取器 + 4 阶段实施 |
 
-**基础设施**：
-- 安装 `@types/node` + `typescript` 作为 devDependencies
-- 创建 `@cline/core` + `@cline/shared` 类型声明 stub
-- tsconfig.json: `types: ["node"]` + `paths` 映射
+### 4. Claude 深度研究 + 评审闭环
 
-### 3. 不可抗力声明（上轮完成，本轮保留）
+**任务书**：[cline-plus-deep-research-brief.md](plugin/cline-plus-deep-research-brief.md) — 5 任务优化方案（从"从零探查"改为"补缺整合"）
 
-已写入 3 个活跃决策文档：
-- `docs/plugin/design.md` — 证据链表格（v4.0.0→v4.0.1→v4.0.2→issue #11944→CLI 3.0.33）
-- `docs/plugin/mechanism-landing-assessment.md` — 运行时约束声明
-- `docs/dev-rules.md` — §1.15 执行环境可用性门控
+**Claude 产出 6 份**（[claude-external-review/](plugin/claude-external-review/)）：
+- task-1：5 模块源码四问矩阵（Plan/Act、Subagents、Focus Chain、Memory Bank、Workflows）
+- task-2：3 条绕 codec bug 降级路径
+- task-3：8 组件映射表
+- task-4：W1-W14 四维优先级矩阵
+- task-5：L1 Plugin 层 + L2 Runtime 层两层路线图
+- summary：跨任务关键发现 + 3 点核心技术结论
 
-### 4. CLI 验证结果（本轮更新）
+**3 轮子代理并行审查**（[review-closure-report.md](plugin/claude-external-review/review-closure-report.md)）：
+- 审查 A（事实声明）：F7/F8 Confirmed，F4/F6 Consistent，F1-F3/F5 Unverified（4 项需源码验证）
+- 审查 B（扩展路径）：P3/P4/P6 完全可行，P2/P5/P7 降级可行，P1 阻塞（采纳 V6 替代）
+- 审查 C（验证路径）：V3/V5/V6 Sound，V1/V2/V4 对 codec bug 触发条件理解有误
 
-| 验证项 | 结果 |
-|--------|------|
-| setup() 执行 | ✅ marker 文件写入（本轮重测通过）|
-| messageBuilder.build() 调用 | ✅ 每 turn 执行（plugin-loaded.log 累积记录可见）|
-| compact 检测 | ✅ shouldCompact 返回 needsCompact=true |
-| token 估算 bug 修复 | ✅ Math.ceil(text.length/4) + default case JSON.stringify |
-| rules 注入实测 | ✅ **通过** — 注入含 XYZ789 标记的 snapshot，Cline 新 session 正确答出决策表 |
-| snapshot 文件写入实测 | ✅ **通过**（workaround 验证）— 临时降阈值到 1000 tokens 触发 compact，产出 12 个 .md 文件，5 节模板生成正确，文件名格式 `{hash}-{ts}-{uuid}.md` 正确。验证后已改回 120K tokens 原阈值。**注意**：真实 90K tokens 长对话触发路径仍受 §1.15 codec bug 阻塞，本次通过 workaround 验证功能可用性，不等同环境完整可用 |
-| beforeModel (Loop Guard) 实测 | ✅ **检测层通过** — detectRepetition 在 history=15 时正确返回 `repeating=true, count=4, pattern=[read_files,run_commands,read_files,run_commands,read_files]`（[instrument.log](file:///C:/Users/19936/.cline/data/snapshot/loop-guard-instrument.log) 行 111, 114）。H1-H4 全部排除（hook 被调 ✅ / toolName 正确 ✅ / 模型未优化 ✅ / 所有 success 调用进 history ✅）。注入层（beforeModel 返回 messages 修改）因 §1.15 codec bug 在步骤 15 后立即崩溃。**2026-07-01 更新**：[investigation-note O8](decisions/investigation-note-cli-codec-content-map-bug.md) 补充 Verified 根因——[index.ts:146](context-snapshot/src/index.ts#L146) 注入的 content 为 string 类型，codec `Nd` 函数调用 `n.content.map(eK)` 必然崩溃，与消息数量/token 总量无关。崩溃边界是 content 类型维度，非 token 维度。详见 [loop-guard-scenario-design.md](experiments/loop-guard-scenario-design.md) v2 |
+### 5. O8 发现（本会话最重要增量）
 
-### 5. 本轮新发现的问题（不影响核心验证）
+**子代理审查 C 发现**：[index.ts:146](context-snapshot/src/index.ts#L146) beforeModel 注入的消息 content 为 **string 类型**，codec `Nd` 函数调用 `n.content.map(eK)` 必崩——**string 无 `.map()` 方法**。
 
-| 问题 | 现象 | 影响 | 优先级 |
-|------|------|------|--------|
-| 双重 setup | 每次会话 setup() 被调两次（`workspace=(unknown)` + `workspace=E:\cline++`），snapshot 文件成对产生 | 重复写入 + 浪费 token，但功能正常 | 🟡 中（待确认是否 Cline hub 模式正常架构）|
-| plugin console.log 不可见 | v0.6.0 的 `console.log` 输出未出现在 `plugin-loaded.log`，Cline 重定向到不可见位置 | 调试困难，后续需改用文件写入 | 🟢 低（不影响功能）|
+**关键含义**：
+- beforeModel 注入本身就是 codec bug 的触发条件，与消息数量/token 总量无关
+- 原根因链（H1）仅覆盖 MCP tool_result 路径（Hypothetical），O8 补充 beforeModel 注入路径（Verified）
+- V1-A（梯度阈值）和 V2-B（低 message 数）的崩溃边界假设都是错误的——崩溃边界是 content 类型维度
+- 即使 codec bug 修复后，string content 仍可能导致序列化异常
 
-### 6. 治理建设 + VS Code 扩展 4.0.4 判读（本轮新增）
+**Verified 依据**（4 来源）：源码直接证据 + codec 行为（O3）+ 实测吻合（handoff §4）+ 子代理审查独立发现
 
-| 项 | 内容 |
-|----|------|
-| **Plugin Dev Planning Framework SOP** | 🆕 [docs/plugin/plugin-dev-sop.md](plugin/plugin-dev-sop.md) — 写代码前的思考框架。整合 v0.6.0 4 处契约违反教训 + console.log 不可见事故。核心设计：①档位路由（常量/内部/契约三档，该松的松该死的死）②出口判据用"答得上"而非"做了没" ③Debug 前置：读源码优先于让用户跑命令 ④契约速查表（hooks/rules/messageBuilders/setup ctx 对应 .d.ts 路径）⑤验证档 A/B/C 与 codec bug 风险对齐 |
-| **Cline VS Code 4.0.2-4.0.4 判读** | 4.0.2-4.0.4 仍是 pre-SDK 代码基（3.89.2）。diff 零 plugin API 痕迹（`registerMessageBuilder`/`AgentRuntimeHooks`/`registerTool` 全无匹配）。ClinePass 功能渐进式合入（4.0.2 add → 4.0.3 enable → 4.0.4 fully remove flag），说明 SDK 迁移仍在 main 分支推进，官方选择拆碎功能逐个移植到稳定版而非一次性合入。Plugins 系统（4.0.0 的 Customize marketplace）尚未回归。结论：dev-rules §1.15 "VS Code 4.0.x 不支持插件" 仍成立，CLI 3.0.x 作为唯一 plugin 运行环境的判断不变 |
-| **codec bug issue 已提交** | [draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md) 草稿已转成正式 issue 提交到 cline/cline（独立于 #11944） |
+### 6. 决策文档同步更新
+
+| 文档 | 更新内容 |
+|------|---------|
+| [investigation-note](decisions/investigation-note-cli-codec-content-map-bug.md) | 补充 O8 + H1 升级 4 来源 + 双触发路径根因链 + D3 新增跟进项 |
+| [mechanism-landing-assessment](plugin/mechanism-landing-assessment.md) | Q2 结论 + Phase 3 补充 V6 替代路径 + §5 关键结论 #4 落地路径更新 |
+| [mechanism-candidates](mechanism-candidates.md) | #4 状态 → "候选（设计调整）"，说明 V6 替代实现 |
+| [dev-rules §1.15](dev-rules.md) | codec bug 影响范围补充 O8 双触发路径 + Loop Guard 注入层分级 🟡→🔴 |
+| [handoff.md](handoff.md) | 本文件（本次重写）|
 
 ## 产出文件
 
 | 文件 | 变更 |
 |------|------|
-| `handoff-plugin/src/constants.ts` | 🆕 共享常量 |
-| `handoff-plugin/src/snapshot-writer.ts` | 🆕 P0 snapshot 生成 + 写入 |
-| `handoff-plugin/src/index.ts` | 重写：接入 snapshot writer + Loop Guard 兜底 + meta marker |
-| `handoff-plugin/src/rules-injector.ts` | 重写：全量重命名 + 统一路径 |
-| `handoff-plugin/src/tool-recorder.ts` | 清理：移除死代码 + LIFO 匹配 |
-| `handoff-plugin/src/types.ts` | 清理：移除 SnapshotOptions |
-| `handoff-plugin/package.json` | 重命名 + devDeps |
-| `handoff-plugin/tsconfig.json` | types + paths 配置 |
+| `docs/plugin/external-review-handoff-foundation.md` | 🆕 第 1 轮外部评审输入 |
+| `docs/plugin/response-to-external-review-handoff.md` | 🆕 项目方第 1 轮回应 |
+| `docs/plugin/external-review-round2-handoff.md` | 🆕 第 2 轮评审回复 |
+| `context-snapshot/README.md` | 全面重写 |
+| `context-snapshot/package.json` | version 0.5.0→0.6.0 |
+| `docs/plugin/design.md` | 7 处一致性修正 |
+| `docs/plugin/snapshot-extractor-design.md` | 🆕 v0.7.0 提取器设计 |
+| `docs/plugin/cline-plus-deep-research-brief.md` | 🆕 深度研究任务书 |
+| `docs/plugin/claude-external-review/` | 🆕 6 份 Claude 产出 + 闭环报告 |
+| `docs/plugin/gpt-external-review/` | 🆕 GPT 整合版 |
+| `docs/decisions/investigation-note-cli-codec-content-map-bug.md` | 补充 O8 + H1 升级 |
+| `docs/plugin/mechanism-landing-assessment.md` | V6 替代路径 |
+| `docs/mechanism-candidates.md` | #4 状态更新 |
+| `docs/dev-rules.md` | §1.15 O8 补充 |
+| `.gitmodules` + 10 个文档 | 目录重命名引用更新 |
+| `scripts/cleanup-and-reinstall-plugin.ps1` | 路径 + version 检查更新 |
 | `docs/handoff.md` | 本文件 |
 
 ## Commits
@@ -112,20 +116,11 @@
 
 | Hash | Repo | Message |
 |------|------|---------|
-| `565968a` | handoff-plugin | refactor: ADR-005 full rename + P0 snapshot writer + P1 bug fixes |
-| `16b6660` | cline++ (parent) | chore: update handoff-plugin to context-snapshot v0.6.0 |
-| `4d3b91f` | cline++ | docs: codec bug investigation + Senior Agent Developer reviewer role + v0.6.0 verification |
-| `7e6992a` | cline++ | docs: Loop Guard verification + contract fixes + dual-setup v2 |
-| `6d2ef08` | cline++ | docs: clarify v4.0.1 SDK rollback as the trigger for CLI pivot |
-| `586ac92` | cline++ | docs: add Plugin Dev Planning Framework SOP |
-
-### 历史（上轮）
-
-| Hash | Repo | Message |
-|------|------|---------|
-| `6db3a68` | handoff-plugin | fix: token estimation bugs in compact-observer |
-| `8e10507` | cline++ | verify: CLI plugin chain verified + token estimation bugs fixed |
-| `623d700` | cline++ | docs: add force majeure declaration — VS Code ext 4.0.x plugin unavailable |
+| `24225e0` | context-snapshot | docs: remove directory name note after rename |
+| `0b0a0fd` | context-snapshot | docs: v0.6.x cleanup - README rewrite + version bump |
+| `7a0280b` | cline++ | refactor: rename handoff-plugin/ to context-snapshot/ + v0.6.x doc cleanup |
+| `42125cf` | cline++ | docs: integrate Claude review closure + O8 finding (beforeModel content type Verified) |
+| `51d2a32` | cline++ | docs: archive external reviews (Claude 6 files + GPT 1 file + research brief) |
 
 ## 未完成项 / 后续动作
 
@@ -136,36 +131,24 @@
 | **A5 V6 替代实现** | afterTool 检测循环 + registerRule 动态更新 rule 内容，绕过 codec bug 路径 | 🟡 P1 |
 | **A3 W2 handoff.md schema 化** | 三字段（id/confidence/depends_on）升级，详见 [external-review-round2-handoff.md](plugin/external-review-round2-handoff.md) | 🟡 P1 |
 | **A4 W1 v0.7.0 提取器** | 结构化提取替代简单正则，详见 [snapshot-extractor-design.md](plugin/snapshot-extractor-design.md) | 🟡 P1 |
-| **提交 cline/cline issue** | codec bug issue 草稿已就绪（[draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md)），待用户确认后提交 | 🟡 中 |
-| ~~**CLI 实测 Loop Guard 兜底**~~ | ✅ **本轮完成** — 检测层 Verified（detectRepetition 正确识别 repeating=true count=4），注入层因 §1.15 codec bug 阻塞。instrument.log 已留存于 `~/.cline/data/snapshot/loop-guard-instrument.log`，instrument 代码已从源码清理 | — |
-| ~~**调查双重 setup**~~ | ✅ **本轮完成** — [investigation-note-dual-setup.md v2](decisions/investigation-note-dual-setup.md) 已就绪。结论：dual-setup 为 Likely（Cline hub 模式架构，缺官方说明升级到 Verified）；副作用：build 双倍 + ToolCallRecorder 双实例（第 1 实例 p6jk2z 孤立零 hook 调用，第 2 实例 qe86yg 活跃）| — |
-| **GitHub issue #11944 跟进** | 等作者回复 SDK 迁移时间线（影响 §1.15 第一条不可抗力恢复）| 🟡 中 |
-| ~~**README.md 同步**~~ | ✅ **v0.6.x 收尾完成** — [context-snapshot/README.md](context-snapshot/README.md) 已全面更新 | — |
-| ~~**design.md §3.3.2 标注废弃**~~ | ✅ **v0.6.x 收尾完成** — [design.md](plugin/design.md) 7 处修正，index.jsonl 标注 DEPRECATED | — |
-| **Snapshot 模板精度迭代** | 当前决策/未完成项提取基于简单正则，精度有限（v0.7.0 提取器设计已就绪）| 🟢 低 |
-| **补证 H2/H3** | image 分支 undefined 丢弃 + 下游连锁风险（子代理 B 单源 Hypothetical，待交叉验证）| 🟢 低 |
-
-## 本轮新增产出
-
-| 文件 | 内容 |
-|------|------|
-| [docs/decisions/investigation-note-cli-codec-content-map-bug.md](decisions/investigation-note-cli-codec-content-map-bug.md) | 🆕 codec bug 完整证据链（O1-O7 + H1-H3 + PR #5246 幻觉复盘 + Conflict Registry）|
-| [docs/decisions/draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md) | 🆕 cline/cline issue 草稿（Facts/Reproduction/Suggested Fix/Test Cases/Impact）|
-| [docs/dev-rules.md §1.15](dev-rules.md) | 不可抗力表新增 codec bug 行 + 影响分层（🔴/🟡/🟢）|
+| **提交 cline/cline issue** | codec bug issue 草稿已就绪（[draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md)）| 🟡 中 |
+| **GitHub issue #11944 跟进** | 等作者回复 SDK 迁移时间线 | 🟡 中 |
+| **补证 H2/H3** | image 分支 undefined 丢弃 + 下游连锁风险（Hypothetical，待交叉验证）| 🟢 低 |
+| **监控 VS Code 扩展后续 release** | 关键词 `Plugins` / `Customize marketplace` / `registerMessageBuilder` | 🟢 低 |
 
 ## 权威源
 
-[dev-rules.md](dev-rules.md) · [design.md](plugin/design.md) · [ADR-005](decisions/ADR-005-split-compact-from-handoff.md) · [mechanism-landing-assessment.md](plugin/mechanism-landing-assessment.md) · [investigation-note-cli-plugin-verification.md](decisions/investigation-note-cli-plugin-verification.md) · [investigation-note-cli-codec-content-map-bug.md](decisions/investigation-note-cli-codec-content-map-bug.md)
+[dev-rules.md](dev-rules.md) · [design.md](plugin/design.md) · [ADR-005](decisions/ADR-005-split-compact-from-handoff.md) · [mechanism-landing-assessment.md](plugin/mechanism-landing-assessment.md) · [investigation-note-cli-codec-content-map-bug.md](decisions/investigation-note-cli-codec-content-map-bug.md) · [review-closure-report.md](plugin/claude-external-review/review-closure-report.md) · [external-review-round2-handoff.md](plugin/external-review-round2-handoff.md)
 
 ---
 
 ## Handoff（下次会话第一句话建议）
 
 ```text
-先读 docs/dev-rules.md（注意 §1.15 不可抗力门控）与 docs/handoff.md，按下面的工作内容继续。
+先读 docs/dev-rules.md（注意 §1.15 不可抗力门控 + O8 双触发路径）与 docs/handoff.md，按下面的工作内容继续。
 ```
 
-接续上下文：context-snapshot plugin v0.6.0 全部 6 项核心功能实测通过——setup marker ✅ + messageBuilder ✅ + compact 检测 ✅ + rules 注入 ✅ + snapshot 写入 ✅（workaround 验证）+ Loop Guard 检测层 ✅（注入层因 §1.15 codec bug 阻塞）。v0.6.x 收尾完成：README/design.md/ADR-005 一致性 + 目录重命名 handoff-plugin → context-snapshot + v0.7.0 提取器设计归档 + 外部评审材料归档（GPT/Claude 两源）+ Claude 评审闭环报告（25 条意见全部处理）+ investigation-note O8 补充（beforeModel 注入 content 类型为 string，Verified 根因）。
+接续上下文：v0.6.x 收尾完成（README/design.md/目录重命名/提取器设计归档）+ Claude 深度研究评审闭环完成（25 条意见全部处理，3 轮子代理审查）+ O8 Verified 发现（beforeModel 注入 content 为 string 类型，codec bug 双触发路径确认）+ 5 个决策文档同步更新（证据链一致）。本会话最大增量是 O8 发现——它修正了原 codec bug 影响范围判断（Loop Guard 注入层 🟡→🔴），并确认 V6（afterTool + registerRule）是唯一可行的替代路径。
 
 **下次首要动作**（按优先级）：
 1. **🔴 P0：A1 修复 beforeModel content 类型**（[index.ts:146](context-snapshot/src/index.ts#L146) string → array）+ A2 V2-A 静态审计
