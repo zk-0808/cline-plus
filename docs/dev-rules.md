@@ -258,6 +258,8 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 
 **O8 对影响范围的修正**：原"🟡 Loop Guard 实测"分级基于"避免 MCP + 避免长输出"假设，但路径 B 表明 beforeModel 注入本身即触发 bug，不分步骤数量。Loop Guard 注入层应改为 **🔴 阻塞**，检测层仍为 🟢。替代方案见 [mechanism-landing-assessment.md Q2 V6 路径](plugin/mechanism-landing-assessment.md)（afterTool + registerRule 绕过 codec）。
 
+**V6 实现已完成**（2026-07-01）：Loop Guard 改用 registerRule 动态注入（rules → system prompt，不经过 message codec），beforeModel hook 已移除。注入层从 🔴 阻塞恢复为 🟢 可用（V6 路径）。A1 修复（content string → array）+ V6 替代实现双保险。
+
 **workaround 不等同环境可用**（§1.15 禁止条款）：workaround 期间实测结果仅证明"避开 bug 的路径可用"，不证明"环境完整可用"。
 
 源由 1：2026-06-28 VS Code 扩展 v4.0.0 bootstrap 缺失 → v4.0.1 官方回滚到 pre-SDK 代码基 → v4.0.2 继承回滚，Plugin 系统在 VS Code 端完全不存在。CLI 端为唯一可用运行环境。完整证据链见 [investigation-note-vscode-bootstrap-missing.md](decisions/investigation-note-vscode-bootstrap-missing.md) + [D-2026-06-28-cline-v401-sdk-rollback.md](decisions/D-2026-06-28-cline-v401-sdk-rollback.md) + [design.md 不可抗力声明](plugin/design.md)。
