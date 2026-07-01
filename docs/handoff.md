@@ -1,21 +1,12 @@
-# Handoff — v0.6.x 收尾完成 + Claude 评审闭环 + O8 Verified 发现
+# Handoff — A1/A2 完成 + F1 发现
 
 ## 本会话决策
 
 | 决策 | 状态 |
 |------|------|
-| handoff 机制化规划梳理（ADR-005 + dev-rules §2 + mechanism-candidates #5/#6）| ✅ 7 层规划盘点完成 |
-| 外部评审材料归档（handoff 机制化 3 份）| ✅ external-review-handoff-foundation / response / round2 |
-| v0.6.x 收尾：README 全面更新 | ✅ 术语统一为 Context Snapshot |
-| v0.6.x 收尾：design.md 与 ADR-005 一致性修订 | ✅ 7 处修正，index.jsonl 标注 DEPRECATED |
-| v0.6.x 收尾：目录重命名 handoff-plugin/ → context-snapshot/ | ✅ 52 处引用分类处理，活跃文档零残留 |
-| v0.7.0 提取器设计文档 | ✅ snapshot-extractor-design.md（4 提取器 + 数据模型）|
-| Claude 深度研究任务书 | ✅ cline-plus-deep-research-brief.md |
-| Claude 深度研究产出归档（6 份）| ✅ claude-external-review/ |
-| GPT 深度研究产出归档（1 份）| ✅ gpt-external-review/ |
-| Claude 评审闭环（3 轮子代理并行审查）| ✅ 25 条意见全部处理（12 采纳 / 8 部分采纳 / 2 拒绝 / 4 待验证）|
-| O8 发现：beforeModel 注入 content 为 string 类型 | ✅ Verified（4 来源），codec bug 双触发路径确认 |
-| 5 个决策文档同步更新（O8 + V6 替代路径）| ✅ 证据链一致 |
+| A1：修复 beforeModel content 类型（string → ContentBlock[]）| ✅ index.ts 两处修改 + context-snapshot 子模块提交 |
+| A2：V2-A 静态审计 | ✅ tsc --noEmit 零错误，5 步骤全部通过 |
+| F1 发现：compaction.ts buildCompactionSummary 同样返回 string content | ⚠️ 记录（非 A1 范围），当前受 §1.15 阻塞不会触发 |
 
 ## 本会话净变化
 
@@ -126,8 +117,8 @@
 
 | 方向 | 说明 | 优先级 |
 |------|------|--------|
-| **A1 修复 beforeModel content 类型** | [index.ts:146](context-snapshot/src/index.ts#L146) 注入 content 为 string，应改为 array 类型。Verified 根因见 [investigation-note O8](decisions/investigation-note-cli-codec-content-map-bug.md)。**任务书**：[subagent-task-A1-A2.md](plugin/subagent-task-A1-A2.md)，适合云端子代理并行 | 🔴 **P0** |
-| **A2 V2-A 静态审计** | tsc --noEmit + 契约对照，纳入 A1 content 类型审计。**任务书**：同 A1 | 🔴 **P0** |
+| **A1 修复 beforeModel content 类型** | ✅ 已完成。content string → ContentBlock[]，META_MARKER 检查适配 array。审计报告：[v2a-static-audit-report.md](plugin/v2a-static-audit-report.md) | ~~🔴 P0~~ ✅ |
+| **A2 V2-A 静态审计** | ✅ 已完成。tsc --noEmit 零错误，5 步骤全部通过。发现 F1（compaction.ts 同类问题，非阻塞）| ~~🔴 P0~~ ✅ |
 | **A5 V6 替代实现** | afterTool 检测循环 + registerRule 动态更新 rule 内容，绕过 codec bug 路径 | 🟡 P1 |
 | **A3 W2 handoff.md schema 化** | 三字段（id/confidence/depends_on）升级，详见 [external-review-round2-handoff.md](plugin/external-review-round2-handoff.md) | 🟡 P1 |
 | **A4 W1 v0.7.0 提取器** | 结构化提取替代简单正则，详见 [snapshot-extractor-design.md](plugin/snapshot-extractor-design.md) | 🟡 P1 |
@@ -151,9 +142,9 @@
 接续上下文：v0.6.x 收尾完成（README/design.md/目录重命名/提取器设计归档）+ Claude 深度研究评审闭环完成（25 条意见全部处理，3 轮子代理审查）+ O8 Verified 发现（beforeModel 注入 content 为 string 类型，codec bug 双触发路径确认）+ 5 个决策文档同步更新（证据链一致）。本会话最大增量是 O8 发现——它修正了原 codec bug 影响范围判断（Loop Guard 注入层 🟡→🔴），并确认 V6（afterTool + registerRule）是唯一可行的替代路径。
 
 **下次首要动作**（按优先级）：
-1. **🔴 P0：A1 修复 beforeModel content 类型**（[index.ts:146](context-snapshot/src/index.ts#L146) string → array）+ A2 V2-A 静态审计
-2. **🟡 P1：A5 V6 替代实现**（afterTool + registerRule 绕过 codec bug 路径）
-3. **🟡 P1：A3 W2 handoff.md schema 化**（三字段升级，详见 [external-review-round2-handoff.md](plugin/external-review-round2-handoff.md)）
-4. **🟡 P1：A4 W1 v0.7.0 提取器**（详见 [snapshot-extractor-design.md](plugin/snapshot-extractor-design.md)）
-5. **🟡 中：跟进已提交的 codec bug issue + GitHub issue #11944**
+1. **🟡 P1：A5 V6 替代实现**（afterTool + registerRule 绕过 codec bug 路径）
+2. **🟡 P1：A3 W2 handoff.md schema 化**（三字段升级，详见 [external-review-round2-handoff.md](plugin/external-review-round2-handoff.md)）
+3. **🟡 P1：A4 W1 v0.7.0 提取器**（详见 [snapshot-extractor-design.md](plugin/snapshot-extractor-design.md)）
+4. **🟡 中：跟进已提交的 codec bug issue + GitHub issue #11944**
+5. **🟡 中：F1 compaction.ts buildCompactionSummary string content 修复**（同类 bug，受 §1.15 阻塞）
 6. **🟢 低：监控 VS Code 扩展后续 release**（关键词 `Plugins` / `Customize marketplace` / `registerMessageBuilder`）
