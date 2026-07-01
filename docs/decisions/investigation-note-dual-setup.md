@@ -158,7 +158,7 @@
 
 ### 4.1 Setup 阶段 Instrumentation
 
-在 [index.ts](file:///e:/cline++/handoff-plugin/src/index.ts) setup() 入口加文件写入日志（绕过 console.log 不可见问题）：
+在 [index.ts](file:///e:/cline++/context-snapshot/src/index.ts) setup() 入口加文件写入日志（绕过 console.log 不可见问题）：
 
 ```ts
 import { appendFileSync } from "node:fs";

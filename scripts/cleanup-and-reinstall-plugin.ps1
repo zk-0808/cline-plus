@@ -36,7 +36,7 @@ function Write-Warn  { param([string]$Message) Write-Host "   WARN: $Message" -F
 function Write-Fail  { param([string]$Message) Write-Host "   FAIL: $Message" -ForegroundColor Red }
 
 $projectRoot = "E:\cline++"
-$pluginSource = Join-Path $projectRoot "handoff-plugin"
+$pluginSource = Join-Path $projectRoot "context-snapshot"
 $pluginDest = Join-Path $env:USERPROFILE ".cline\plugins\installed\local\context-snapshot"
 
 # --- Step 1: Cleanup stray artifacts ---
@@ -137,7 +137,8 @@ $checks = @(
     @{ Path = (Join-Path $pluginDest "src\compaction.ts"); Name = "src/compaction.ts" },
     @{ Path = (Join-Path $pluginDest "src\rules-injector.ts"); Name = "src/rules-injector.ts" },
     @{ Path = (Join-Path $pluginDest "src\tool-recorder.ts"); Name = "src/tool-recorder.ts" },
-    @{ Path = (Join-Path $pluginDest "src\shell-wrapper.ts"); Name = "src/shell-wrapper.ts" },
+    @{ Path = (Join-Path $pluginDest "src\constants.ts"); Name = "src/constants.ts" },
+    @{ Path = (Join-Path $pluginDest "src\snapshot-writer.ts"); Name = "src/snapshot-writer.ts" },
     @{ Path = (Join-Path $pluginDest "src\types.ts"); Name = "src/types.ts" }
 )
 
@@ -151,14 +152,14 @@ foreach ($check in $checks) {
     }
 }
 
-# Verify package.json is the new version (0.4.0)
+# Verify package.json is the new version (0.6.0)
 $pkgJsonPath = Join-Path $pluginDest "package.json"
 if (Test-Path $pkgJsonPath) {
     $pkgJson = Get-Content $pkgJsonPath -Raw | ConvertFrom-Json
-    if ($pkgJson.version -eq "0.4.0") {
+    if ($pkgJson.version -eq "0.6.0") {
         Write-OK "package.json version=$($pkgJson.version) (new version)"
     } else {
-        Write-Fail "package.json version=$($pkgJson.version) (expected 0.4.0)"
+        Write-Fail "package.json version=$($pkgJson.version) (expected 0.6.0)"
         $allOK = $false
     }
     $caps = $pkgJson.cline.plugins[0].capabilities
@@ -184,7 +185,7 @@ if ($allOK) {
     Write-Host "  2. Open Cline sidebar -> Customize (gear icon) -> Plugins"
     Write-Host "  3. Confirm 'context-snapshot' plugin appears (not auto-handoff anymore)"
     Write-Host "  4. Trigger a long conversation compact, check ~/.cline/data/snapshot/ for .md files"
-    Write-Host "  5. Check ~/.cline/data/snapshot/index.jsonl is appended"
+    Write-Host "  5. Check ~/.cline/data/snapshot/ for context snapshot .md files (index.jsonl is deprecated by ADR-005)"
     Write-Host ""
     Write-Host "If plugin still not visible:" -ForegroundColor Yellow
     Write-Host "  - Check VS Code Developer Console (Help > Toggle Developer Tools) for [context-snapshot] logs"

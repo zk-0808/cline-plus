@@ -135,10 +135,10 @@ SessionRuntimeOrchestrator.executeRunInternal()
 
 输出路径：`<snapshotDir>/<sessionId>.md`
 
-结构（继承本项目 handoff.md 格式）：
+结构（继承本项目 handoff.md 格式，ADR-005 重命名为 context snapshot）：
 
 ```yaml
-# Handoff — <会话标题>
+# Context Snapshot — <会话标题>
 
 ## 本会话决策
 | 决策 | 状态 |
@@ -160,7 +160,16 @@ SessionRuntimeOrchestrator.executeRunInternal()
 - **未完成项**：从上下文推断的未完成的 todo 项
 - **权威源**：引用在本会话中被确认的官方文档/源码
 
-#### 3.3.2 index.jsonl（可版本化索引层）
+#### 3.3.2 index.jsonl（已废弃 — ADR-005）
+
+> **⚠️ DEPRECATED（2026-06-28，[ADR-005](../decisions/ADR-005-split-compact-from-handoff.md)）**
+>
+> index.jsonl 已被 ADR-005 废弃，不再维护。理由：
+> 1. Cline SQLite DB 已存储会话元数据，自建索引与原生存储职责重叠
+> 2. 待 Cline 暴露稳定查询接口后可直接接入，无需自建索引层
+> 3. Compaction 与 Handoff 拆分后，索引层的定位不再清晰
+>
+> 以下内容保留作为历史设计记录，**不再作为实现依据**。Phase 3（index.jsonl 集成）已取消。
 
 输出路径：`<snapshotDir>/index.jsonl`
 
@@ -195,14 +204,10 @@ schema 定义：
 
 ```
 ~/.cline/data/snapshot/
-├── <sessionId>.md          ← context snapshot
-└── index.jsonl             ← 索引（append-only）
-
-# 或 workspace 级（待确认 VS Code 是否扫描）：
-<workspace>/.cline/snapshot/
-├── <sessionId>.md
-└── index.jsonl
+└── <project_hash>-<timestamp>-<uuid>.md  ← context snapshot（ADR-005 命名规范）
 ```
+
+> **注**：`index.jsonl` 已废弃（ADR-005），不再写入。
 
 首选全局路径（`~/.cline/data/snapshot/`）——与 `~/.cline/data/{settings,db}/` 一致，跨 workspace 可见。具体路径通过 `@cline/shared` 的 `getStoragePath` 或类似 helper 确定。
 
@@ -211,19 +216,21 @@ schema 定义：
 | 场景 | 行为 |
 |------|------|
 | snapshot 写入失败（权限/磁盘满）| 记录错误到 console，不影响消息返回 |
-| index.jsonl 写入失败 | 同上，snapshot 仍写入（部分产出 > 无产出）|
+| ~~index.jsonl 写入失败~~ | ~~已废弃（ADR-005），不再写入~~ |
 | messageBuilder.build() 抛出异常 | **（2026-06-29 修正）** sandbox 层 catch + retry + 返回原始 messages；API-safety builder 在 plugin builder 之后，plugin 异常不会到达它。见 §6 Task C 发现 3 |
 | 路径不存在 | 尝试创建目录（`mkdirSync` recursive），失败后跳过写入 |
 | VS Code 扩展不扫描全局 store | 退回 workspace 级 `.cline/plugins/` 路径（待实测） |
 
 ### 3.5 与 #6 的关系
 
-#6（session_start hook）检测新 session 启动时读取 `index.jsonl`，找到与当前任务关联的历史 snapshot，自动注入提示词。二者关系：
+> **ADR-005 更新**：#6 不再读取 `index.jsonl`（已废弃），改为通过 `rules` 动态注入 snapshot 内容。
 
-- **#5**：compact 触发 → **写入** snapshot + index
-- **#6**：session start → **读取** index → 注入相关 snapshot
+#6（rules 注入）检测新 session 启动时读取最新 snapshot 文件，通过 `rules.content()` 函数注入到新会话上下文。二者关系：
 
-#5 是 #6 的数据前提。#6 需等待 #5 产出至少一条索引条目后才能验证。
+- **#5**：compact 触发 → **写入** context snapshot
+- **#6**：新 session 启动 → **读取**最新 snapshot → 通过 rules 注入
+
+#5 是 #6 的数据前提。#6 需等待 #5 产出至少一个 snapshot 文件后才能验证。
 
 ---
 
@@ -232,7 +239,7 @@ schema 定义：
 ### 4.1 Plugin 结构
 
 ```
-handoff-plugin/
+context-snapshot/
 ├── package.json             ← manifest（声明 messageBuilders + rules + hooks capabilities）
 ├── src/
 │   ├── index.ts             ← plugin 入口 + setup() 注册三类能力
@@ -323,17 +330,9 @@ snapshot 文件名格式：`{project_hash}-{timestamp}-{uuid}.md`
 
 **通过标准**：compact 触发时，snapshot 写入成功，内容结构完整，至少包含本会话决策和净变化两节。
 
-### Phase 3：index.jsonl 集成
+### Phase 3：index.jsonl 集成（已取消 — ADR-005）
 
-**目标**：每次 compact 事件追加一条索引条目。
-
-**步骤**：
-1. 实现 `index-writer.ts`
-2. 从 snapshot 中提取 `session_id`、`summary`、`key_terms`、`file_count`、`decision_count`
-3. append-only 写入 `index.jsonl`
-4. 验证：多次 compact 产生多条记录，文件有效 JSONL
-
-**通过标准**：多次 compact 后，index.jsonl 包含多条可解析的 JSON 行。
+> **⚠️ DEPRECATED**：index.jsonl 已被 ADR-005 废弃，本 Phase 取消。待 Cline 暴露稳定的会话元数据查询接口后再评估替代方案。
 
 ### Phase 4：VS Code 扩展端验证闭环
 
@@ -343,10 +342,9 @@ snapshot 文件名格式：`{project_hash}-{timestamp}-{uuid}.md`
 1. 用户在 VS Code 扩展中正常使用 Cline
 2. 长对话触发 compact
 3. 检查 `~/.cline/data/snapshot/` 下是否产出 snapshot
-4. 检查 `index.jsonl` 是否追加
-5. 新任务启动时，通过 #6（session_start hook）验证是否能读取到历史 snapshot
+4. 新任务启动时，通过 #6（rules 注入）验证是否能读取到历史 snapshot
 
-**通过标准**：用户工作流中 compact 自动触发 → 双产物写入 → 新任务可检索。
+**通过标准**：用户工作流中 compact 自动触发 → snapshot 写入 → 新任务可通过 rules 注入恢复上下文。
 
 ---
 
@@ -355,7 +353,7 @@ snapshot 文件名格式：`{project_hash}-{timestamp}-{uuid}.md`
 | 风险 | 可能性 | 影响 | 缓解 |
 |------|--------|------|------|
 | VS Code 扩展 4.0.0 的 Customize 按钮实际是 marketplace 入口，非 `registerMessageBuilder` 入口 | 低 | 高——Phase 1 无法通过 | Probe 5 已确认全局 store plugin 被加载，但 messageBuilder 实际生效需实测验证 |
-| `build()` 要求同步，fs.writeFileSync 可能阻塞主流程 | 低 | 中——影响对话响应速度 | snapshot/index.jsonl 写入量很小（<10KB），同步阻塞可接受 |
+| `build()` 要求同步，fs.writeFileSync 可能阻塞主流程 | 低 | 中——影响对话响应速度 | snapshot 写入量很小（<10KB），同步阻塞可接受 |
 | snapshot 质量取决于从 messages 中提取结构化信息的准确性 | 中 | 中——产出可能噪音大 | Phase 2 做提取精度的迭代，可先输出最小可用版本 |
 | 自定义 compact 策略与 Cline 原生策略冲突 | 低 | 低 | 本 plugin 不改变 compact 策略，只在 compact 发生时写产物 |
 
@@ -380,7 +378,7 @@ snapshot 文件名格式：`{project_hash}-{timestamp}-{uuid}.md`
 |---|------|------|---------|
 | Q1 | VS Code 扩展 4.0.0 中 `registerMessageBuilder` 注册的 builder 是否在 compact 时被调用？ | ✅ 已验证（源码探查）| **是，但在 compact 判定之前**。调用链：prepareTurn 闭包 → prepareProviderMessagesForApi → plugin MB.build() → API-safety buildForApi() → compact 策略判定。plugin MB 收到的是 compact 前的原始消息。|
 | Q2 | 全局 store `~/.cline/plugins/installed/local/` 的安装路径是否对 VS Code 扩展和 CLI 共用？ | ✅ 已确认（Probe 5）| 是——p5-spike-plugin 安装后 VS Code 扩展可见 |
-| Q3 | `build()` 中写文件是否需考虑并发安全（多个 plugin builder 同时执行）？ | ✅ 已验证（源码探查）| **单 session 内无并发**：messageBuilder 串行执行（for...of + await）。跨 session 写同一文件（如 index.jsonl）需 append 模式，但风险极低。|
+| Q3 | `build()` 中写文件是否需考虑并发安全（多个 plugin builder 同时执行）？ | ✅ 已验证（源码探查）| **单 session 内无并发**：messageBuilder 串行执行（for...of + await）。跨 session 写同一 snapshot 文件因含 uuid 后缀不会冲突（ADR-005 后已无 index.jsonl 共享写）。|
 | Q4 | 存储路径首选 `~/.cline/data/snapshot/` 是否已由 `@cline/shared` 的 storage helper 支持？ | 待确认 | 落地时从 `@cline/shared` 源码确认或硬编码 |
 | Q5 | #6 session_start hook 是否在 VS Code 扩展中工作？ | 待验证 | 与 #5 验证解耦，#6 需 #5 产出数据后才能验证 |
 

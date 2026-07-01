@@ -106,9 +106,9 @@ function eK(i){switch(i.type){case"text":return{type:"text",text:i.text};case"re
 
 | 位置 | 代码 | 是否触发此错 |
 |------|------|------|
-| [compaction.ts:39](../handoff-plugin/src/compaction.ts#L39) `serializeMessage` | `for (const block of message.content)` | ❌ 用 `for...of` 不是 `.map`，会报 "not iterable" 而非 "not a function" |
-| [snapshot-writer.ts](../handoff-plugin/src/snapshot-writer.ts) | 无 content.map | ❌ |
-| [index.ts:41](../handoff-plugin/src/index.ts#L41) `build()` | `return messages`（原样返回入参） | ❌ 不修改结构 |
+| [compaction.ts:39](../context-snapshot/src/compaction.ts#L39) `serializeMessage` | `for (const block of message.content)` | ❌ 用 `for...of` 不是 `.map`，会报 "not iterable" 而非 "not a function" |
+| [snapshot-writer.ts](../context-snapshot/src/snapshot-writer.ts) | 无 content.map | ❌ |
+| [index.ts:41](../context-snapshot/src/index.ts#L41) `build()` | `return messages`（原样返回入参） | ❌ 不修改结构 |
 
 ### O7. 环境确认（§1.15）
 

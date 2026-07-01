@@ -328,10 +328,10 @@ docs/                     项目文档
     blog/                 社区博文
     project-rules.md      search-orchestrator 开发期防漂移约束
   plugin/                 Plugin 产品线
-    design.md             handoff-plugin 设计文档
+    design.md             context-snapshot 设计文档
     refs/                 架构参考 + 社区指南（对外可发布）
 scripts/                  工具脚本（patch、自动化）
-handoff-plugin/           Plugin 源码（独立 git 仓库）
+context-snapshot/         Plugin 源码（独立 git 仓库，submodule）
 search-mcp-wrapper/       MCP wrapper（独立项目）
 skills/                   Cline skills
 experiments/              Spike 实验
@@ -342,7 +342,7 @@ experiments/              Spike 实验
 - 内部决策记录（ADR / 调查笔记）→ `docs/decisions/`
 - 可执行脚本（.ps1 / .sh / .py 工具）→ `scripts/`
 - 运行时日志（.log）→ gitignore，不入库
-- 独立项目的源码 → 各自子目录（handoff-plugin/ / search-mcp-wrapper/）
+- 独立项目的源码 → 各自子目录（context-snapshot/ / search-mcp-wrapper/）
 
 源由：2026-06-28 项目整理——根目录曾有 patch 脚本、测试日志、重复文档，缺乏存放规范导致每次新增文件都需人工判断位置。
 
