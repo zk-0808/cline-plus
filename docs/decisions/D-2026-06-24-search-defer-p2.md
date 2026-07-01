@@ -3,6 +3,7 @@ id: D-2026-06-24-search-defer-p2
 date: 2026-06-24
 topic: search-orchestrator
 status: deferred
+lifecycle: 永久保留——决策记录，状态由 status 枚举驱动。
 supersedes: []
 superseded_by: []
 evidence:

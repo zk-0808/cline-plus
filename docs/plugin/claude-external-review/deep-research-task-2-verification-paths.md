@@ -2,6 +2,7 @@
 
 **文件**: `docs/plugin/deep-research-task-1-runtime-modules.md`
 **状态**: active
+**生命周期**: 任务绑定——深度研究评审闭环后归档。
 **evidence_as_of**: 2026-07-01
 **执行约束**: 0.1 已覆盖的 compact / checkpoint / messageBuilder / rules / Plugin 7 层不重新探查。
 

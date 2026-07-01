@@ -2,6 +2,7 @@
 
 **文件**: `docs/plugin/deep-research-task-5-roadmap.md`
 **状态**: active
+**生命周期**: 任务绑定——深度研究评审闭环后归档。
 **evidence_as_of**: 2026-07-01
 **背景依据**: `docs/plugin/design.md §5`（Plugin Phase 1-4）、`docs/PROJECT_DEV_OUTLINE.md §5`（能力验证清单）、`docs/plugin/snapshot-extractor-design.md §6`（v0.7.0计划）、`docs/mechanism-candidates.md`（机制候选清单）
 

@@ -2,6 +2,7 @@
 
 日期：2026-06-29
 
+> **生命周期**：事件绑定——CLI plugin 链路验证完成 + 上游确认后归档。
 > **关联**：[handoff.md](../handoff.md)、[design.md](../plugin/design.md)、[investigation-note-vscode-bootstrap-missing.md](investigation-note-vscode-bootstrap-missing.md)
 
 ---

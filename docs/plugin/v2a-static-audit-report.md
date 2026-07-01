@@ -1,5 +1,7 @@
 # V2-A 静态审计报告
 
+> **生命周期**：任务绑定——A1 content 类型修复合入主线后归档。
+
 日期：2026-07-01
 审计对象：context-snapshot 插件（v0.6.0）
 关联任务：A1 修复 beforeModel content 类型 + A2 V2-A 静态审计

@@ -1,6 +1,7 @@
 # External Review Round 2 — Handoff 机制化基石方向
 
 > **轮次**：第 2 轮（评审对项目方回应的回复）
+> **生命周期**：任务绑定——handoff 机制化正式开发启动后归档。
 > **来源**：外部评审
 > **评审日期**：2026-07-01
 > **回应对象**：[response-to-external-review-handoff.md](response-to-external-review-handoff.md)（项目方第 1 轮回应）

@@ -3,6 +3,7 @@ id: D-2026-06-25-search-redesign-p5-evidence-map
 date: 2026-06-25
 topic: search-orchestrator
 status: proposed
+lifecycle: 永久保留——决策记录，状态由 status 枚举驱动。
 supersedes:
   - D-2026-06-24-search-evaluate-p5-output-schema
 superseded_by: []

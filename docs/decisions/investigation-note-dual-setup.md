@@ -1,6 +1,7 @@
 # Investigation Note: 双重 setup() 调查（v2 — 评审修订版）
 
 **日期**：2026-06-30
+**生命周期**：事件绑定——setup() 双调用根因确认 + 修复后归档。
 **调查对象**：context-snapshot 插件每次 `cline -i` 启动时 setup() 被调用两次
 **状态**：现象已确认，根因待 Instrumentation 验证
 **评审修订**：v1 将 Likely 推断为 Verified、Hypothesis 排序错误、过早进入 Patch。v2 按 Senior Agent Developer Reviewer 要求重做。

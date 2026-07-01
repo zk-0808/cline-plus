@@ -12,6 +12,7 @@
 ## 官方 Changelog
 
 > "Roll the stable VS Code extension back to the pre-SDK-migration codebase to resolve regressions reported in 4.0.0. This release ships the 3.89.2 extension code under a higher version number so existing 4.0.0 users receive the update. SDK-migration work continues separately on `main`."
+> **生命周期**：永久保留——决策记录，状态由 status 枚举驱动。
 
 摘要：v4.0.1 是**回滚版本**，将 VS Code 扩展代码退回到 SDK 迁移前的 3.89.2 代码基，以修复 v4.0.0 引入的回归问题。SDK 迁移工作继续在 `main` 分支独立进行。
 

@@ -3,6 +3,7 @@ id: D-2026-06-26-search-adopt-mcp-throttle-wrapper
 date: 2026-06-26
 topic: search-orchestrator
 status: active
+lifecycle: 永久保留——决策记录，状态由 status 枚举驱动。
 supersedes: []
 superseded_by: []
 evidence:

@@ -1,6 +1,8 @@
 ## Investigation Note: Cline Marketplace 扩展开发机制并行调查
 日期：2026-06-27
 
+> **生命周期**：事件绑定——VS Code 扩展 plugin 系统恢复后归档（当前受 §1.15 不可抗力）。
+
 > **框架**：按 [evidence-governance.md §10](../evidence-governance.md) Investigation Note 模板，配合 [reviewer-personas.md](../reviewer-personas.md) 固定角色集 + [dev-rules.md §1.12](../dev-rules.md) 多角色 subagent 并行调用规则。
 >
 > **关联**：

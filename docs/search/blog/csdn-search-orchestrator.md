@@ -1,5 +1,6 @@
 # 14 轮双盲 A/B 实验：把 Cline + DuckDuckGo 搜索能力逼近 Perplexity 的 6 个提示词层机制
 
+> **生命周期**：永久保留——社区博文，对外可发布。
 > 仓库地址：[https://github.com/zk-0808/cline-search-orchestrator](https://github.com/zk-0808/cline-search-orchestrator)
 
 ## 写在前面

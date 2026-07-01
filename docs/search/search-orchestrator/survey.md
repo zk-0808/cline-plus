@@ -1,5 +1,7 @@
 # 主流 Agent 搜索功能实现调研
 
+> **生命周期**：功能绑定——search-orchestrator，功能稳定后归档。
+
 > **目的**：回答「主流 agent 的搜索功能在工程层做了什么」——过滤、改写、摘要、citation、二次抓取、重排、降权、缓存等具体手法——并给出**对本项目 search-orchestrator 的强化启示**。
 >
 > **方法**：search-orchestrator skill 自身的 L2 流程（Plan → Search → Evaluate → Synthesize）+ 反证搜索。原始证据见 [search-research-results.md](search-research-results.md)。

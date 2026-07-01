@@ -1,5 +1,7 @@
 # 归档摘要 — docs/search/search-orchestrator/
 
+> **生命周期**：永久保留——归档索引。
+
 > 评估日期：2026-06-28
 > 对照基准：`skills/search-orchestrator/SKILL.md`（v1.0.0）
 
