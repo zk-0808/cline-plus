@@ -114,29 +114,63 @@ function eK(i){switch(i.type){case"text":return{type:"text",text:i.text};case"re
 
 VS Code 扩展 v4.0.2（继承 v4.0.1 回滚，pre-SDK 代码基，**无 plugin 系统**）— 我们的 context-snapshot 插件在 VS Code 端根本没加载。CLI 3.0.34 是当前唯一可用运行环境（见 [investigation-note-cli-plugin-verification.md](investigation-note-cli-plugin-verification.md)）。
 
+### O8. beforeModel 注入的 content 类型为 string（2026-07-01 子代理审查发现）
+
+**来源**：[claude-external-review/review-closure-report.md](../plugin/claude-external-review/review-closure-report.md) §5.1 子代理审查 C 发现
+
+[index.ts:146](../context-snapshot/src/index.ts#L146) beforeModel hook 返回的注入消息 content 为 **string 类型**：
+
+```typescript
+return {
+    messages: [...messages, { role: "user", content: `${META_MARKER}\n${warningText}` }],
+};
+```
+
+而 codec 的 `Nd` 函数（O3 已确认）对每条消息调用 `n.content.map(eK)` — **string 类型没有 `.map()` 方法**。
+
+**关键含义**：
+- beforeModel 注入本身就是 codec bug 的触发条件之一，与消息数量和 token 总量无关
+- 即使在低 message 数量场景（如步骤 8），只要 beforeModel 返回修改后的 messages，codec 处理到该 string content 消息时就会崩溃
+- 即使 codec bug 的 `Array.isArray` 守卫被官方修复，string content 仍可能与下游期望 array 类型的代码冲突——应同步修复为 array 类型
+
+**Verified 依据**（3 独立来源）：
+1. 源码直接证据：[index.ts:146](../context-snapshot/src/index.ts#L146) content 为模板字符串
+2. codec 行为：O3 已确认 `Nd` 函数对每条消息调用 `n.content.map(eK)`
+3. 实测吻合：[handoff.md §4](../handoff.md) 记录 beforeModel 在步骤 15 首次返回修改后的 messages 后立即崩溃——步骤 15 是 detectRepetition 首次返回 repeating=true 的步骤，beforeModel 首次返回也在该步骤，崩溃发生在 codec 处理注入的 string content 时
+
 ---
 
 ## Evidence → Hypothesis → Verified
 
 ### H1（Verified）：错误源在 Cline 核心 `agent-message-codec.ts`，不在本插件
 
-**证据**（3 独立来源，满足 [dev-rules.md §1.6](../dev-rules.md) 双来源门槛）：
+**证据**（4 独立来源，满足 [dev-rules.md §1.6](../dev-rules.md) 双来源门槛）：
 
 | # | 证据 | 类型 | 来源 |
 |---|------|------|------|
 | 1 | minified cline.exe 锚点 `n.content.map(eK)`（Bun/JSC 错误格式 + 参数名精确匹配） | minified 源码 | 本地 binary grep |
 | 2 | unminified `agentMessageToMessageWithMetadata` / `agentMessagesToMessages` 无 `Array.isArray` 守卫 | unminified 源码 | 子代理 A 直接读源码 |
 | 3 | 同模块 `MessageBuilder.buildForApi()` 有守卫 — 证明作者知道该做守卫，codec 漏写 | unminified 源码 | 子代理 A + B 一致 |
+| 4 | O8：beforeModel 注入的 content 为 string 类型，直接触发 codec `.map()` 崩溃 | 本插件源码 + codec 行为 | 2026-07-01 子代理审查 C |
 
-**Hypothetical 根因链**（部分 Verified，部分待证）：
+**Verified 根因链**（2026-07-01 更新，O8 补充后两条触发路径均 Verified）：
 
 ```
+触发路径 A（MCP tool_result，H1 原 Hypothetical 链）:
 MCP tool_result (结构化数据)
   → anthropicContentBlockToSdkBlock (JSON.stringify 有损转换) [子代理 B 单源，Hypothetical]
     → AgentMessage.content 可能变成非数组
       → agentMessageToMessageWithMetadata (无 Array.isArray 守卫) [Verified]
-        → .map() 崩溃: content.map is not a function [Verified]
+        → .map() 崩溃 [Verified]
+
+触发路径 B（beforeModel 注入，O8 新增 Verified 链）:
+Plugin beforeModel hook 返回 messages
+  → 注入消息 content 为 string 类型 [Verified, index.ts:146]
+    → codec Nd 函数对每条消息调用 n.content.map(eK) [Verified, O3]
+      → string 无 .map() 方法 → 崩溃 [Verified, handoff §4 实测吻合]
 ```
+
+**O8 对 H1 的增量**：原 H1 仅覆盖触发路径 A（MCP tool_result，Hypothetical），O8 补充了触发路径 B（beforeModel 注入，Verified）。路径 B 是本项目 Loop Guard 注入层受阻的直接原因，且与消息数量/token 总量无关——任何步骤下 beforeModel 返回 string content 都会崩溃。
 
 ### H2（Hypothetical，待证）：image 分支 `undefined` 静默丢弃
 
@@ -204,6 +238,7 @@ MCP tool_result (结构化数据)
 | H3 下游连锁风险 | Hypothetical | 下次读源码时验证 `agent-runtime.ts:621` / `runtime-event-adapter.ts:70` |
 | 测试盲点 | 未验证 | 提 issue 时一并核查 codec 模块测试覆盖 |
 | 是否有已知 issue | 未验证 | 提 issue 前先在 cline/cline 搜 `content.map is not a function` |
+| **O8 content 类型修复** | **Verified，待修复** | **修复 [index.ts:146](../context-snapshot/src/index.ts#L146) beforeModel 注入 content 类型 string → array；修复后重跑 V2-A 静态审计 + V6 替代实现验证** |
 
 ---
 
@@ -222,6 +257,6 @@ MCP tool_result (结构化数据)
 
 ## 证据时效性（按 [dev-rules.md §1.13](../dev-rules.md)）
 
-- `evidence_as_of`: 2026-06-30
-- `expires_if_unchanged`: 2026-07-14（14 天后）
+- `evidence_as_of`: 2026-07-01（O8 补充更新）
+- `expires_if_unchanged`: 2026-07-15（14 天后）
 - 引用前需复查：上游是否已修复 + CLI 版本是否已升级

@@ -75,7 +75,7 @@
 | token 估算 bug 修复 | ✅ Math.ceil(text.length/4) + default case JSON.stringify |
 | rules 注入实测 | ✅ **通过** — 注入含 XYZ789 标记的 snapshot，Cline 新 session 正确答出决策表 |
 | snapshot 文件写入实测 | ✅ **通过**（workaround 验证）— 临时降阈值到 1000 tokens 触发 compact，产出 12 个 .md 文件，5 节模板生成正确，文件名格式 `{hash}-{ts}-{uuid}.md` 正确。验证后已改回 120K tokens 原阈值。**注意**：真实 90K tokens 长对话触发路径仍受 §1.15 codec bug 阻塞，本次通过 workaround 验证功能可用性，不等同环境完整可用 |
-| beforeModel (Loop Guard) 实测 | ✅ **检测层通过** — detectRepetition 在 history=15 时正确返回 `repeating=true, count=4, pattern=[read_files,run_commands,read_files,run_commands,read_files]`（[instrument.log](file:///C:/Users/19936/.cline/data/snapshot/loop-guard-instrument.log) 行 111, 114）。H1-H4 全部排除（hook 被调 ✅ / toolName 正确 ✅ / 模型未优化 ✅ / 所有 success 调用进 history ✅）。注入层（beforeModel 返回 messages 修改）因 §1.15 codec bug 在步骤 15 后立即崩溃，逻辑简单（`messages.push + return`）非功能 bug。详见 [loop-guard-scenario-design.md](experiments/loop-guard-scenario-design.md) v2 |
+| beforeModel (Loop Guard) 实测 | ✅ **检测层通过** — detectRepetition 在 history=15 时正确返回 `repeating=true, count=4, pattern=[read_files,run_commands,read_files,run_commands,read_files]`（[instrument.log](file:///C:/Users/19936/.cline/data/snapshot/loop-guard-instrument.log) 行 111, 114）。H1-H4 全部排除（hook 被调 ✅ / toolName 正确 ✅ / 模型未优化 ✅ / 所有 success 调用进 history ✅）。注入层（beforeModel 返回 messages 修改）因 §1.15 codec bug 在步骤 15 后立即崩溃。**2026-07-01 更新**：[investigation-note O8](decisions/investigation-note-cli-codec-content-map-bug.md) 补充 Verified 根因——[index.ts:146](context-snapshot/src/index.ts#L146) 注入的 content 为 string 类型，codec `Nd` 函数调用 `n.content.map(eK)` 必然崩溃，与消息数量/token 总量无关。崩溃边界是 content 类型维度，非 token 维度。详见 [loop-guard-scenario-design.md](experiments/loop-guard-scenario-design.md) v2 |
 
 ### 5. 本轮新发现的问题（不影响核心验证）
 
@@ -131,13 +131,18 @@
 
 | 方向 | 说明 | 优先级 |
 |------|------|--------|
+| **A1 修复 beforeModel content 类型** | [index.ts:146](context-snapshot/src/index.ts#L146) 注入 content 为 string，应改为 array 类型。Verified 根因见 [investigation-note O8](decisions/investigation-note-cli-codec-content-map-bug.md) | 🔴 **P0** |
+| **A2 V2-A 静态审计** | tsc --noEmit + 契约对照，纳入 A1 content 类型审计 | 🔴 **P0** |
+| **A5 V6 替代实现** | afterTool 检测循环 + registerRule 动态更新 rule 内容，绕过 codec bug 路径 | 🟡 P1 |
+| **A3 W2 handoff.md schema 化** | 三字段（id/confidence/depends_on）升级，详见 [external-review-round2-handoff.md](plugin/external-review-round2-handoff.md) | 🟡 P1 |
+| **A4 W1 v0.7.0 提取器** | 结构化提取替代简单正则，详见 [snapshot-extractor-design.md](plugin/snapshot-extractor-design.md) | 🟡 P1 |
 | **提交 cline/cline issue** | codec bug issue 草稿已就绪（[draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md)），待用户确认后提交 | 🟡 中 |
 | ~~**CLI 实测 Loop Guard 兜底**~~ | ✅ **本轮完成** — 检测层 Verified（detectRepetition 正确识别 repeating=true count=4），注入层因 §1.15 codec bug 阻塞。instrument.log 已留存于 `~/.cline/data/snapshot/loop-guard-instrument.log`，instrument 代码已从源码清理 | — |
 | ~~**调查双重 setup**~~ | ✅ **本轮完成** — [investigation-note-dual-setup.md v2](decisions/investigation-note-dual-setup.md) 已就绪。结论：dual-setup 为 Likely（Cline hub 模式架构，缺官方说明升级到 Verified）；副作用：build 双倍 + ToolCallRecorder 双实例（第 1 实例 p6jk2z 孤立零 hook 调用，第 2 实例 qe86yg 活跃）| — |
 | **GitHub issue #11944 跟进** | 等作者回复 SDK 迁移时间线（影响 §1.15 第一条不可抗力恢复）| 🟡 中 |
-| **README.md 同步** | ~15 处 handoff 引用待更新 | 🟢 低 |
-| **design.md §3.3.2 标注废弃** | index.jsonl 已被 ADR-005 废弃，文档未标注 | 🟢 低 |
-| **Snapshot 模板精度迭代** | 当前决策/未完成项提取基于简单正则，精度有限 | 🟢 低 |
+| ~~**README.md 同步**~~ | ✅ **v0.6.x 收尾完成** — [context-snapshot/README.md](context-snapshot/README.md) 已全面更新 | — |
+| ~~**design.md §3.3.2 标注废弃**~~ | ✅ **v0.6.x 收尾完成** — [design.md](plugin/design.md) 7 处修正，index.jsonl 标注 DEPRECATED | — |
+| **Snapshot 模板精度迭代** | 当前决策/未完成项提取基于简单正则，精度有限（v0.7.0 提取器设计已就绪）| 🟢 低 |
 | **补证 H2/H3** | image 分支 undefined 丢弃 + 下游连锁风险（子代理 B 单源 Hypothetical，待交叉验证）| 🟢 低 |
 
 ## 本轮新增产出
@@ -160,11 +165,12 @@
 先读 docs/dev-rules.md（注意 §1.15 不可抗力门控）与 docs/handoff.md，按下面的工作内容继续。
 ```
 
-接续上下文：context-snapshot plugin v0.6.0 全部 6 项核心功能实测通过——setup marker ✅ + messageBuilder ✅ + compact 检测 ✅ + rules 注入 ✅ + snapshot 写入 ✅（workaround 验证）+ Loop Guard 检测层 ✅（注入层因 §1.15 codec bug 阻塞）。本轮完成契约修复（4 处：workspacePath / rule.id / beforeTool 签名 / afterTool 签名，对照 `@cline/shared/dist/agent.d.ts` + `contribution-registry.d.ts`）。dual-setup 调查 v2 已就绪（Likely：Cline hub 模式架构，第 1 ToolCallRecorder 实例孤立）。codec bug issue 已提交到 cline/cline。Plugin Dev Planning Framework SOP 已建立（[docs/plugin/plugin-dev-sop.md](plugin/plugin-dev-sop.md)），整合 v0.6.0 契约违反教训为规划阶段思考框架。VS Code 扩展 4.0.2-4.0.4 判读：仍是 pre-SDK 代码基，ClinePass 渐进式合入但 Plugins 系统未回归，CLI 仍是唯一 plugin 运行环境。
+接续上下文：context-snapshot plugin v0.6.0 全部 6 项核心功能实测通过——setup marker ✅ + messageBuilder ✅ + compact 检测 ✅ + rules 注入 ✅ + snapshot 写入 ✅（workaround 验证）+ Loop Guard 检测层 ✅（注入层因 §1.15 codec bug 阻塞）。v0.6.x 收尾完成：README/design.md/ADR-005 一致性 + 目录重命名 handoff-plugin → context-snapshot + v0.7.0 提取器设计归档 + 外部评审材料归档（GPT/Claude 两源）+ Claude 评审闭环报告（25 条意见全部处理）+ investigation-note O8 补充（beforeModel 注入 content 类型为 string，Verified 根因）。
 
-**下次首要动作**：
-1. **跟进已提交的 codec bug issue**：等 cline/cline 官方回复（issue 已提交，草稿在 [draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md)）
-2. **跟进 GitHub issue #11944**：等作者回复 SDK 迁移时间线（影响 §1.15 第一条不可抗力恢复）
-3. **（可选）dual-setup 升级到 Verified**：需 Cline 官方说明或源码证据确认 hub 模式架构
-4. **（可选）Loop Guard 注入层端到端验证**：待 codec bug 修复后重跑场景 B 走完 beforeModel 返回路径
-5. **（可选）监控 VS Code 扩展后续 release**：关键词 `Plugins` / `Customize marketplace` / `registerMessageBuilder` — 出现任一即触发"VS Code 端 plugin 系统恢复"判定，届时可考虑合并 CLI 与 VS Code 路径
+**下次首要动作**（按优先级）：
+1. **🔴 P0：A1 修复 beforeModel content 类型**（[index.ts:146](context-snapshot/src/index.ts#L146) string → array）+ A2 V2-A 静态审计
+2. **🟡 P1：A5 V6 替代实现**（afterTool + registerRule 绕过 codec bug 路径）
+3. **🟡 P1：A3 W2 handoff.md schema 化**（三字段升级，详见 [external-review-round2-handoff.md](plugin/external-review-round2-handoff.md)）
+4. **🟡 P1：A4 W1 v0.7.0 提取器**（详见 [snapshot-extractor-design.md](plugin/snapshot-extractor-design.md)）
+5. **🟡 中：跟进已提交的 codec bug issue + GitHub issue #11944**
+6. **🟢 低：监控 VS Code 扩展后续 release**（关键词 `Plugins` / `Customize marketplace` / `registerMessageBuilder`）

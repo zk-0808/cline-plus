@@ -252,6 +252,12 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 - 🟡 **带观察推进**：Loop Guard 实测（构造场景时避免 MCP 工具 + 避免长输出，用小文件简单 read_file 重复）
 - 🟢 **可推进**：setup marker / rules 注入（短交互，不触发长对话路径）
 
+**2026-07-01 补充（O8 发现）**：[investigation-note O8](decisions/investigation-note-cli-codec-content-map-bug.md) 发现 codec bug 有两条独立触发路径：
+- **路径 A（MCP tool_result）**：原已知，Hypothetical（content 经 JSON.stringify 有损转换变非数组）
+- **路径 B（beforeModel 注入）**：**Verified** — [index.ts:146](context-snapshot/src/index.ts#L146) 注入 content 为 string 类型，codec `Nd` 函数调用 `n.content.map()` 必崩。**与消息数量/token 总量无关**，任何步骤下 beforeModel 返回 string content 都会崩溃
+
+**O8 对影响范围的修正**：原"🟡 Loop Guard 实测"分级基于"避免 MCP + 避免长输出"假设，但路径 B 表明 beforeModel 注入本身即触发 bug，不分步骤数量。Loop Guard 注入层应改为 **🔴 阻塞**，检测层仍为 🟢。替代方案见 [mechanism-landing-assessment.md Q2 V6 路径](plugin/mechanism-landing-assessment.md)（afterTool + registerRule 绕过 codec）。
+
 **workaround 不等同环境可用**（§1.15 禁止条款）：workaround 期间实测结果仅证明"避开 bug 的路径可用"，不证明"环境完整可用"。
 
 源由 1：2026-06-28 VS Code 扩展 v4.0.0 bootstrap 缺失 → v4.0.1 官方回滚到 pre-SDK 代码基 → v4.0.2 继承回滚，Plugin 系统在 VS Code 端完全不存在。CLI 端为唯一可用运行环境。完整证据链见 [investigation-note-vscode-bootstrap-missing.md](decisions/investigation-note-vscode-bootstrap-missing.md) + [D-2026-06-28-cline-v401-sdk-rollback.md](decisions/D-2026-06-28-cline-v401-sdk-rollback.md) + [design.md 不可抗力声明](plugin/design.md)。

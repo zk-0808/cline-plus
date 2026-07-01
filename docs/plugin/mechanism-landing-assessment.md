@@ -59,6 +59,8 @@
 
 **对 #4 的结论**：Cline 原生依赖模型自身能力识别循环，没有专门的 loop-guard 机制。Plugin 层可通过 `beforeTool` + `afterTool` 记录工具调用序列，检测重复模式。但**处置手段有限**——plugin 只能注入提示词（通过 `beforeModel` hook 修改 messages），不能直接中断 agent 循环。建议 #4 实现为"检测 + 提示词注入"：检测到重复时在下一轮 messages 中注入警告提示词。
 
+**2026-07-01 更新（V6 替代路径）**：原方案的 beforeModel 注入路径受 [codec bug](../decisions/investigation-note-cli-codec-content-map-bug.md) §O8 阻塞——beforeModel 注入的 content 为 string 类型，codec `Nd` 函数调用 `n.content.map()` 必然崩溃（Verified 根因，与消息数量/token 总量无关）。采用 V6 替代实现：**afterTool 检测循环 + registerRule 动态更新 rule 内容**，绕过 codec 路径（rules 注入 system prompt，不经过 message codec）。代价是延迟一个 turn（afterTool 检测到 → 下一次 rule 求值时注入），但规则注入路径已实测验证通过（[handoff.md §4](../handoff.md) rules 注入 ✅）。
+
 ### Q3: Shell Wrapper（#2-3 编码/Profile/交互式）
 
 | 系统 | 方案 | 关键机制 |
@@ -160,10 +162,22 @@ beforeTool hook：
 ### Phase 3：Loop Guard 检测 + 提示词注入 + 兜底
 
 ```
-beforeModel hook：
+原方案（beforeModel 注入，受 codec bug 阻塞）：
+  beforeModel hook：
   - 读取 tool-call-recorder 的工具调用历史
   - 检测重复模式（N-gram / 状态 Hash / 错误指纹）
-  - 注入警告提示词到 messages
+  - 注入警告提示词到 messages  ⚠️ 受 §1.15 O8 阻塞（string content 触发 codec 崩溃）
+
+V6 替代方案（afterTool + registerRule，已采纳）：
+  afterTool hook：
+  - 读取 tool-call-recorder 的工具调用历史
+  - 检测重复模式（N-gram / 状态 Hash / 错误指纹）
+  - 将检测结果写入持久化状态（内存/文件）
+
+  registerRule 动态准则：
+  - rule.content 函数每次求值时读取最新检测结果
+  - 若检测到循环，在 rule 内容中注入警告文本
+  - 警告随 system prompt 注入，不经过 message codec
 
 兜底层（评审补充）：
   - 三类 case 覆盖不均：
@@ -174,7 +188,7 @@ beforeModel hook：
   - plugin 不越界替代 Cline 的进程管理
 ```
 
-**涉及候选**：#4（完整实现）
+**涉及候选**：#4（完整实现，V6 替代路径）
 
 ---
 
@@ -190,7 +204,7 @@ beforeModel hook：
 
 - **#1** → afterTool 监控（降级，不替代 Cline 进程管理）
 - **#2-3** → beforeTool 命令改写
-- **#4** → tool-call-recorder 记录 + beforeModel 提示词注入 + max iterations 兜底
+- **#4** → tool-call-recorder 记录 + ~~beforeModel 提示词注入~~（受 §1.15 O8 阻塞）+ **V6 替代：afterTool 检测 + registerRule 动态注入** + max iterations 兜底
 
 ### 待验证的候选
 
