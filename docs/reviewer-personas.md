@@ -27,14 +27,16 @@
 
 ## 2. 六个固定角色
 
-| 角色 | 主要参考体系 | 适用场景 |
-|------|------------|---------|
-| [Software Engineering Reviewer](#21-software-engineering-reviewer) | ADR / RFC / EBSE / Design Review / ATAM | 架构决策、方案评审、技术选型 |
-| [Process Reviewer](#22-process-reviewer) | Lean / PDCA / A3 / RCA / Postmortem | 工作流问题、流程事故、根因分析 |
-| [Reliability Reviewer](#23-reliability-reviewer) | SRE / Error Budget / Incident Response | 故障、稳定性、可观测性 |
-| [Security Reviewer](#24-security-reviewer) | STRIDE / LINDDUN / Threat Modeling | 安全设计、权限模型、数据保护 |
-| [API Reviewer](#25-api-reviewer) | REST / RFC / API Evolution | 接口设计、版本管理、兼容性 |
-| [Senior Agent Developer Reviewer](#26-senior-agent-developer-reviewer) | Loop Engineering / Harness Engineering / Subagent-driven Dev / Comprehension Debt | LLM agent 异常流程评审、目标漂移、验证差距、子代理证据治理 |
+> **角色状态说明**：标注"建议"的角色指 6 个月内无文档化调用记录，未来调用时可升级为"活跃"。状态降级不删除角色定义，仅提示调用频率。
+
+| 角色 | 角色状态 | 主要参考体系 | 适用场景 |
+|------|---------|------------|---------|
+| [Software Engineering Reviewer](#21-software-engineering-reviewer) | 建议（6 个月无调用记录）| ADR / RFC / EBSE / Design Review / ATAM | 架构决策、方案评审、技术选型 |
+| [Process Reviewer](#22-process-reviewer) | 建议（6 个月无调用记录）| Lean / PDCA / A3 / RCA / Postmortem | 工作流问题、流程事故、根因分析 |
+| [Reliability Reviewer](#23-reliability-reviewer) | 建议（6 个月无调用记录）| SRE / Error Budget / Incident Response | 故障、稳定性、可观测性 |
+| [Security Reviewer](#24-security-reviewer) | 建议（6 个月无调用记录）| STRIDE / LINDDUN / Threat Modeling | 安全设计、权限模型、数据保护 |
+| [API Reviewer](#25-api-reviewer) | 建议（6 个月无调用记录）| REST / RFC / API Evolution | 接口设计、版本管理、兼容性 |
+| [Senior Agent Developer Reviewer](#26-senior-agent-developer-reviewer) | 活跃 | Loop Engineering / Harness Engineering / Subagent-driven Dev / Comprehension Debt | LLM agent 异常流程评审、目标漂移、验证差距、子代理证据治理 |
 
 ---
 
@@ -322,75 +324,9 @@
 
 ---
 
-## 9. 第 6 角色（Senior Agent Developer Reviewer）加入理由：为什么需要 Runtime 视角
+## 9. 第 6 角色（Senior Agent Developer Reviewer）加入理由
 
-按 §8 设计原则第 4 条，新角色必须证明现有 5 个无法覆盖。2026-06-30 snapshot 写入实测事故催生本角色。
-
-**核心论点**：本角色不是"行为层评审者"（Agent Operations / Process Reviewer 的延伸），而是 **Agent Runtime 架构师**——不停在"发生了什么行为"（Failure Mode），必须继续追问"Runtime 为什么允许这种行为发生，应该在哪一层修复"。
-
-### 9.1 现有 5 角色的覆盖盲区
-
-| 现有角色 | 覆盖域 | 不覆盖 |
-|---------|--------|--------|
-| SE Reviewer | 架构决策（ADR/RFC/EBSE/ATAM/Postmortem）| agent 自身作为执行主体的运行时行为漂移 |
-| Process Reviewer | 工作流事故（Lean/PDCA/A3/RCA）| 流程视角是"团队/工作流层"，非"agent 生命周期层" |
-| Reliability Reviewer | 服务可靠性（SRE/Error Budget/Incident）| SRE 视角是"服务可靠"，非"agent 决策可靠" |
-| Security Reviewer | 威胁建模（STRIDE/LINDDUN）| 完全不同领域 |
-| API Reviewer | 接口设计（REST/RFC/Evolution）| 完全不同领域 |
-
-### 9.2 本次事故暴露的三类问题
-
-| 问题 | 现有 5 角色都无法直接评审 |
-|------|-------------------------|
-| 下"功能没验证"前未检查最直接 artifact（.md 文件已落盘） | SE 不覆盖 agent 验证方法论，Process 覆盖团队流程不覆盖 agent 决策 |
-| 从"验证 snapshot"漂移到"追 console.log 去向"（6 轮诊断） | SE 不覆盖 agent 调试漂移，Process 不覆盖单 agent 内部状态 |
-| PR #5246 单源当独立来源引用 | SE 的 EBSE 涉及证据但非 agent 子代理场景，evidence-governance §6 是规则不是评审角色 |
-| 降阈值漏改 PRESERVE_RECENT_TOKENS 配对常量 | SE 的 ATAM 涉及权衡但非 agent 改常量的依赖扫描 |
-| 读日志错过 setup() 双重调用并行异常 | 无角色覆盖"agent 读日志的扫描模式" |
-| 调查无停止条件（追 console.log 去向无退出条件） | Process 的 PDCA 有 stop 但非 agent 调查场景 |
-
-### 9.3 成熟实践的存在性
-
-2026-06-07 Addy Osmani 发表《Loop Engineering》，O'Reilly Radar 转载为正式技术出版物。文章系统回答了"agent loop 是什么、有几个组成部分、边界在哪里"，并明确指出三大 failure mode：
-- **Verification Gap**："A loop running unattended is also a loop making mistakes unattended"——对应本次"下阴性结论前未做对照"
-- **Comprehension Debt**：loop 越高效产出，人理解腐蚀越快——对应本次"长期靠 Cline 实测，对 plugin 加载机制理解被腐蚀"
-- **Cognitive Surrender**：loop 跑得顺时人停止思考——对应本次"接受了 Cline 给的错误方向（dist/cli-entry.js）未自己核对"
-
-这证明：**问题有成熟实践可借鉴**（Loop Engineering / Harness Engineering / Subagent-driven Development / ReAct / Plan-Execute / Reflection / Runtime Loop 设计），不是本项目独创。所以新角色符合"优先借鉴"原则。
-
-### 9.4 为什么不停在 Failure Mode（行为层不够的理由）
-
-行为层 Failure Mode（Verification Gap / Goal Drift 等）描述的是"行为表现"，但**它无法回答"Runtime 为什么允许"和"应该在哪一层修复"**。这是两个层次：
-
-| 层次 | 问的问题 | 案例："下'功能没验证'前未检查 .md 文件" |
-|------|---------|---------------------------------------|
-| **行为层（Failure Mode）** | 发生了什么行为？ | Verification Gap |
-| **系统层（Runtime Architecture）** | Runtime 为什么没阻止？ | 为什么 Evaluator 在缺少 artifact 检查时能下阴性结论？Success Signal 是谁消费的？Observation Layer 默认读取了什么而忽略了 filesystem？ |
-| **责任层（Architecture）** | 应该在哪一层修复？ | Prompt（提醒检查）/ Skill（verification-discipline checklist）/ Runtime（强制 artifact gate）/ Tool（verify_snapshot() 专用工具）/ Framework（State Evaluator 确定性验证）？ |
-
-**行为层评审的局限**：
-- 只能说"发生了 Goal Drift"，不能说"Planner 为什么能覆盖原目标？有没有 Objective Consistency Check？Goal Representation 有没有 Version？"
-- 只能说"调查无停止条件"，不能说"Termination Condition 归属在哪？Planner / Executor / Evaluator / Runtime 谁负责？"
-- 只能说"Verification Gap"，不能说"Success Signal 是谁消费的？Observation Layer 还是 Evaluator？"
-- 只能修复一个具体案例，不能回答"修复是否具有可扩展性，还是同类问题会复发"
-
-**大厂面试官的视角**（Anthropic / OpenAI / Cursor / Google DeepMind / Cline 团队复盘时）：
-- 不会停在"为什么 Verification Gap？"
-- 会继续问："Termination Condition 放哪？Planner？Executor？Evaluator？Runtime？"
-- 会问："Goal Representation 是什么？什么时候更新？谁负责？有没有 Version？"
-- 会问："为什么 Runtime 没发现 Success？Success Signal 是谁消费的？"
-
-**所以本角色的输出格式强制要求 8 维度系统层追问 + 责任层归属**（见 §2.6 输出格式第二/三层），不是可选的 Failure Mode checklist。Failure Mode 只是入口，系统层追问是必答，责任层归属是必须给出。
-
-### 9.5 与 [verification-discipline] skill 的关系（三层落地）
-
-| 层 | 工具 | 作用时机 | 视角 |
-|----|------|---------|------|
-| 元规则 | [dev-rules.md §1.3](../dev-rules.md) | 原则定义 | 阴性结论门控原则 |
-| 评审角色 | 本文件 §2.6 | 事后/事前评审 | **系统层追问**（Runtime 为什么允许 + 责任层归属）|
-| 执行 skill | [verification-discipline](../.trae/skills/verification-discipline/SKILL.md) | 运行时触发 | **行为层刹车**（强制问"最直接 artifact 证据是什么？我检查过吗？"）|
-
-**协同**：skill 是"行为层刹车"（阻止继续漂移），角色是"系统层复盘"（追问 Runtime 为什么允许漂移 + 应在哪层修复）。skill 落地 §1.3 阴性结论门控的执行 checklist，角色落地 §1.11/§1.12 角色注入的 8 维度系统追问。两者互补：skill 防止本次漂移，角色防止架构层复发。
+本角色由 2026-06-30 snapshot 写入实测事故催生，论证"现有 5 角色无法覆盖 agent 运行时行为漂移"——本角色不停在行为层 Failure Mode（Verification Gap / Goal Drift 等），必须继续追问系统层 Runtime Architecture（"Runtime 为什么允许这种行为发生，应该在哪一层修复"）与责任层归属（Prompt / Skill / Runtime / Tool / Framework）。问题有成熟实践可借鉴（Loop Engineering [Addy Osmani, 2026-06] / Harness Engineering / Subagent-driven Development / ReAct / Plan-Execute / Reflection / Runtime Loop 设计），符合 §8"优先借鉴"原则，非本项目独创。完整论证（含 5 角色覆盖盲区表、事故暴露问题表、行为层 vs 系统层 vs 责任层对照、与 [verification-discipline](../.trae/skills/verification-discipline/SKILL.md) skill 的三层落地协同）见 docs/decisions/ADR-006-senior-agent-reviewer-role.md（待创建）。本节为决策记录摘要，非永久规则；角色定义见 §2.6，调用规则见 §4.1。
 
 ---
 

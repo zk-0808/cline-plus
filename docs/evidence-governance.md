@@ -77,12 +77,24 @@ Verified → Decision:       需通过 Decision Readiness Checklist（§7）
 | 已知限制 | Issue / Discussion |
 | 真实运行行为 | 实测 |
 | 设计意图 | 官方文档 / Example 注释 |
+| 社区开发活动是否存在 | npm 包数量 + 周下载量 + GitHub issue/PR 数 + 第三方 fork/scope |
+| 社区 how-to 经验是否沉淀 | 中英文搜索引擎 + 掘金/知乎/CSDN/Dev.to/Medium |
+| 社区 plugin 是否上架 | 官方 Marketplace API 或 catalog.json |
+| 社区问题是否被响应 | GitHub issue 关闭率 + 响应时长 + Stack Overflow 标签活跃度 |
 
 **冲突时记录，不裁决**（见 §6 Conflict Registry）。
 
 **反例**（本次事故）：
 - 用 CHANGELOG 回答"是否支持"——错误，CHANGELOG 回答"何时引入"
 - 用 minified 源码回答"设计意图"——错误，源码回答"实际行为"
+- 用一种社区证据类型代替另一种：
+  - ❌ "无 how-to 博客" ⇒ "无开发活动"（证据类型混淆）
+  - ❌ "npm 包存在" ⇒ "社区已沉淀经验"（包存在 ≠ 经验沉淀）
+  - ✅ "无 how-to 博客" + "npm 周下载 < 100" + "GitHub PR 数 < 5" + "Marketplace 上架 0" ⇒ "社区活动稀少"（多源一致）
+
+**成熟实践映射**：社区活动多源验证 ↔ **EBSE 多源证据三角验证（Triangulation）** + **Mixed Methods Research**（定量 npm/GitHub 数据 + 定性博客/Issue 分析）
+
+> *§16 社区活动证据职责已合并至本节表格末尾。源由：2026-06-23 调查把"无 how-to 博客"误等同为"无开发活动"（[investigation-note-marketplace-dev-mechanism.md](decisions/investigation-note-marketplace-dev-mechanism.md) C 号 RCA 一号根因：证据类型混淆）。*
 
 ---
 
@@ -298,7 +310,7 @@ ADR 之前应有 Investigation Note 记录证据链，**不直接从搜索跳到
 |----------|---------|--------------------------|---------|
 | §2 证据生命周期状态机 | **EBSE（Evidence-Based Software Engineering）**——Kitchenham et al., 2004；科学方法的 Observation → Hypothesis → Experiment → Conclusion | 增加 Evidence 中间状态（区分"原始观察"与"支持假设的证据"）| 无 |
 | §2.4 Observation vs Inference 分离 | **科学方法 + RCA（Root Cause Analysis）**——观察与解释分离是 RCA 基本原则 | 无 | 无 |
-| §3 证据职责分工 | **EBSE 证据分级**——不同证据类型回答不同问题 | 针对 AI agent 调研场景的具体证据类型映射（minified/官方/Example/实测）| 无 |
+| §3 证据职责分工（含社区活动，原 §16 已合并）| **EBSE 证据分级** + **EBSE 三角验证（Triangulation）** + **Mixed Methods Research**——不同证据类型回答不同问题 | 针对 AI agent 调研场景的具体证据类型映射（minified/官方/Example/实测/社区活动 npm·GitHub·Marketplace）| 无 |
 | §4 Confidence 模型 | **EBSE 证据等级** + **CER（Claim-Evidence-Reasoning）** | 简化为高/中/低三档 + ★ 标注 | 无 |
 | §5 Unknown 状态 | **科学方法**——"I don't know"是合法答案；**RCA**——未确认原因时停止而非猜测 | 显式允许 ADR 暂停于 Unknown | 无 |
 | §6 Conflict Registry | **RCA**——记录矛盾证据而非急于裁决；**ADR**——记录决策时的反对意见 | 无 | 无 |
@@ -306,6 +318,8 @@ ADR 之前应有 Investigation Note 记录证据链，**不直接从搜索跳到
 | §8 Evidence Escalation | **RCA 5 Whys**——逐层深入；**PDCA**——Plan/Do/Check/Act 升级 | 证据类型升级路径（官方→Example→源码→实测）| 无 |
 | §9 实验优先 | **Lean Startup**——Build-Measure-Learn；**EBSE**——empirical evidence 优于 analytical reasoning | 针对 AI agent 倾向于分析 minified 代码的修正 | 无 |
 | §10 Investigation Note | **Lab Notebook / Research Log**——科学研究的实验记录簿 | 格式标准化为 Observation/Evidence/Hypothesis/Verified/Decision | 无 |
+| §15 结论时效性模型 | **Refresh Token 生命周期** + **Nutrition Facts"as of"标注** | ADR frontmatter 加 `evidence_as_of` / `expires_if_unchanged` 字段 | 无 |
+| §17 调研可复现性 | **SLR 检索协议（Kitchenham & Charters 2007）** + **Lab Notebook** | 强制 query 列表 + 时间戳 + 命中数三字段 | 无 |
 
 **结论**：本框架**无创新部分**——所有组成部分均有成熟实践对应。本地扩展仅是"针对 AI agent 调研工作流的场景适配"（如 minified 代码风险、Confidence 简化为三档）。
 
@@ -339,26 +353,9 @@ expires_if_unchanged: <YYYY-MM-DD>     # 默认 evidence_as_of + 14 天（外部
 
 ---
 
-## 16. 社区活动证据职责
+## 16. 社区活动证据职责（已合并至 §3）
 
-> **源由**：§3 证据职责分工表未覆盖"社区活动"维度，导致 2026-06-23 调查把"无 how-to 博客"误等同为"无开发活动"（[investigation-note-marketplace-dev-mechanism.md](decisions/investigation-note-marketplace-dev-mechanism.md) C 号 RCA 一号根因：证据类型混淆）。
-
-补全 §3 表格：
-
-| 问题 | 应使用的证据类型 |
-|------|---------------|
-| 社区开发活动是否存在 | npm 包数量 + 周下载量 + GitHub issue/PR 数 + 第三方 fork/scope |
-| 社区 how-to 经验是否沉淀 | 中英文搜索引擎 + 掘金/知乎/CSDN/Dev.to/Medium |
-| 社区 plugin 是否上架 | 官方 Marketplace API 或 catalog.json |
-| 社区问题是否被响应 | GitHub issue 关闭率 + 响应时长 + Stack Overflow 标签活跃度 |
-
-**禁止**：用一种证据类型代替另一种。例如：
-- ❌ "无 how-to 博客" ⇒ "无开发活动"（证据类型混淆）
-- ❌ "npm 包存在" ⇒ "社区已沉淀经验"（包存在 ≠ 经验沉淀）
-- ✅ "无 how-to 博客" + "npm 周下载 < 100" + "GitHub PR 数 < 5" + "Marketplace 上架 0" ⇒ "社区活动稀少"（多源一致）
-
-**成熟实践映射**：
-- 社区活动多源验证 ↔ **EBSE 多源证据三角验证（Triangulation）** + **Mixed Methods Research**（定量 npm/GitHub 数据 + 定性博客/Issue 分析）
+本节内容已合并至 [§3 证据职责分工](#3-证据职责分工) 表格末尾（社区活动 4 行）及反例列表。源由见 §3 末尾引用块。
 
 ---
 
@@ -387,12 +384,6 @@ expires_if_unchanged: <YYYY-MM-DD>     # 默认 evidence_as_of + 14 天（外部
 
 ---
 
-## 18. 产源说明（§15-§17 补充）
+## 18. 产源说明（§15-§17 补充）（已合并至 §14）
 
-| 本框架章节 | 成熟实践 | 本地扩展（AI 工作流特殊性）| 创新部分 |
-|----------|---------|--------------------------|---------|
-| §15 结论时效性模型 | **Refresh Token 生命周期** + **Nutrition Facts"as of"标注** | ADR frontmatter 加 `evidence_as_of` / `expires_if_unchanged` 字段 | 无 |
-| §16 社区活动证据职责 | **EBSE 三角验证（Triangulation）** + **Mixed Methods Research** | 针对 AI agent 调研场景的具体社区活动证据类型映射（npm/GitHub/Marketplace）| 无 |
-| §17 调研可复现性 | **SLR 检索协议（Kitchenham & Charters 2007）** + **Lab Notebook** | 强制 query 列表 + 时间戳 + 命中数三字段 | 无 |
-
-**结论**：§15-§17 无创新部分，均为成熟实践的本项目适配。
+本节产源表已合并至 [§14 产源说明](#14-产源说明成熟实践映射) 表格：§15/§17 行新增，§16 产源并入 §3 行。§15-§17 无创新部分，均为成熟实践的本项目适配。
