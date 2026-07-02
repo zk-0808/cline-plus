@@ -1,20 +1,15 @@
 #!/usr/bin/env node
-// MCP 反-bot 节流 wrapper（方案 C）
+// MCP 反-bot 节流 wrapper（方案 C）— 重构后入口模块
 // 对应决策：D-2026-06-26-search-adopt-mcp-throttle-wrapper
-// 包裹 duckduckgo-websearch，实现：
-//   1. 强制 max_results <= 10（从根上消除 vqd 翻页连击）
-//   2. 跨调用状态记忆（blockedUntil + recentFailures 滑动窗口 + circuitBreakCount）
-//   3. 指数退避熔断（3 次失败触发熔断，熔断时长按熔断次数指数递增：30s/2min/10min）
-//   4. 会话级熔断（熔断期内拒绝 search 调用，返回 CIRCUIT_OPEN）
 //
-// 设计说明（整合决策文档 §决策第 3 点与 §wrapper 行为规约伪代码）：
-//   决策文档伪代码"3 次失败 → 5min 熔断 + 清空 recentFailures"与 §决策第 3 点"指数退避 [30s,2min,10min]"
-//   存在表述差异。本实现整合为：
-//   - recentFailures 滑动窗口累计失败，>=3 次触发熔断（符合伪代码）
-//   - 熔断触发后清空 recentFailures（符合伪代码），circuitBreakCount++ 记录熔断次数
-//   - 熔断时长 = BACKOFF_DELAYS[min(circuitBreakCount-1, 2)]，实现指数退避（符合 §决策第 3 点）
-//   - 成功调用清空 recentFailures + circuitBreakCount（完全恢复）
-//   wrapper 不做同步重试（上游内部已有 3 次重试，避免双重重试放大延迟）。
+// 架构（单向依赖，无循环）：
+//   index.ts ──→ circuit-breaker.ts ──→ config.ts
+//
+// 本模块职责：
+//   1. 类型导出（SearchResult, SearchError, UpstreamSearcher, UpstreamFetcher 等）
+//   2. ThrottledSearchWrapper — 编排层：Promise 链串行化 + 熔断检查 + cap + 上游调用
+//   3. ThrottledMCPServer — MCP 协议层
+//   4. main() 入口
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -24,7 +19,10 @@ import {
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 
-// ===== 类型定义 =====
+import { WrapperConfig, loadConfig } from './config';
+import { CircuitBreaker } from './circuit-breaker';
+
+// ===== 类型定义（保持原有导出契约） =====
 
 // 与上游 duckduckgo-websearch 的 SearchResult 兼容（鸭子类型，便于测试 mock）
 export interface SearchResult {
@@ -59,7 +57,7 @@ export class SearchError extends Error {
 }
 
 // 类型守卫：从 unknown 错误中提取 code
-function getErrorCode(e: unknown): SearchErrorCode | undefined {
+export function getErrorCode(e: unknown): SearchErrorCode | undefined {
   if (e && typeof e === 'object' && 'code' in e) {
     const code = (e as { code: unknown }).code;
     if (typeof code === 'string') return code as SearchErrorCode;
@@ -70,26 +68,8 @@ function getErrorCode(e: unknown): SearchErrorCode | undefined {
 // ===== ThrottledSearchWrapper =====
 
 export class ThrottledSearchWrapper {
-  // 强制 cap：SKILL §1.4.1 的 R1/R2/R3 每路 max_results=10，项目从不分页，禁分页零损失
-  private static readonly MAX_RESULTS_CAP = 10;
-
-  // 指数退避熔断时长（毫秒）。索引 = circuitBreakCount - 1（封顶在索引 2）
-  // 第 1 次熔断 → 30s
-  // 第 2 次熔断 → 2min
-  // 第 3+ 次熔断 → 10min（封顶）
-  private static readonly BACKOFF_DELAYS = [30_000, 120_000, 600_000];
-
-  // 触发熔断的失败次数阈值（决策伪代码：3 次）
-  private static readonly FAILURE_THRESHOLD = 3;
-
-  // 滑动窗口时长（1 小时）
-  private static readonly FAILURE_WINDOW_MS = 3600_000;
-
-  // 滑动窗口：1 小时内的失败时间戳
-  private recentFailures: Date[] = [];
-  private blockedUntil: Date | null = null;
-  // 熔断次数（用于指数退避递增；成功后清零）
-  private circuitBreakCount = 0;
+  private breaker: CircuitBreaker;
+  private config: WrapperConfig;
 
   // 串行化链：避免并发请求同时穿透熔断检查（MCP server 支持并发调用）
   private chain: Promise<void> = Promise.resolve();
@@ -97,7 +77,11 @@ export class ThrottledSearchWrapper {
   constructor(
     private upstreamSearch: UpstreamSearcher,
     private upstreamFetch: UpstreamFetcher,
-  ) {}
+    config?: WrapperConfig,
+  ) {
+    this.config = config ?? loadConfig();
+    this.breaker = new CircuitBreaker(this.config);
+  }
 
   /**
    * 节流 search：串行化排队 → 熔断检查 → cap max_results → 调用上游 → 成功清空 / 失败记录
@@ -115,33 +99,38 @@ export class ThrottledSearchWrapper {
   }
 
   private async _searchImpl(query: string, maxResults: number): Promise<SearchResult[]> {
-    // 1. 熔断检查
-    if (this.blockedUntil && new Date() < this.blockedUntil) {
+    // 1. 熔断检查（状态机驱动）
+    const check = this.breaker.checkAndAllow();
+    if (!check.allowed) {
       throw new SearchError(
-        `Circuit open: blocked until ${this.blockedUntil.toISOString()}`,
+        `Circuit open: blocked until ${check.blockedUntil?.toISOString()}`,
         'CIRCUIT_OPEN',
-        this.blockedUntil,
+        check.blockedUntil,
       );
     }
 
     // 2. 强制 cap（从根上消除 vqd 翻页连击）
-    const capped = Math.min(maxResults, ThrottledSearchWrapper.MAX_RESULTS_CAP);
+    const capped = Math.min(maxResults, this.config.maxResultsCap);
 
     // 3. 调用上游（内部已有 3 次重试）
+    //    Closed 和 HalfOpen 态的上游调用逻辑一致：
+    //    - 成功 → 完全恢复（recordSuccess 清空所有状态）
+    //    - BOT_DETECTED → 记录失败（状态机内部处理转换）
+    //    - 其他错误 → 透传，不影响熔断状态
+    const isProbe = check.state === 'half-open';
     try {
       const results = await this.upstreamSearch.search(query, { maxResults: capped });
-      // 成功 → 完全恢复
-      this.recentFailures = [];
-      this.blockedUntil = null;
-      this.circuitBreakCount = 0;
+      this.breaker.recordSuccess();
       return results;
     } catch (e) {
-      const code = getErrorCode(e);
-      if (code === 'BOT_DETECTED') {
-        this.recordFailure();
+      if (getErrorCode(e) === 'BOT_DETECTED') {
+        this.breaker.recordFailure();
       }
-      // 直接抛给调用方（不做同步重试）
       throw e;
+    } finally {
+      if (isProbe) {
+        this.breaker.completeProbe();
+      }
     }
   }
 
@@ -153,41 +142,17 @@ export class ThrottledSearchWrapper {
     return this.upstreamFetch.fetchAndParse(url, maxContentLength);
   }
 
-  // 记录失败 + 触发熔断（3 次失败才熔断，熔断后清空 recentFailures + circuitBreakCount++）
-  private recordFailure(): void {
-    const now = new Date();
-    this.recentFailures.push(now);
-    // 滑动窗口清理：移除 1h 外的失败
-    this.recentFailures = this.recentFailures.filter(
-      (t) => now.getTime() - t.getTime() < ThrottledSearchWrapper.FAILURE_WINDOW_MS,
-    );
-
-    // 达到阈值才触发熔断
-    if (this.recentFailures.length < ThrottledSearchWrapper.FAILURE_THRESHOLD) {
-      return;
-    }
-
-    // 触发熔断：清空 recentFailures（决策伪代码）+ circuitBreakCount++（指数退避）
-    this.recentFailures = [];
-    this.circuitBreakCount++;
-    const idx = Math.min(
-      this.circuitBreakCount - 1,
-      ThrottledSearchWrapper.BACKOFF_DELAYS.length - 1,
-    );
-    const delay = ThrottledSearchWrapper.BACKOFF_DELAYS[idx];
-    this.blockedUntil = new Date(now.getTime() + delay);
-  }
-
-  // 测试/调试用：查看当前状态
+  // 测试/调试用：查看当前状态（向后兼容原有返回形状）
   getState(): {
     blockedUntil: Date | null;
     recentFailures: number;
     circuitBreakCount: number;
   } {
+    const snap = this.breaker.getState();
     return {
-      blockedUntil: this.blockedUntil,
-      recentFailures: this.recentFailures.length,
-      circuitBreakCount: this.circuitBreakCount,
+      blockedUntil: snap.blockedUntil,
+      recentFailures: snap.recentFailures,
+      circuitBreakCount: snap.circuitBreakCount,
     };
   }
 }
