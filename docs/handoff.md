@@ -1,52 +1,40 @@
-# Handoff — 交界期收敛（context-snapshot 开发期结束）
+# Handoff — 交界期延续（snapshot-writer 重构完成）
 
 > **生命周期**：每次覆写，无归档——会话交接文件。
 
 ## 本会话决策
 
-| id | 决策 | confidence | depends_on |
-|----|------|-----------|------------|
-| `governance-procedure` | 阶段性治理流程参考文档创建（[governance-procedure.md](governance-procedure.md)，根因4暂缓项载体） | Verified | `audit-baseline` |
-| `context-snapshot-freeze` | context-snapshot 开发期冻结（P0/P1 完成，剩余项受 §1.15 阻塞） | Verified | — |
-| `junction-convergence` | 交界期收敛执行（§5.2 七步 + §6 规则迁移评估） | Verified | `context-snapshot-freeze` |
-| `migration-eval` | 规则迁移评估结论：[plugin/project-rules.md §3](plugin/project-rules.md) 所有子章节均不迁入（通用模式已在 dev-rules，特化内容保留作为下一功能参考样例） | Verified | `junction-convergence` |
+无新增决策。交界期状态不变：context-snapshot 开发期已冻结，顶层已解冻。
 
 ## 本会话净变化
 
-### 1. 阶段性治理流程文档（commit `e7d9843`）
+### 1. dev-rules TRAE 泛化（commit `ea9ec8f`）
 
-[governance-procedure.md](governance-procedure.md) 新增——13 章节操作参考文档（非规则条款），整合散落于 dev-rules §1.15/§2/§4/§6.4/§6.5/末尾生命周期的阶段性动作。含 §10 自指风险监测 + §13 权威源索引单点维护点。外部评审采纳修订：参考vs规则边界下沉到每个N步流程标题、硬引用收敛到§13单点维护、关键步骤补完成检测方法列、级vs档关系说明、生命周期改"长期维护受§10约束"。
+[dev-rules.md](dev-rules.md) 中 TRAE agent 引用泛化为"主 agent"（跨多 agent 通用定位），加载方式改为不依赖单一 IDE 自动注入机制。16 行变更。
 
-### 2. 顶层解冻声明
+### 2. context-snapshot README 同步 + 子模块推进（commit `ea9ec8f` + `53c53c4`）
 
-[dev-rules.md](dev-rules.md) L13 头部状态：🔴 冻结中 → 🟢 解冻（功能交界期）。context-snapshot 开发期已于 2026-07-02 冻结（P0/P1 完成，剩余项受 §1.15 阻塞），进入交界期。下一功能开发启动后重新冻结。
+README 对齐 v0.7.0 结构化提取器完成状态、V6 架构图（messageBuilder 注入绕开 codec）、已知限制表更新；package.json version 0.6.0→0.7.0。
 
-### 3. handoff 重置（本文件）
+子模块指针 `5ac7cec → 13af3d3`（3 commits）：
 
-覆盖写 handoff.md，从"审查四档闭环"切换为"交界期收敛"状态。未完成项保留原有监控项 + 新增"下一功能方向待定"。
+| Hash | 内容 |
+|------|------|
+| `c0c6c5f` | snapshot-writer: 提取 5 个 section render 函数 |
+| `10375c0` | snapshot-writer: 第 2 轮 review 反馈修复 |
+| `13af3d3` | 业务逻辑从 renderer 迁移到 extractor + formatter（5 文件 +149/-101）|
 
-### 4. 规则迁移评估（无文件修改）
+### 3. 插件安装目录同步
 
-按 [governance-procedure.md §6.1](governance-procedure.md) 迁移判据逐条评估 [plugin/project-rules.md §3](plugin/project-rules.md) 七个子章节（§3.1-§3.7）：
-
-| 子章节 | 跨功能验证 | 与具体功能无关 | 预期被复用 | 判定 |
-|-------|-----------|--------------|-----------|------|
-| §3.1 P 级触发器 | 模式通用，定义专属 | 部分 | 模式可复用 | 不迁（通用模式已在 dev-rules §2）|
-| §3.2 教训沉淀位置 | 模式通用，内容专属 | 部分 | 模式可复用 | 不迁（L1-L8 归属已分层落实）|
-| §3.3 handoff 特化字段 | blocker_ref/codec_status 含 codec 专属 | 否 | 否 | 不迁（纯项目专属）|
-| §3.4 评审角色配置 | 从 reviewer-personas §2 选子集 | 是 | 是 | 不迁（reviewer-personas §2 已是全集）|
-| §3.5 版本变化重测流程 | 流程通用，重测项专属 | 部分 | 流程可复用 | 不迁（通用部分已在 dev-rules §1.15）|
-| §3.6 通用报错处理 | 分类专属 | 否 | 否 | 不迁（通用模式太抽象）|
-| §3.7 跨会话读取门控 | 通用部分已在 dev-rules §1 | 部分 | 通用部分已复用 | 不迁（通用已在 dev-rules）|
-
-**结论**：§3 所有子章节均不迁入顶层。通用模式已在 dev-rules 中（§2/§1.11-1.12/§1.15/末尾生命周期），项目特化内容随 context-snapshot 冻结保留作为下一功能参考样例。plugin/project-rules.md 保留原位，不再活跃执行。
+子模块 src/ + package.json + tsconfig.json 已复制到 `~/.cline/plugins/installed/local/context-snapshot/`。
 
 ## Commits
 
 | Hash | Repo | Message |
 |------|------|---------|
-| `e7d9843` | cline-plus | docs: 阶段性治理流程参考文档（根因4暂缓项载体）|
-| 待 commit | cline-plus | handoff: 交界期收敛 - context-snapshot 开发期结束 + 顶层解冻 |
+| `6b3d801` | cline-plus | handoff: 交界期收敛 - context-snapshot 开发期结束 + 顶层解冻 |
+| `ea9ec8f` | cline-plus | chore: context-snapshot README同步v0.7.0+V6改造 + dev-rules TRAE泛化 |
+| `53c53c4` | cline-plus | chore: update context-snapshot submodule (snapshot-writer refactor) |
 
 ## 未完成项
 
@@ -72,7 +60,7 @@
 ## Handoff
 
 ```text
-context-snapshot 开发期已于 2026-07-02 冻结（P0/P1 完成，剩余项受 §1.15 阻塞），进入功能交界期。顶层已解冻（dev-rules 🟢）。规则迁移评估结论：plugin/project-rules.md §3 所有子章节均不迁入（通用模式已在 dev-rules，特化内容保留作为参考样例）。下一功能方向待定（候选：记忆系统 D' 索引层 / 经验机制化 / 其他）。读 docs/governance-procedure.md §12 快速启动清单了解阶段性治理流程。
+交界期延续，无新决策。context-snapshot 开发期已冻结（P0/P1 完成，剩余项受 §1.15 阻塞），顶层已解冻。本会话拉取远端 2 commit（dev-rules TRAE 泛化 + 子模块 snapshot-writer 重构 3 commits）并同步插件安装目录。snapshot-writer 重构完成：业务逻辑从 renderer 迁移到 extractor + formatter。下一功能方向待定（候选：记忆系统 D' 索引层 / 经验机制化 / 其他）。
 ```
 
 **后续动作**（无紧急项）：
