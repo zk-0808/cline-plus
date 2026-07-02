@@ -140,6 +140,32 @@ return {
 2. codec 行为：O3 已确认 `Nd` 函数对每条消息调用 `n.content.map(eK)`
 3. 实测吻合：[handoff.md §4](../handoff.md) 记录 beforeModel 在步骤 15 首次返回修改后的 messages 后立即崩溃——步骤 15 是 detectRepetition 首次返回 repeating=true 的步骤，beforeModel 首次返回也在该步骤，崩溃发生在 codec 处理注入的 string content 时
 
+### O9. 上游修复 PR #12032 提交（2026-07-02 登记）
+
+**来源**：cline/cline issue #12004 评论区 Osraka 评论 + PR #12032（WebFetch 实读）
+
+[PR #12032](https://github.com/cline/cline/pull/12032) `fix(core): tolerate string agent message content` — Osraka 提交，**状态：Open**（截至 2026-07-02，1 commit，未合并）。
+
+PR scope 与 §1.15 恢复条件对照：
+
+| 恢复条件要求（§1.15 + D3 表） | PR #12032 实际修复 |
+|------|------|
+| 修复 `agentMessageToMessageWithMetadata` 加守卫 | ✅ "both decode paths (agentMessageToMessageWithMetadata and agentMessagesToMessages)" |
+| 修复 `agentMessagesToMessages` 加守卫 | ✅ 同上 |
+| 补测试 | ✅ "regression test covers single-message and batch decode paths"（`sdk/packages/core/src/runtime/config/agent-message-codec.test.ts`）|
+| 守卫形式 | ⚠️ "normalize string content to a text part" + "tolerate single part-shaped object by wrapping" + "ignore null/unknown shapes"——非显式 `Array.isArray`，但功能等价（容忍非数组不崩）|
+
+**关键含义**：
+- PR scope 精确命中 §1.15 恢复条件（两条 decode 路径 + 补测试）
+- PR 状态为 Open，**未合并、未发版**——按 §1.15 禁止条款"workaround 不等同环境可用"，未合并前 §1.15 不可抗力声明**不解除**
+- O5 结论"Bug 仍在 main branch"在 PR 合并前**保持有效**
+- 一旦合并 + CLI 发版升级，即可解除 §1.15 codec bug 行 + 解除 F1 阻塞
+
+**Verified 依据**：
+1. WebFetch 直读 PR #12032 页面：状态 Open，fixes #12004
+2. PR description 明确列出两条 decode 路径修复 + regression test
+3. PR scope 与本 Investigation Note O5 的 unminified 源码定位（`agentMessageToMessageWithMetadata` L78 / `agentMessagesToMessages` L97）精确对应
+
 ---
 
 ## Evidence → Hypothesis → Verified
@@ -239,8 +265,9 @@ Plugin beforeModel hook 返回 messages
 | H2 image 分支 undefined 丢弃 | Hypothetical | 下次读源码时补证 `agentPartToContentBlock` 完整 image 分支 |
 | H3 下游连锁风险 | Hypothetical | 下次读源码时验证 `agent-runtime.ts:621` / `runtime-event-adapter.ts:70` |
 | 测试盲点 | 未验证 | 提 issue 时一并核查 codec 模块测试覆盖 |
-| 是否有已知 issue | 未验证 | 提 issue 前先在 cline/cline 搜 `content.map is not a function` |
-| **O8 content 类型修复** | **Verified，待修复** | **修复 [index.ts:146](../context-snapshot/src/index.ts#L146) beforeModel 注入 content 类型 string → array；修复后重跑 V2-A 静态审计 + V6 替代实现验证** |
+| 是否有已知 issue | **已确认**（#12004）| issue #12004 已由 Osraka 复现 + 提 PR #12032（见 O9）|
+| **O8 content 类型修复** | **Verified，已完成** | **[index.ts:146](../context-snapshot/src/index.ts#L146) beforeModel 注入 content 类型 string → array 已修复（A1）；V6 替代实现（messageBuilder 注入）已完成双保险** |
+| **O9 PR #12032 监控** | **Open，待合并** | **监控 [PR #12032](https://github.com/cline/cline/pull/12032) 合并状态 + CLI 发版；合并 + 发版后解除 §1.15 codec bug 行 + 解除 F1 阻塞** |
 
 ---
 
@@ -259,6 +286,6 @@ Plugin beforeModel hook 返回 messages
 
 ## 证据时效性（按 [dev-rules.md §1.13](../dev-rules.md)）
 
-- `evidence_as_of`: 2026-07-01（O8 补充更新）
-- `expires_if_unchanged`: 2026-07-15（14 天后）
-- 引用前需复查：上游是否已修复 + CLI 版本是否已升级
+- `evidence_as_of`: 2026-07-02（O9 补充更新：PR #12032 Open）
+- `expires_if_unchanged`: 2026-07-16（14 天后）
+- 引用前需复查：PR #12032 是否合并 + CLI 版本是否已升级

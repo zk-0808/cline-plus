@@ -240,12 +240,12 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 - 用 workaround 结果等同于"环境可用"（workaround 可用 ≠ 官方支持路径可用）
 - 省略证据链直接声明"不可用"（必须按 §1.6 双来源验证）
 
-**当前生效的不可抗力声明**（2026-06-30 更新）：
+**当前生效的不可抗力声明**（2026-07-02 更新，O9 追加 PR #12032 进展）：
 
 | 环境 | 状态 | 替代路径 | 恢复条件 |
 |------|------|---------|---------|
 | VS Code 扩展 4.0.x（plugin 系统）| 不可用 | CLI 3.0.30+ | SDK 迁移重新合入稳定版（issue #11944）|
-| CLI 3.0.34 `agent-message-codec.ts` 守卫缺失 | **部分受限**（长对话/异常 MCP tool_result 触发崩溃） | 分层推进：仅低风险实测（setup marker / rules 注入 / Loop Guard 短场景）| 上游修复 `agentMessageToMessageWithMetadata` / `agentMessagesToMessages` 加 `Array.isArray` 守卫 + 补测试 |
+| CLI 3.0.34 `agent-message-codec.ts` 守卫缺失 | **部分受限**（长对话/异常 MCP tool_result 触发崩溃） | 分层推进：仅低风险实测（setup marker / rules 注入 / Loop Guard 短场景）| 上游修复 `agentMessageToMessageWithMetadata` / `agentMessagesToMessages` 加 `Array.isArray` 守卫 + 补测试。**修复 PR 已提交**：[PR #12032](https://github.com/cline/cline/pull/12032)（Open，2026-07-02，scope 命中两条 decode 路径 + regression test）——合并 + CLI 发版后解除；详见 [investigation-note O9](decisions/investigation-note-cli-codec-content-map-bug.md) |
 
 **CLI 3.0.34 codec bug 影响范围**：
 - 🔴 **搁置**：snapshot 写入实测（需 90K tokens 长对话，正是 bug 触发场景）
