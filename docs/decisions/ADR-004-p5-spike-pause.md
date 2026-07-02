@@ -1,7 +1,8 @@
 # ADR-004: P5 Plugin Spike 暂停（实验环境前提动摇）
 
-- **Status**: deferred
+- **Status**: superseded（原 deferred，2026-06-28 被 ADR-005 取代）
 - **Date**: 2026-06-27
+- **Superseded-by**: [ADR-005](ADR-005-split-compact-from-handoff.md)（拆分 compaction 与 handoff，spawn context-snapshot 插件）
 - **Deciders**: 项目所有者
 - **Supersedes**: 无（承接 ADR-003 rolled-back 后的 partial Go 状态）
 - **Related**: ADR-002（Validation Plan §实验环境硬约束）、ADR-003（No-Go 误判撤销，partial Go）、[experiments/p5-spike/run-p5-capability-spike.md](../../experiments/p5-spike/run-p5-capability-spike.md) §5
@@ -126,3 +127,15 @@ ADR-003 §环境事实已记录此区分，但 ADR-002 Validation Plan 未充分
 3. **decisions/README.md**：索引表新增 ADR-004 行
 4. **survey.md §9.1 同步**：ADR-004 为全局 Plugin 决策，与 search-orchestrator 无主题关联，按 ADR-003 先例**不加入 §9.1**，仅登记于 decisions/README.md
 5. **插件临时改动已回滚**：`p5-spike-plugin.ts` 的降阈值实验常量已恢复原值（`MAX_INPUT_TOKENS=120_000` / `PRESERVE_RECENT_TOKENS=24_000`）
+
+---
+
+## Update 2026-06-28: 被 ADR-005 取代（superseded）
+
+[ADR-005: Split Compaction from Handoff](ADR-005-split-compact-from-handoff.md) 从根本上改变了 p5-spike 的架构前提：
+
+1. **恢复条件 ③ 已不满足**：p5-spike 的 #5 compact 双产物问题不再是"未解问题"——ADR-005 将 compaction 和 handoff 解耦，spawn 了 [context-snapshot](../../context-snapshot/) 插件（v0.7.0），以 `compact-observer` + `snapshot-writer` + `rules-injector` 三模块架构取代 p5-spike 的单插件设计
+2. **`index.jsonl` 已被废弃**：ADR-005 明确废弃 p5-spike 的 `index.jsonl` 机制（Cline SQLite DB 已存会话元数据）
+3. **`beforeRun` 已被 `rules` 注入替代**：p5-spike 的 `beforeRun` hook 被 Cline 的 `rules` API 动态注入取代
+
+因此恢复条件 ③（"#5 compact 双产物实证仍为未解问题"）已被 ADR-005 推翻，本 ADR 从 deferred 转为 **superseded**。#6 `beforeRun` hook 已实证触发的结论保留（`experiments/p5-spike/handoff/session-start.log`），但架构路径已由 context-snapshot 继承。目录添加 [DEPRECATED.md](../../experiments/p5-spike/DEPRECATED.md) 就地归档。
