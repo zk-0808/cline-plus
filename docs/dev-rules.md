@@ -10,7 +10,7 @@
 >
 > **与 `.clinerules` 的关系**：`.clinerules` 约束模型**执行行为**（遇不明确条件即停止询问）；本文件约束**执行主体边界与方法论**。两者互补，不重叠。
 >
-> **当前状态**：🔴 冻结中 — context-snapshot plugin 开发期间，本文件不新增规则（§6 硬约束）。新规则沉淀至 [plugin/project-rules.md](plugin/project-rules.md) §3。解冻条件：context-snapshot 功能结束 + 项目级规则提炼迁入。
+> **当前状态**：🟢 解冻（功能交界期）— context-snapshot 开发期已于 2026-07-02 冻结（P0/P1 完成，剩余项受 §1.15 阻塞），进入交界期。本文件可按 §6 维护节奏评估迁入新规则（迁入评估见 [handoff.md](handoff.md)）。下一功能开发启动后重新冻结。
 
 ---
 
