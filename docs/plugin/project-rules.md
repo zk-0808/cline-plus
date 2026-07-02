@@ -73,6 +73,81 @@
 
 ---
 
+## 3. 治理类规则（context-snapshot 开发期项目级承载）
+
+> **定位**：本节承载 context-snapshot 开发期间不适合放入 dev-rules.md（顶层冻结，dev-rules §6 硬约束）的项目级治理规则。功能结束后按迁移判据评估是否迁入顶层。
+
+### 3.1 P 级 handoff 触发器（context-snapshot 专属）
+
+**触发条件**（满足任一即触发）：
+- P0/P1 任务全部完成，或
+- 单个 P0/P1 达到最终状态（Verified 实测通过 + 文档闭环）
+
+**触发动作**：
+1. 写入 handoff.md
+2. confidence 字段必须标注（取值与 [evidence-governance.md §4](../evidence-governance.md) 一致：Verified / Likely / Hypothesis）
+3. 未完成项必须列出（即使全部 P0/P1 完成，中/低优先级项也要列入"未完成项"表，三字段按 dev-rules §2.2 强制）
+
+**context-snapshot 的 P 级定义**（开发期）：
+- P0：codec bug 修复路径（A1 content type fix / V6 Loop Guard 实现）
+- P1：v0.7.0 提取器完成（A4 Phase 4 验证通过）
+
+**为什么属于项目级**：dev-rules §2 通用触发器（触发器 a 用户口头要求 / 触发器 c 对话过长 + 话题跳转）不含"P 级任务完成"——P 级定义因项目而异。context-snapshot 的 P 级是 codec bug 修复 / V6 实现 / 提取器完成，其他项目（如 search-orchestrator）的 P 级定义不同。通用层无法枚举所有项目的 P 级语义，故下沉到项目级。
+
+### 3.2 教训沉淀位置约定（context-snapshot 开发期）
+
+context-snapshot 开发期产生的教训按下列位置约定沉淀：
+
+| 教训 ID | 内容 | 沉淀位置 | 层级归属理由 |
+|---------|------|---------|------------|
+| L1 | 契约优先（先读 .d.ts 确认 API 字段名） | plugin-dev-sop §1 Step1（已有） | 通用 plugin 开发流程，跨插件复用 |
+| L2 | 死代码也要修（codec bug 同模式复发） | **本文件 §3.2（本表）** | context-snapshot 特有——codec bug 在 beforeModel / compaction.ts 等多处同模式复发 |
+| L3 | workaround ≠ 环境可用 | dev-rules §1.15 禁止条款（已存在） | 通用约束——任何项目遇不可抗力都适用 |
+| L4 | 单源声明降级 Hypothesis | evidence-governance §6（已存在） | 通用证据规则 |
+| L5 | 日期异常是幻觉强信号 | evidence-governance §6（已存在） | 通用证据规则 |
+| L6 | 命题三翻触发流程审查 | dev-rules §1.10 / project_memory 硬约束（已存在） | 跨项目通用 |
+| L7 | minified 代码只用于定位 | dev-rules §1.7（已存在） | 通用约束 |
+| L8 | 模型可能误读 SKILL 文件 | project_memory（已存在） | 跨项目 |
+
+**新增规则**：本开发期内新教训优先沉淀到本文件 §3.2（本表），功能结束后再评估是否迁入顶层 dev-rules.md。评估判据：教训与 context-snapshot 特有的 codec bug / 提取器 / Loop Guard 强相关 → 留项目级；与具体功能无关且预期被下一个扩展项目复用 → 迁顶层。
+
+**为什么属于项目级**：每个项目的教训集合不同（context-snapshot 的 L2 死代码同模式复发是其特有教训），沉淀位置需项目级约定。顶层 dev-rules 只承载已验证跨功能通用的教训（L3/L4/L5/L6/L7/L8），项目特有教训（L1/L2）留在项目级。
+
+### 3.3 handoff schema 特化字段（context-snapshot 专属）
+
+在 dev-rules §2.2 通用三字段（id / confidence / depends_on）基础上，context-snapshot handoff 的"未完成项"表增加以下项目特化字段：
+
+| 特化字段 | 规则 | 示例 |
+|---------|------|------|
+| `blocker_ref` | 受 dev-rules §1.15 阻塞的项，引用不可抗力声明行（dev-rules §1.15 表中"环境"列） | `CLI 3.0.34 codec bug` |
+| `codec_status` | codec bug 当前状态（PR 编号 + 状态） | `PR #12032 Open` |
+| `verified_evidence` | 本会话 Verified 证据的 commit hash（context-snapshot 仓库） | `659dd1c` |
+
+**填写约束**：
+- `blocker_ref` 仅当 depends_on 含 `codec-bug-fix` 时填写
+- `codec_status` 仅当 `blocker_ref` 非空时填写
+- `verified_evidence` 仅当 confidence = Verified 时填写
+
+**为什么属于项目级**：这些字段与 context-snapshot 的 codec bug 阻塞强相关（blocker_ref / codec_status 直接引用 dev-rules §1.15 不可抗力声明），其他项目无此阻塞场景，不需要这些字段。通用三字段（id/confidence/depends_on）已由 dev-rules §2.2 强制，项目级只追加特化字段。
+
+### 3.4 项目级评审角色配置
+
+从 reviewer-personas §2 降级的 5 个角色中，context-snapshot 开发期可能需要的：
+
+| 角色 | 用途 | 当前状态 |
+|------|------|---------|
+| SE Reviewer | ADR 评审（context-snapshot 有 ADR-001~005） | 按需启用 |
+| Senior Agent Developer Reviewer | agent 异常流程评审（如 codec bug 触发的 Loop Guard 重设计） | 已活跃 |
+| Process Reviewer | 工作流触发-执行-退出全生命周期审查 / 流程闭环 / 根因分析 / 状态值约定一致性 | 按需启用（本次 §3 章节补全任务已启用） |
+| Reliability Reviewer | 失败模式 / 长对话崩溃分析 | 按需启用 |
+| Security/API Reviewer | 插件 API 边界 / hook 注入安全 | 按需启用 |
+
+**启用规则**：遇 ADR 评审 → SE Reviewer；遇 agent 异常流程 → Senior Agent Developer Reviewer；遇工作流闭环问题 → Process Reviewer；遇失败模式分析 → Reliability Reviewer；遇 API 边界 → Security/API Reviewer。调用方式按 dev-rules §1.11 / §1.12 执行（角色提示词注入子代理 query）。
+
+**为什么属于项目级**：不同项目需要的评审角色不同（如 search-orchestrator 不需要 SE Reviewer 评审 ADR，但需要 Reliability Reviewer 评审搜索质量）。reviewer-personas §2 提供全集，项目级按需配置子集。
+
+---
+
 ## 本文件的生命周期
 
 - 功能绑定 — context-snapshot plugin 开发
