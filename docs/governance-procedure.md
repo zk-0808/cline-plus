@@ -464,6 +464,7 @@
 | | | 子代理协作证据规则 | §20 |
 | [reviewer-personas.md](reviewer-personas.md) | 评审角色全集 | 评审角色全集 + 触发条件 | §2 |
 | | | 评审经验映射实践表 | §6 |
+| [coder-persona.md](plugin/coder-persona.md) | 代码执行角色 | 触发方式 / 启动时必读 / 宪法四原则 / 工作流 / 输出契约 | 触发方式节 / 附录 A-B |
 | [`project-rules-<功能>.md`](plugin/project-rules.md) | 项目级规则承载 | 治理类章节（P 级触发器 / 教训沉淀 / handoff 特化字段 / 评审角色配置 / 跨会话读取门控 / 版本变化重测 / 报错处理） | §3 |
 | [mechanism-candidates.md](mechanism-candidates.md) | 机制候选清单 | 状态约定（候选/实验中/已机制化/永久C类/已退休） | 文件内"状态约定"节 |
 | | | stale entry 清理规则 | 文件内"stale 清理"节 |
