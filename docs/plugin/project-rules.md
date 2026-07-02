@@ -146,6 +146,36 @@ context-snapshot 开发期产生的教训按下列位置约定沉淀：
 
 **为什么属于项目级**：不同项目需要的评审角色不同（如 search-orchestrator 不需要 SE Reviewer 评审 ADR，但需要 Reliability Reviewer 评审搜索质量）。reviewer-personas §2 提供全集，项目级按需配置子集。
 
+### 3.5 跨会话续作读取门控（context-snapshot 开发期）
+
+> **来源**：mechanism-candidates #6 状态升级——读取流程从"建议"升级为"规则"。注入机制（plugin rules 自动注入 handoff 内容）仍候选，受 §1.15 阻塞。
+
+**新会话首动作门控**（必须按序执行，不得跳过）：
+
+1. 读 [dev-rules.md](../dev-rules.md) 全文——跨功能通用防漂移规则 + §1.15 不可抗力声明
+2. 读 [handoff.md](../handoff.md) 全文——上一会话快照（决策 / 净变化 / 未完成项）
+3. 读 [plugin/project-rules.md](project-rules.md) §3 治理类规则——context-snapshot 开发期项目级规则承载位
+4. 读 [evidence-governance.md](../evidence-governance.md) §15 ADR 时效 + §19 Hypothesis 生命周期——检查引用的 ADR/Hypothesis 是否超期
+
+**门控判据**（读完前 4 项前禁止启动任何开发动作）：
+
+- 若 handoff.md 标注"P 级任务待续"→ 优先续作 P 级任务，不开启新方向
+- 若 handoff.md 未完成项中 confidence = Verified 的项 → 可直接作为推理依据
+- 若 handoff.md 未完成项中 confidence = Likely / Hypothesis 的项 → 需按 [evidence-governance §19](../evidence-governance.md) 检查是否超期，超期项降级为 Unknown 后不得作为依据
+- 若引用的 ADR `expires_if_unchanged` 已超期 → 按 [evidence-governance §15](../evidence-governance.md) 降级为 Hypothesis，触发复查
+
+**会话结束前必写**（与读取门控对偶）：
+
+- handoff.md 必须更新（dev-rules §2 通用触发器 + 本文件 §3.1 P 级触发器）
+- 未完成项三字段（id / confidence / depends_on）必须填齐（dev-rules §2.2 强制）
+- 若有 P 级任务状态变更，§3.3 特化字段（blocker_ref / codec_status / verified_evidence）按条件触发填写
+
+**为什么属于项目级**：读取门控的"读哪些文件"因项目而异——context-snapshot 需读 plugin/project-rules.md §3，其他项目（如 search-orchestrator）需读 search/project-rules.md。通用层（dev-rules §2）只规定"何时写 handoff"，不规定"新会话读哪些文件"——因项目级规则文件路径不同，无法在通用层枚举。读取门控的通用部分（读 dev-rules + handoff）已隐含在 dev-rules §1 各条款中，项目级追加项目专属文件（plugin/project-rules.md §3）。
+
+**机制化状态**：
+- ✅ 读取流程规则化（本节 + handoff.md 末尾"新会话首动作"提示）
+- ⏳ 注入机制候选（plugin rules 自动注入 handoff 内容，受 §1.15 阻塞，待 codec bug 修复后评估）
+
 ---
 
 ## 本文件的生命周期
