@@ -77,6 +77,8 @@ loop warning 注入路径经历两次迭代：
 
 [dev-rules.md](dev-rules.md) · [design.md](plugin/design.md) · [v2a-static-audit-report.md](plugin/v2a-static-audit-report.md) · [snapshot-extractor-design.md](plugin/snapshot-extractor-design.md) · [investigation-note-cli-codec-content-map-bug.md](decisions/investigation-note-cli-codec-content-map-bug.md)
 
+> **新会话首动作**：除读 dev-rules.md + handoff.md 外，必须读 [plugin/project-rules.md](plugin/project-rules.md) §3 治理类规则——context-snapshot 开发期项目级规则承载位。
+
 ---
 
 ## Handoff
