@@ -146,7 +146,38 @@ context-snapshot 开发期产生的教训按下列位置约定沉淀：
 
 **为什么属于项目级**：不同项目需要的评审角色不同（如 search-orchestrator 不需要 SE Reviewer 评审 ADR，但需要 Reliability Reviewer 评审搜索质量）。reviewer-personas §2 提供全集，项目级按需配置子集。
 
-### 3.5 跨会话续作读取门控（context-snapshot 开发期）
+### 3.5 外部依赖版本变化重测流程（F5，context-snapshot 开发期）
+
+> **来源**：审查 F5——外部依赖版本变化工作流缺失（Cline 正常升级如何重测）。
+
+**触发条件**：Cline CLI 版本升级（`cline --version` 变化）或 VS Code 扩展版本升级。
+
+**重测流程**（按序执行）：
+1. **记录版本变化**：在 handoff.md 或本文件记录旧版本 → 新版本号 + 升级日期
+2. **核查 §1.15 不可抗力**：升级是否解除任何不可抗力项？（如 codec bug 修复 → 按 §1.15 解除流程执行）
+3. **回归测试**：重跑上一个版本的 plugin 核心功能（setup 加载 / hook 触发 / messageBuilder 注入 / 提取器输出）
+4. **核查 API 契约**：读新版本 `.d.ts` 类型声明，确认 plugin API 未 breaking change（按 §2.2 类型声明查阅规则）
+5. **更新证据时效**：若升级影响 ADR 结论，按 [evidence-governance §15](../evidence-governance.md) 更新 `evidence_as_of`
+
+**为什么属于项目级**：重测流程的"重跑哪些功能"因项目而异——context-snapshot 重跑 setup/hook/messageBuilder，其他项目重跑不同功能。通用层只规定"升级后必须重测"，项目级规定"重测什么"。
+
+### 3.6 通用报错处理工作流（F6，context-snapshot 开发期）
+
+> **来源**：审查 F6——通用报错处理工作流缺失（plugin-dev-sop §2 仅覆盖 plugin 开发报错，不覆盖运行时报错）。
+
+**运行时报错处理流程**（plugin 运行时遇到错误时）：
+1. **记录完整错误**：错误消息 + 堆栈 + 触发场景（哪个 hook / 哪个工具调用）
+2. **分类**：① plugin 代码 bug ② Cline API 契约变化 ③ 环境问题（§1.15 不可抗力）④ 模型行为
+3. **按分类处理**：
+   - ① plugin 代码 bug → 按 §2.1 三步流程修复
+   - ② API 契约变化 → 按 §3.5 版本变化重测流程处理
+   - ③ 环境问题 → 登记 §1.15 不可抗力 + 找 workaround
+   - ④ 模型行为 → 记录为 Observation，纳入 mechanism-candidates
+4. **沉淀教训**：若报错揭示新教训，按 §3.2 教训沉淀位置约定落入对应层级
+
+**为什么属于项目级**：报错分类的"哪些属于 plugin bug vs 环境问题"因项目而异。通用层无法枚举所有项目的报错分类，项目级按本项目特点定义分类标准。
+
+### 3.7 跨会话续作读取门控（context-snapshot 开发期）
 
 > **来源**：mechanism-candidates #6 状态升级——读取流程从"建议"升级为"规则"。注入机制（plugin rules 自动注入 handoff 内容）仍候选，受 §1.15 阻塞。
 
