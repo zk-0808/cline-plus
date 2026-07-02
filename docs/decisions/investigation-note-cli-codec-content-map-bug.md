@@ -260,14 +260,16 @@ Plugin beforeModel hook 返回 messages
 
 ### D3：未验证项跟进
 
-| 项 | 状态 | 跟进动作 |
-|----|------|---------|
-| H2 image 分支 undefined 丢弃 | Hypothetical | 下次读源码时补证 `agentPartToContentBlock` 完整 image 分支 |
-| H3 下游连锁风险 | Hypothetical | 下次读源码时验证 `agent-runtime.ts:621` / `runtime-event-adapter.ts:70` |
-| 测试盲点 | 未验证 | 提 issue 时一并核查 codec 模块测试覆盖 |
-| 是否有已知 issue | **已确认**（#12004）| issue #12004 已由 Osraka 复现 + 提 PR #12032（见 O9）|
-| **O8 content 类型修复** | **Verified，已完成** | **[index.ts:146](../context-snapshot/src/index.ts#L146) beforeModel 注入 content 类型 string → array 已修复（A1）；V6 替代实现（messageBuilder 注入）已完成双保险** |
-| **O9 PR #12032 监控** | **Open，待合并** | **监控 [PR #12032](https://github.com/cline/cline/pull/12032) 合并状态 + CLI 发版；合并 + 发版后解除 §1.15 codec bug 行 + 解除 F1 阻塞** |
+> **Hypothesis 生命周期**（按 [evidence-governance.md §19](../evidence-governance.md) 补登，2026-07-02）：H2/H3 为源码类，默认 30 天补证期。声明日 2026-06-30，必须补证日 2026-07-30。
+
+| 项 | 状态 | 跟进动作 | 声明日 | 必须补证日 | 补证路径 | 超期处置 |
+|----|------|---------|--------|-----------|---------|---------|
+| H2 image 分支 undefined 丢弃 | Hypothetical | 下次读源码时补证 `agentPartToContentBlock` 完整 image 分支 | 2026-06-30 | 2026-07-30 | 读 unminified 源码 `agentPartToContentBlock` image 分支 | 降级为 Unknown |
+| H3 下游连锁风险 | Hypothetical | 下次读源码时验证 `agent-runtime.ts:621` / `runtime-event-adapter.ts:70` | 2026-06-30 | 2026-07-30 | 读 unminified 源码上述两处 | 降级为 Unknown |
+| 测试盲点 | 未验证 | 提 issue 时一并核查 codec 模块测试覆盖 | — | — | — | — |
+| 是否有已知 issue | **已确认**（#12004）| issue #12004 已由 Osraka 复现 + 提 PR #12032（见 O9）| — | — | — | — |
+| **O8 content 类型修复** | **Verified，已完成** | **[index.ts:146](../context-snapshot/src/index.ts#L146) beforeModel 注入 content 类型 string → array 已修复（A1）；V6 替代实现（messageBuilder 注入）已完成双保险** | — | — | — | — |
+| **O9 PR #12032 监控** | **Open，待合并** | **监控 [PR #12032](https://github.com/cline/cline/pull/12032) 合并状态 + CLI 发版；合并 + 发版后解除 §1.15 codec bug 行 + 解除 F1 阻塞** | — | — | — | — |
 
 ---
 
