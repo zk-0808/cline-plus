@@ -228,17 +228,22 @@ Phase 4: 闭环文档          → 本文件
 | A2 | 执行 V3（V2-A 静态审计），纳入 A1 的 content 类型审计 | V3 采纳 | **P0** |
 | A3 | 启动 W2（handoff.md schema 化三字段） | PR1 采纳 | **P1** |
 | A4 | 启动 W1（v0.7.0 提取器实现） | PR1 采纳 | **P1** |
-| A5 | 实施 V6 替代实现（afterTool + registerRule 动态 loop 警告） | V6 采纳, P1 部分采纳 | **P1** |
+| A5 | 实施 V6 替代实现（afterTool + messageBuilder 注入 loop 警告，ContentBlock[] 绕过 codec） | V6 采纳, P1 部分采纳 | **P1** |
 
 ### 6.2 需源码验证后执行
 
-| # | 行动项 | 对应意见 | 前置条件 |
-|---|--------|---------|---------|
-| B1 | 验证 F1（Deep Planning 无代码实体） | F1 待验证 | Cline 源码搜索 |
-| B2 | 验证 F2（Focus Chain VS Code 专属） | F2 待验证 | Cline 源码搜索 |
-| B3 | 验证 F3（Plan/Act = extraTools 过滤） | F3 待验证 | Cline 源码搜索 |
-| B4 | 验证 F5（Workflows 架构隔离） | F5 待验证 | Cline 源码搜索 |
-| B5 | 验证 F6 子断言（spawn-agent-tool.ts 路径 + hooks 转发） | F6 部分采纳 | Cline 源码搜索 |
+> **跟踪表**（2026-07-02 建立）：B1-B5 前置条件为 Cline 源码搜索，不受 §1.15 codec bug 阻塞（源码搜索只需读源码，不需运行 Cline）。未跟进原因为优先级低于 P0/P1 开发任务。
+
+| # | 行动项 | 对应意见 | 前置条件 | 当前状态 | 最后更新 |
+|---|--------|---------|---------|---------|---------|
+| B1 | 验证 F1（Deep Planning 无代码实体） | F1 待验证 | Cline 源码搜索 | ⏳ 未跟进 | 2026-07-02 |
+| B2 | 验证 F2（Focus Chain VS Code 专属） | F2 待验证 | Cline 源码搜索 | ⏳ 未跟进 | 2026-07-02 |
+| B3 | 验证 F3（Plan/Act = extraTools 过滤） | F3 待验证 | Cline 源码搜索 | ⏳ 未跟进 | 2026-07-02 |
+| B4 | 验证 F5（Workflows 架构隔离） | F5 待验证 | Cline 源码搜索 | ⏳ 未跟进 | 2026-07-02 |
+| B5 | 验证 F6 子断言（spawn-agent-tool.ts 路径 + hooks 转发） | F6 部分采纳 | Cline 源码搜索 | ⏳ 未跟进 | 2026-07-02 |
+
+**状态取值**：⏳ 未跟进 / 🔄 进行中 / ✅ 已验证（Verified）/ ❌ 已证伪 / ⏸ 受阻塞
+**复查节奏**：每次文档健康度审查（dev-rules §6）时扫描本表，超过 30 天未跟进的项标 ⚠️ 并评估是否降级为"不跟进"
 
 ### 6.3 需 codec bug 修复后执行
 

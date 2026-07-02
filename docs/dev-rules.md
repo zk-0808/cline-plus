@@ -205,6 +205,23 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 
 源由 2：2026-06-30 用户报 `Error: n.content.map is not a function. (In 'n.content.map(eK)', 'n.content.map' is undefined)` 三次（duckduckgo 超时 / run_commands 843+ 行 / read E:\cline++\docs 后）。源码定位见 [investigation-note-cli-codec-content-map-bug.md](decisions/investigation-note-cli-codec-content-map-bug.md)。
 
+**解除流程**（恢复条件命中后必须按序执行）：
+
+1. **验证修复落地**：PR 合并 + CLI 官方发版（不仅是 main 分支合并，需等 release tag）
+2. **升级本地 CLI**：用户在真实终端升级到含修复的 CLI 版本，确认 `cline --version` 已更新
+3. **回归实测**：在无 workaround 的环境下重跑原触发场景（长对话 ≥90K tokens / MCP tool_result 大输出 / beforeModel string content 注入），确认无崩溃
+4. **移除不可抗力声明**：删除本节"当前生效的不可抗力声明"表中对应行（codec bug 行），保留 VS Code 扩展行直至 SDK 迁移完成
+5. **恢复受阻验证项**：将本节"CLI 3.0.34 codec bug 影响范围"中标 🔴 的项（snapshot 写入实测）恢复为可推进，按原计划执行
+6. **更新引用文档**：同步更新 [design.md 不可抗力声明](plugin/design.md) / [mechanism-landing-assessment.md](plugin/mechanism-landing-assessment.md) / [investigation-note-cli-codec-content-map-bug.md](decisions/investigation-note-cli-codec-content-map-bug.md) 中对 codec bug 的引用状态
+7. **归档 draft-issue**：若 issue 已提交且 PR 已合并，将 [draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md) 标注 issue 编号并移入归档流程
+
+**部分解除条件**：若 PR 仅覆盖部分触发路径（如仅 beforeModel 注入路径，未覆盖 MCP tool_result 路径），按覆盖范围部分移除声明，保留未覆盖路径的受限标注。
+
+**禁止**：
+- 跳过步骤 3（回归实测）直接移除声明——workaround 可用 ≠ 修复落地
+- 用 main 分支合并等同于"已修复"——必须等 release tag（用户安装的是 release 版本）
+- 移除声明后不更新引用文档——会导致其他文档引用过时状态
+
 ---
 
 ## 2. handoff 通用触发器
