@@ -5,6 +5,8 @@
 - **Deciders**: 项目所有者
 - **Supersedes**: 无
 - **Related**: ADR-001（Handoff / Compact / Memory）、Capability Probe Phase 1、Plugin Dev Quick Reference
+- **Evidence as of**: 2026-06-27（Update 4 最新证据日）
+- **Expires if unchanged**: 2026-07-27（官方文档/版本号类，30 天；VS Code 扩展 plugin 可用性结论已被 v4.0.1 回滚推翻，复查时优先核查 SDK 迁移 issue #11944 进展）
 
 ---
 

@@ -5,6 +5,8 @@
 - **Deciders**: 项目所有者
 - **Supersedes**: 无（承接 ADR-003 rolled-back 后的 partial Go 状态）
 - **Related**: ADR-002（Validation Plan §实验环境硬约束）、ADR-003（No-Go 误判撤销，partial Go）、[experiments/p5-spike/run-p5-capability-spike.md](../../experiments/p5-spike/run-p5-capability-spike.md) §5
+- **Evidence as of**: 2026-06-27
+- **Expires if unchanged**: 2026-07-27（CLI 载体稳定性 + VS Code 扩展环境对齐类，30 天；恢复条件 ② 已被 design.md 不可抗力声明推翻，复查时优先核查 SDK 迁移 issue #11944）
 
 ---
 
