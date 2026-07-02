@@ -30,18 +30,33 @@ x = retired        对应规则/提示词已确认删除，整行移入归档区
 
 ## 状态约定
 
-| 简写 | 状态 | 含义 | 触发条件 |
+> **权威源**：[dev-rules.md §3](dev-rules.md) 规定实际表格"状态"列用中文枚举（`候选` / `实验中` / `已机制化` / `永久C类` / `已退休`）。本节 o/p/r/d/e/m/k/x 简写仅作漏斗内部状态参考，不直接用于表格"状态"列。
+
+| 简写 | 状态（中文，dev-rules §3 权威） | 含义 | 触发条件 |
 |------|------|------|---------|
-| o | 观察中 | 观察到但未归纳（初始状态） | 从 DEV_NOTES 或其他来源首次移入本表时自动标注 |
-| p | 模式 | 已识别为重复模式（认知操作，无需代码介入） | 维护者在审查时主动标注 |
-| r | 规则 | 可写入 dev-rules.md 的行为规则 | 显著影响工作流 |
-| d | 决策 | 决定代码化，附三维评估：事件语义匹配度 / 实现优雅度 / 事故频率 | 必须有 Runtime Event 接入点（Gate 0）。Gate 0.5：**这是一个系统问题，不是 Prompt/配置问题？** |
+| o | 候选 | 观察到但未归纳（初始状态） | 从 DEV_NOTES 或其他来源首次移入本表时自动标注 |
+| p | 候选 | 已识别为重复模式（认知操作，无需代码介入） | 维护者在审查时主动标注 |
+| r | 候选 | 可写入 dev-rules.md 的行为规则 | 显著影响工作流 |
+| d | 候选 | 决定代码化，附三维评估：事件语义匹配度 / 实现优雅度 / 事故频率 | 必须有 Runtime Event 接入点（Gate 0）。Gate 0.5：**这是一个系统问题，不是 Prompt/配置问题？** |
 | e | 实验中 | 正在 P5 实验验证 | 有 run-N-*.md 实验计划 |
 | k | 已终止 | 实验证伪或有充分证据证明不值得继续投入 | 有明确实验结论，非前置条件变化 |
 | m | 已机制化 | 实验通过，代码已实现 | 双盲验证或等价实证通过 |
 | x | 已退休 | 对应规则/提示词已确认删除，整行移入归档区 | 规则删除确认 + 30 天倒计时 |
 
 **永久 C 类**（不进漏斗管线，在表末尾保留作为"已知不可代码化"参考）：治理思考方式，不可机制化。
+
+### Stale entry 清理规则（J2 补全，2026-07-02）
+
+> **源由**：审查 J2——#1/#2/#3 长期候选无进展，无清理规则导致 stale entry 沉积。
+
+| 状态 | 无进展时长 | 处置 |
+|------|-----------|------|
+| 候选 | > 90 天 | 标 ⚠️ stale，评估是否降级为"不跟进"或删除 |
+| 候选（暂缓） | 触发条件解除后 > 90 天无跟进 | 同上 |
+| 已机制化 | > 30 天 | 启动退休倒计时（移入归档区） |
+
+**清理节奏**：每次文档健康度审查（dev-rules §6）时扫描本表，stale 项标 ⚠️ 并评估。
+**删除判据**：痛点已被其他机制覆盖 / 痛点不再出现 / 痛点优先级低于当前开发方向且无跟进计划 → 删除整行，不保留归档。
 
 ---
 
@@ -65,14 +80,14 @@ x = retired        对应规则/提示词已确认删除，整行移入归档区
 | 14 | 自研 compact 路线已失败 / `compaction_count=0` | memory + task analysis | A→已转向 | 接入 Cline messageBuilder（替代自研） | 候选（暂缓）— 触发条件：见 [ADR-004](decisions/ADR-004-p5-spike-pause.md)。CLI 3.0.30 插件运行时已验证可用，结论保留 |
 | 15 | 装机/部署任务必须先盘点现状（已装/已配置的工具与配置），再决定是否安装新依赖 | 本次 DDG MCP 装机失误（2026-06-23） | **C** | 不可机制化（治理思考方式）。可由 plugin 半机制化：装机前自动扫 `cline_mcp_settings.json` / PATH / 已知工具，但根治在认知层 | 永久C类（半机制化辅助） |
 | 16 | Output Schema 结构化抽取（Search→Extract→Normalize→Reason） | search-orchestrator/survey.md §9 + decisions/D-2026-06-24-search-evaluate-p5-output-schema.md（superseded）+ decisions/D-2026-06-25-search-redesign-p5-evidence-map.md（proposed）+ experiments/run-9b-p5-output-schema-v2.md（3/5 有条件）+ run-9b-external-review.md（外部评审决策 C）+ run-9c-p5-output-schema-v3.md（2/5 双盲证伪）+ experiments/run-13-p5-evidence-map.md（2/5 双盲证伪）+ experiments/run-14-p5-gap-ledger.md（4/5 ✅ Gap Ledger 升级 active） | A | search-orchestrator skill v2：P5 v1 字段对齐 schema（Run #9c 证伪）与 v2 Evidence Map / Claim Graph（Run #13 证伪）均未对自由文本展现决定性优势；仅 Gap Ledger 强制证据缺口枚举显示窄增量 | **部分已机制化** — Run #14 4/5 双盲验证通过：Gap Detection Recall Δ=+55.6%（33.3% → 88.9%），Implicit Gap Recall Δ=+40%（40% → 80%），安全指标全部不退化。Gap Ledger 最小机制已升级 active 并进入 SKILL.md。False Gap=1 阻挡 5/5（Run B G15 把 cloudscraper"已淘汰"误标为"侦察用途待评估"），缓解措施=每项 gap 需引用 evidence id，evidence 充分则不应标 gap。完整 Evidence Map / Claim Graph 保持 proposed，不再推进 |
-| 17 | Highlights / Relevance Compression（fetch 后强制 token 压缩） | search-orchestrator/survey.md §9.3 P6 行 + experiments/run-10-p6-highlights.md（4/5 ✅）+ decisions/D-2026-06-25-search-adopt-p6-highlights.md（active） | A | search-orchestrator skill v2：fetch_content 结果不直接进 context，先按 sub-Q 抽 ≤500 token | **已机制化** — Run #10 评分 4/5：Extractive Fidelity 92.3%（24/26），Paraphrase 7.7%（2/26），Untraceable 0。两条 paraphrase 模式：主语同义替换 + 跨语言归纳。提示词层 verbatim 抽取指令基本有效 |
+| 17 | Highlights / Relevance Compression（fetch 后强制 token 压缩） | search-orchestrator/survey.md §9.3 P6 行 + experiments/run-10-p6-highlights.md（4/5 ✅）+ decisions/D-2026-06-25-search-adopt-p6-highlights.md（active） | A | search-orchestrator skill v2：fetch_content 结果不直接进 context，先按 sub-Q 抽 ≤500 token | **已机制化（退休倒计时中，2026-08-01 移入归档）** — Run #10 评分 4/5：Extractive Fidelity 92.3%（24/26），Paraphrase 7.7%（2/26），Untraceable 0。两条 paraphrase 模式：主语同义替换 + 跨语言归纳。提示词层 verbatim 抽取指令基本有效 |
 | 18 | 重量 multi-agent 编排（Planner/Searcher/Composer） | 同上 / OpenAI Deep Research 借鉴 | A→拒绝 | 走 Cline 原生 subagent；search-orchestrator 不内建 | 候选（不进 V1） |
-| 19 | 同源转载证据去重（Evidence Deduplication） | decisions/D-2026-06-24-search-adopt-p4-same-source-merge.md（active）+ experiments/run-7-p4-dedup.md（逐字场景）+ experiments/run-11-p4-semantic-merge.md（translation 语义场景 4/5）+ experiments/run-12-p4-summary-rewrite.md（summary/rewrite 语义场景 5/5） | A | 已落地为 P4 Same-source Merge：Phase 3 同源合并步骤；指标修订见 D-2026-06-24-search-revise-p4-metrics。Run #7 验证逐字场景（Merge Precision 100%）；Run #11 验证 translation 子类（P4 LLM P=1.00/R=1.00 vs lexical baseline P=1.00/R=0.20，Net Gain +0.80）；Run #12b 验证 summary/rewrite 子类（GT positive=5：summary 3、rewrite 2；Baseline P=1.00/R=0.00/F1=0.00；P4 LLM P=1.00/R=1.00/F1=1.00；Net Gain +1.00；False Merge=0；Info Loss=0） | **已机制化（逐字 + translation + summary/rewrite 语义子类均验证通过）** |
+| 19 | 同源转载证据去重（Evidence Deduplication） | decisions/D-2026-06-24-search-adopt-p4-same-source-merge.md（active）+ experiments/run-7-p4-dedup.md（逐字场景）+ experiments/run-11-p4-semantic-merge.md（translation 语义场景 4/5）+ experiments/run-12-p4-summary-rewrite.md（summary/rewrite 语义场景 5/5） | A | 已落地为 P4 Same-source Merge：Phase 3 同源合并步骤；指标修订见 D-2026-06-24-search-revise-p4-metrics。Run #7 验证逐字场景（Merge Precision 100%）；Run #11 验证 translation 子类（P4 LLM P=1.00/R=1.00 vs lexical baseline P=1.00/R=0.20，Net Gain +0.80）；Run #12b 验证 summary/rewrite 子类（GT positive=5：summary 3、rewrite 2；Baseline P=1.00/R=0.00/F1=0.00；P4 LLM P=1.00/R=1.00/F1=1.00；Net Gain +1.00；False Merge=0；Info Loss=0） | **已机制化（退休倒计时中，2026-08-01 移入归档）**（逐字 + translation + summary/rewrite 语义子类均验证通过） |
 | 20 | 反证检索（counter-evidence search）—— DDG/通用 search 后端对负向 query 召回差，复合 OR 易被屏蔽 | search-orchestrator §1.4.3 + experiments/run-3-fanout-tuned.md 决策「根因 #3」+ decisions/D-2026-06-24-search-defer-p2.md（deferred）+ survey.md §10.3（现成结论引用 2026-06-25）| A | 反证专用检索机制：分拆负向短语单发、引入 contrarian intent classifier、或换支持否定召回的后端（Tavily/Exa）。**现成结论验证**：NevIR 基准确认神经检索在否定上等于/低于随机；DDG 2023 起算子被下线；"分拆负向短语单发"方向正确。修正：非"完全不可治"，可由检索策略+架构缓解 | 候选（P2 失败遗产） |
 | 21 | 多样性排序（DiversityPenalty / R1 保底 / 单一路 entry cap） | search-orchestrator §3.5.5/§3.5.6 + experiments/run-3-fanout-tuned.md 决策「根因 #2」+ decisions/D-2026-06-24-search-defer-p2.md（deferred）+ survey.md §10.4（现成结论引用 2026-06-25）| A | 排序后处理代码：合并阶段做真正的数值排序与配额约束，而非依赖 LLM 算分。提示词级算分量级失衡且 LLM 不可靠。**现成结论强支持**：NumericBench 证 LLM 算术不准；评分误差 4 倍方差压缩使 ±2 落在噪声地板内；pointwise 逐条打分是排序家族里方差最大范式。LLM 应只做语义判断（输出离散标签），数值合成交给代码 | 候选（P2 失败遗产） |
 | 22 | Browser-backed Fetch（穿透 Cloudflare JS Challenge） | search-orchestrator/experiments/run-8a-mcp-backend.md（否决 TLS 假设）+ decisions/D-2026-06-24-search-infra-mcp-upgrade.md（rolled-back）+ survey.md §10.5（现成结论引用 2026-06-25）| A | Playwright / Headless Chromium MCP：能执行 JS 取 challenge cookie。**现成结论修正**：真实浏览器内核是必要执行环境，但**非唯一**（cloudscraper/FlareSolverr 旁路、nodriver/Camoufox 引擎级工具、托管云浏览器）且**不充分**（裸 headless 必被识别，需 stealth + 住宅代理 + 拟人化 + CAPTCHA solver 多层叠加）。原"唯一对路径方案"措辞需修正为"多层方案的地基层"| 候选（暂缓）— 触发条件：Tier C snippet-only 被证明严重影响答案质量；否则不启动。启动时选多层叠加方案而非裸 Playwright |
 | 23 | TRAE agent 与 Cline SKILL 执行边界混淆 | session_memory 2026-06-24/25 两次记录 + docs/dev-rules.md §1（执行主体边界） | **C** | 不可机制化（治理思考方式）。半机制化辅助：① dev-rules.md §1 已落地为防漂移约束；② 实验框架模板（run-N-*.md）必须声明各 Phase 的 designated_executor（Cline / TRAE agent / 用户手动） | 永久C类（半机制化辅助） |
-| 24 | 搜索 MCP 自适应反-bot 节流 / 退避（DDG `BOT_DETECTED` 后靠提示词手动降速不可靠，应下沉到 MCP 实现层） | Run #14 Phase 0b 运行时故障（2026-06-25，Q2 nodriver 被封后全链路不可用）+ skills/search-orchestrator/references/web-search-setup.md §七 分层（rate limit / bot 重试归 MCP 层）+ duckduckgo-websearch 源码（已有 token-bucket 限速 + 3 次重试 + cookie jar，但 max_results>10 翻页放大易触发，且未暴露 backend 切换） | A | 在搜索 MCP 实现层补全自适应反-bot：① `BOT_DETECTED` 后指数退避 + 跨请求记忆近期被封状态主动降速；② vqd 翻页间随机 jitter，避免连击；③ 会话级熔断（被封后自动降 max_results / 串行化）；④ 被封后回退 lite/bing backend。需 fork 上游或包薄 wrapper MCP（当前为 `npx -y` 拉上游，不可直接改）。与 #21 同理：确定性运行时节流应交给代码而非提示词 | **已机制化** 2026-06-26（方案 C 落地于 search-mcp-wrapper/，11/11 集成测试通过，子代理两轮 code review 通过；Run #14 Phase 0b 功能性验证通过：3 次熔断正确触发指数退避（30s/2min/10min），fetch_content 独立通道不受熔断影响，降级规约正确执行） |
+| 24 | 搜索 MCP 自适应反-bot 节流 / 退避（DDG `BOT_DETECTED` 后靠提示词手动降速不可靠，应下沉到 MCP 实现层） | Run #14 Phase 0b 运行时故障（2026-06-25，Q2 nodriver 被封后全链路不可用）+ skills/search-orchestrator/references/web-search-setup.md §七 分层（rate limit / bot 重试归 MCP 层）+ duckduckgo-websearch 源码（已有 token-bucket 限速 + 3 次重试 + cookie jar，但 max_results>10 翻页放大易触发，且未暴露 backend 切换） | A | 在搜索 MCP 实现层补全自适应反-bot：① `BOT_DETECTED` 后指数退避 + 跨请求记忆近期被封状态主动降速；② vqd 翻页间随机 jitter，避免连击；③ 会话级熔断（被封后自动降 max_results / 串行化）；④ 被封后回退 lite/bing backend。需 fork 上游或包薄 wrapper MCP（当前为 `npx -y` 拉上游，不可直接改）。与 #21 同理：确定性运行时节流应交给代码而非提示词 | **已机制化（退休倒计时中，2026-08-01 移入归档）** 2026-06-26（方案 C 落地于 search-mcp-wrapper/，11/11 集成测试通过，子代理两轮 code review 通过；Run #14 Phase 0b 功能性验证通过：3 次熔断正确触发指数退避（30s/2min/10min），fetch_content 独立通道不受熔断影响，降级规约正确执行） |
 
 ---
 

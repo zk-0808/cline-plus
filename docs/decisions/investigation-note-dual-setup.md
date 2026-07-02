@@ -239,6 +239,16 @@ async beforeModel(ctx: { snapshot: any; request: any }) {
 3. 【Hypothesis】toolRecorder 单例被双重加载破坏
 4. 【Hypothesis】(unknown) 实例的 hook 仍被路由
 
+#### Hypothesis 生命周期（按 [evidence-governance.md §19](../evidence-governance.md) 补登，2026-07-02）
+
+> 源码类，默认 30 天补证期。声明日 2026-06-30，必须补证日 2026-07-30。
+
+| H# | 假设 | 声明日 | 必须补证日 | 补证路径 | 超期处置 |
+|----|------|--------|-----------|---------|---------|
+| H1（§2.2） | 两次 setup 都注册生效导致 build() 双倍调用 | 2026-06-30 | 2026-07-30 | §4.1 Instrumentation：打印 registry 句柄/长度 + instanceId | 降级为 Unknown |
+| H2（§2.3） | toolRecorder 单例被双重加载破坏 | 2026-06-30 | 2026-07-30 | §4.1 Instrumentation：打印 `import.meta.url` + `instanceId` | 降级为 Unknown |
+| H3（§5.2.4） | (unknown) 实例的 hook 仍被路由 | 2026-06-30 | 2026-07-30 | §4.2 Instrumentation：打印 hook 调用时的 instanceId | 降级为 Unknown |
+
 ### 5.3 不做的事（v2 修订）
 
 - ❌ **不提 A/B/C 修复方案**（v1 错误，已删）——需先 Instrumentation 证明根因
