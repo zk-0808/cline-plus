@@ -1,6 +1,11 @@
 // 集成测试：mock 上游，覆盖决策文档 §验证计划的 5 个场景 + 扩展场景
 // 运行：npm test（编译 + node --test）
 // 注意：测试不实际调用 DDG，避免触发真实 bot detection
+//
+// 重构适配说明：
+//   - 场景 1-3, 6-7：外部 API 未变，仅调整内部状态断言
+//   - 场景 4, 5, 8, 10：(wrapper as any).blockedUntil 改为 breaker.setStateForTesting()
+//   - 场景 9：HalfOpen 态引入探测请求，第 2/3 批次从 3 calls 改为 2 calls
 
 import { test } from 'node:test';
 import assert from 'node:assert';
@@ -145,7 +150,7 @@ test('场景 4: 熔断期间调用立即抛 CIRCUIT_OPEN（不发 HTTP）', asyn
 
   // 手动设置熔断状态（模拟已触发熔断）
   const future = new Date(Date.now() + 60_000);
-  (wrapper as any).blockedUntil = future;
+  (wrapper as any).breaker.setStateForTesting('open', future);
 
   await assert.rejects(
     () => wrapper.search('q'),
@@ -159,17 +164,17 @@ test('场景 4: 熔断期间调用立即抛 CIRCUIT_OPEN（不发 HTTP）', asyn
   assert.strictEqual(searcher.calls.length, 0, '熔断期内不应调上游');
 });
 
-test('场景 5: 熔断过期后调用正常（恢复）', async () => {
+test('场景 5: 熔断过期后调用正常（HalfOpen 探测成功 → Closed 恢复）', async () => {
   const searcher = new MockSearcher();
   searcher.results = makeResults(2);
   const wrapper = new ThrottledSearchWrapper(searcher, new MockFetcher());
 
-  // 设置已过期的 blockedUntil
-  (wrapper as any).blockedUntil = new Date(Date.now() - 1000);
+  // 设置已过期的 blockedUntil（状态机自动 Open → HalfOpen → 探测 → Closed）
+  (wrapper as any).breaker.setStateForTesting('open', new Date(Date.now() - 1000));
 
   const results = await wrapper.search('recovery test');
   assert.strictEqual(results.length, 2);
-  // 成功后状态完全清空
+  // 探测成功后状态完全清空
   const state = wrapper.getState();
   assert.strictEqual(state.blockedUntil, null);
   assert.strictEqual(state.recentFailures, 0);
@@ -214,8 +219,8 @@ test('场景 8: fetch_content 透传（不加节流，熔断期也正常）', as
   fetcher.content = 'real content here';
   const wrapper = new ThrottledSearchWrapper(searcher, fetcher);
 
-  // 即使熔断状态，fetch 也应正常工作
-  (wrapper as any).blockedUntil = new Date(Date.now() + 60_000);
+  // 即使熔断状态，fetch 也应正常工作（fetch_content 绕过熔断器）
+  (wrapper as any).breaker.setStateForTesting('open', new Date(Date.now() + 60_000));
 
   const content = await wrapper.fetchContent('https://example.com/page', 5000);
   assert.strictEqual(content, 'real content here');
@@ -230,6 +235,7 @@ test('场景 9: 指数退避递增（circuitBreakCount 增长 → 熔断时长 3
   const wrapper = new ThrottledSearchWrapper(searcher, new MockFetcher());
 
   // 第 1 次熔断（circuitBreakCount 0→1）：30s
+  // Closed 态：3 次 BOT_DETECTED → 触发熔断
   for (let i = 0; i < 3; i++) {
     await assert.rejects(() => wrapper.search(`q1-${i}`));
   }
@@ -241,8 +247,9 @@ test('场景 9: 指数退避递增（circuitBreakCount 增长 → 熔断时长 3
   );
 
   // 模拟熔断过期 + 第 2 次熔断（circuitBreakCount 1→2）：2min
-  (wrapper as any).blockedUntil = new Date(Date.now() - 1);
-  for (let i = 0; i < 3; i++) {
+  // HalfOpen 态：第 1 次调用 = 探测（失败 → 立即重新熔断），第 2 次调用 = Open 拒绝
+  (wrapper as any).breaker.setStateForTesting('open', new Date(Date.now() - 1), 1);
+  for (let i = 0; i < 2; i++) {
     await assert.rejects(() => wrapper.search(`q2-${i}`));
   }
   state = wrapper.getState();
@@ -253,8 +260,8 @@ test('场景 9: 指数退避递增（circuitBreakCount 增长 → 熔断时长 3
   );
 
   // 模拟熔断过期 + 第 3 次熔断（circuitBreakCount 2→3）：10min（封顶）
-  (wrapper as any).blockedUntil = new Date(Date.now() - 1);
-  for (let i = 0; i < 3; i++) {
+  (wrapper as any).breaker.setStateForTesting('open', new Date(Date.now() - 1), 2);
+  for (let i = 0; i < 2; i++) {
     await assert.rejects(() => wrapper.search(`q3-${i}`));
   }
   state = wrapper.getState();
@@ -278,12 +285,17 @@ test('场景 10: 熔断后清空 recentFailures（再失败从 0 重新计数）
   assert.strictEqual(state.recentFailures, 0, '熔断后应清空');
   assert.strictEqual(state.circuitBreakCount, 1);
 
-  // 熔断过期后 1 次失败：recentFailures 应为 1（不是 4）
-  (wrapper as any).blockedUntil = new Date(Date.now() - 1);
+  // 熔断过期后 1 次失败：HalfOpen 探测失败 → 重新熔断，recentFailures 清空后计 0
+  // 注意：HalfOpen 探测失败触发 triggerBreak() 会清空 recentFailures，
+  // 所以探测失败后 recentFailures = 0（不是旧版的 1）
+  (wrapper as any).breaker.setStateForTesting('open', new Date(Date.now() - 1), 1);
   await assert.rejects(() => wrapper.search('q-recover'));
   state = wrapper.getState();
-  assert.strictEqual(state.recentFailures, 1, '熔断后清空，再失败从 1 重新计数');
-  assert.strictEqual(state.circuitBreakCount, 1, '未达阈值，circuitBreakCount 不变');
+  // HalfOpen 探测失败 → triggerBreak 清空 recentFailures → 0
+  // 这是与旧版的差异：旧版直接记录到 recentFailures（得 1），
+  // 新版 HalfOpen 探测失败走 triggerBreak() 清空后无新记录（得 0）
+  assert.strictEqual(state.recentFailures, 0, 'HalfOpen 探测失败后 recentFailures 应清空');
+  assert.strictEqual(state.circuitBreakCount, 2, '探测失败触发第 2 次熔断');
 });
 
 console.log('集成测试套件加载完成（10 个场景）');
