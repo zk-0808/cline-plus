@@ -1,4 +1,4 @@
-# Handoff — A1/A2/A3/A4/A5/V6 全部验证完成
+# Handoff — 项目健康度审查四档执行闭环
 
 > **生命周期**：每次覆写，无归档——会话交接文件。
 
@@ -6,88 +6,105 @@
 
 | id | 决策 | confidence | depends_on |
 |----|------|-----------|------------|
-| `a1-content-fix` | A1：beforeModel content string → ContentBlock[] | Verified | — |
-| `a2-static-audit` | A2：V2-A 静态审计，tsc 零错误 | Verified | — |
-| `a5-v6-loop-guard` | A5：V6 Loop Guard 实现（afterTool → loopState → messageBuilder，移除 beforeModel）| Verified | — |
-| `a3-handoff-schema` | A3：handoff schema 化（dev-rules §2.2 三字段强制）| Verified | — |
-| `a4-extractor` | A4：v0.7.0 提取器（数据模型 + 4 提取器 + 渲染层解耦）| Verified | — |
-| `doc-lifecycle` | dev-rules §6 文档生命周期标注 + 63 文件全量补标 | Verified | — |
-| `f1-compaction` | F1：compaction.ts buildCompactionSummary 同类 string content bug（已修复 commit `5ac7cec`） | Verified | `codec-bug-fix` |
-| `v6-message-builder` | V6：registerRule 只评估一次（死路径），切换到 messageBuilder 注入 warning | Verified | `a5-v6-loop-guard` |
-| `a4-phase4-pass` | A4 Phase 4：3 场景 100% recall + 100% precision，提取器验证通过 | Verified | `a4-extractor` |
+| `audit-baseline` | 项目健康度审查报告基线建立（56 项 + 5 根因 + 四档优先级） | Verified | — |
+| `tier1-subtraction` | 第一档减法 + 项目级规则补全（K1-K3 + B1-B4 + C2-C5） | Verified | `audit-baseline` |
+| `tier2-hemostasis` | 第二档止血（A1-A4 + G1 + C1 + E4 + H4-H5） | Verified | `audit-baseline` |
+| `tier3-mechanism` | 第三档机制缺口（F2 + F3 + D2 + G2-G3） | Verified | `tier2-hemostasis` |
+| `tier4-batch1` | 第四档第一批（退休机制 + Hypothesis 生命周期执行 + 外部评审归档） | Verified | `tier3-mechanism` |
+| `tier4-batch2` | 第四档第二批（工作流可操作化 + 评审经验沉淀） | Verified | `tier4-batch1` |
+| `tier4-batch3` | 第四档第三批（规则退役流程 + 定期审查退出条件 + 源码快照时效 + Confidence 正交） | Verified | `tier4-batch2` |
 
 ## 本会话净变化
 
-### 1. A1 beforeModel content 类型修复
+### 1. 审查报告基线（commit `37b5bc0` 前置）
 
-`index.ts` 两处：content `string` → `[{ type: "text", text }]`，META_MARKER 检查适配 array。根因：O8 Verified — codec `Nd` 函数调用 `n.content.map()`，string 无 `.map()` 必崩。
+[project-health-audit-2026-07-02.md](project-health-audit-2026-07-02.md) 20 章节审查报告：56 项问题（13 高-系统性 + 43 高-局部性）+ 5 方法论根因 + 四档优先级（减法 → 止血 → 机制缺口 → 元规则）+ 严重度分级 + 审查退出条件。
 
-### 2. A5 V6 Loop Guard 实现 + 验证
+### 2. 第一档（commit `3449f50`）
 
-loop warning 注入路径经历两次迭代：
-- **V6 初始设计**：afterTool → registerRule 动态内容（system prompt 注入）。**发现 registerRule content 函数在 CLI 3.0.34 只在 session 启动时评估一次，永不重新评估**（rule-eval.log 仅 1 条记录）。死路径。
-- **最终方案**：afterTool → loopState → messageBuilder（conversation context 注入）。registerMessageBuilder 每次 model request 都被调用（已验证）。注入 user-role 消息，content 为 ContentBlock[] 格式（绕过 §1.15 codec bug）。
-- 模型在 [thinking] 中明确回应了 "The system is warning me about repeating the same tool call"。
-- 生产参数：window=3, threshold=2。
+- K1-K3：补全 [plugin/project-rules.md](plugin/project-rules.md) §3 治理类章节（P 级 handoff 触发器 + 教训沉淀位置 + handoff schema 特化）
+- B1-B3：dev-rules §1.5-§1.8 改为指针层（删除本地表格/阈值，统一引用 evidence-governance）
+- B4：dev-rules §2 handoff 触发器特化部分下沉到 plugin/project-rules.md
+- C5：§1.14 删除对 search/project-rules.md 的硬引用
+- C2-C3：reviewer-personas 角色审计——5 个角色降级为"建议"
+- 顶层冻结声明：dev-rules.md 头部加 🔴 冻结中标注（context-snapshot 开发期不新增规则）
 
-### 3. A4 v0.7.0 提取器
+### 3. 第二档（commit `0d359f9`，14 files）
 
-- types.ts 新增 SnapshotData / Extractor<T> / 4 种 Record 类型
-- extractors/ 目录：decision / change / todo / source 四个提取器
-- snapshot-writer.ts 重构：extractSnapshotData + renderSnapshot 解耦
+- A1-A4：4 项文档一致性修复（V6 描述 registerRule → messageBuilder / F1 状态 Likely → Verified / design Probe 5 标"已推翻" / review-closure-report 统计 104% → 100%）
+- C1：4 份 ADR（ADR-001/002/004/005）补 `evidence_as_of` + `expires_if_unchanged` frontmatter
+- E4：[evidence-governance.md §19](evidence-governance.md) 新增 Hypothesis 生命周期管理（声明日 / 必须补证日 14 天外部 / 30 天源码 / 补证路径 / 超期处置 + 存量补登清单）
+- H4-H5：[docs/README.md](README.md) 顶层布局图更新（plugin/ 从 3 份扩展到 15+ 份）+ [decisions/README.md](decisions/README.md) 新增 Investigation Notes(7) / Draft Issues(2) / Observations(1) 索引
 
-### 4. V6 测试记录
+### 4. 第三档（commit `79ba6fd`，6 files）
 
-| 日期 | 步数 | 参数 | 注入路径 | 模型回应 | codec bug | 结论 |
-|------|------|------|---------|---------|-----------|------|
-| 2026-07-01 | 12 | window=5,threshold=3 | — | — | ✅ 步骤12崩溃 | 参数过大 |
-| 2026-07-01 | 8 | window=3,threshold=2 | — | — | ❌ | 子模块未更新（参数仍是5/3）|
-| 2026-07-01 | 5 | window=1,threshold=1 | registerRule | ❌ 只评估1次 | ❌ | registerRule 死路径 |
-| 2026-07-01 | 5 | window=1,threshold=1 | messageBuilder | ✅ thinking 中回应 | ❌ | **验证通过** |
+- F2：[dev-rules.md §1.15](dev-rules.md) 补 7 步不可抗力解除流程 + 部分解除条件 + 3 条禁止条款
+- F3：[plugin/project-rules.md §3.7](plugin/project-rules.md) 跨会话续作读取门控（4 步首动作 + 门控判据 + 会话结束必写）
+- D2：[evidence-governance.md §20](evidence-governance.md) 子代理协作证据规则（单源降级 / 同源检测 URL/文档/推理链三维度 / 日期异常 / 综合 5 步流程）
+- G2-G3：[review-closure-report.md §6.2](plugin/claude-external-review/review-closure-report.md) B1-B5 跟踪表（加"当前状态"+"最后更新"列 + 30 天复查节奏）+ §6.1 A5 registerRule → messageBuilder 修正
+- [external-review-round2-handoff.md §7](plugin/external-review-round2-handoff.md) 项目方第 2 轮回应（采纳"单一语义对象模型+双投影" / Q1-Q8 逐条回应 / 暂不采纳 Q4 lifecycle.kind / 收束判断）
 
-### 5. A4 Phase 4 精度验证
+### 5. 第四档第一批（commit `a49c6a4`，5 files）
 
-3 个场景（EN 显式决策 / CN assistant 决策 / 混合最小决策），每个场景对比提取器输出与人工标注 ground truth。结果：全部 **100% recall + 100% precision**。验证脚本：`context-snapshot/verify-extractors.cjs`（需 tsc CJS 编译到 dist/）。
+- J1：[mechanism-candidates.md](mechanism-candidates.md) §状态约定表加权威源声明（dev-rules §3 中文枚举为权威，o/p/r 简写仅内部参考）+ 新增 Stale entry 清理规则（候选>90天标stale / 已机制化>30天启动退休倒计时）+ #17/#19/#24 标注"已机制化（退休倒计时中，2026-08-01 移入归档）"
+- E1-E3：3 份 Investigation Note（codec-note / dual-setup / vscode-settings）按 §19 模板补登 Hypothesis 生命周期表
+- H7：[ARCHIVE.md](ARCHIVE.md) 追加"外部评审文档闭环状态"章节（7 份已闭环 + 1 份活跃）
 
-观察项（不影响通过）：
-- 首条消息决策置信度为 low（无前文上下文）
-- assistant todo 优先级固定 tbd（即使含紧急关键词）
-- change extractor 向后兼容 files[] 参数产生 low 噪音
+### 6. 第四档第二批（commit `d22835b`，3 files）
+
+- F4：[dev-rules.md §2](dev-rules.md) 触发器 c③ 70% 阈值可操作化——补代理信号估算方式（4 类压力信号：输出截断 / 遗忘决策 / 重复生成 / 用户提示）
+- H7：[reviewer-personas.md §6](reviewer-personas.md) 补 2026-07-02 评审经验映射（56 项 + 5 根因 + K 类违反 → 文档健康度审查 + 治理预算 + 分层治理 + 严重度分级 + 审查退出条件）
+- F5-F6：[plugin/project-rules.md §3.5/§3.6](plugin/project-rules.md) 外部依赖版本变化重测流程（5 步）+ 通用报错处理工作流（4 步 + 4 类报错分类）
+
+### 7. 第四档第三批（commit `9048461`，3 files）
+
+- D5：[evidence-governance.md §15](evidence-governance.md) 新增"源码快照（main 分支）"时效类别（7 天，短于外部生态 14 天）+ `evidence_source_kind` frontmatter 字段 + 判别要点（main vs release tag）+ 成熟实践映射（VCS pinned commit vs rolling branch + Reproducible Build）
+- D8：[evidence-governance.md §4.1](evidence-governance.md) Confidence 与状态机正交关系（5×3 矩阵 + 三含义：升降不互触 / 门槛借用 + 3 反例 + 成熟实践映射 Bug 状态机 vs 严重度）
+- 根因5：[dev-rules.md §6.4](dev-rules.md) 规则退役流程（5 条退役判据 + 禁止退役情形 + 5 步引用清理清单 + 退役归档 + 与 mechanism-candidates 退休机制正交说明 + 成熟实践映射法律废止程序 + dead code 清理）
+- J4：[dev-rules.md §6.5](dev-rules.md) 定期审查机制与退出条件（触发条件 定期/事件/手动 + 4 条退出条件 <10 降季度 / <3 降半年度 / >50 治理膨胀 / 6 月未执行退役 + 与 §6.4 联动 + 自指修复声明 + 成熟实践映射 SLO 错误预算 + PDCA Check 退出判据）
+- 衍生：[project-health-audit-2026-07-02.md](project-health-audit-2026-07-02.md) 第四档表重构为 5 列表（+状态列）+ 补全前三批 commit 标注 + 暂缓清单
 
 ## Commits
 
 | Hash | Repo | Message |
 |------|------|---------|
-| `659dd1c` | context-snapshot | fix: beforeModel content type string → ContentBlock[] (A1) |
-| `953f0e5` | context-snapshot | feat: V6 Loop Guard 实现 |
-| `8548afd` | context-snapshot | feat: v0.7.0 提取器 |
-| `568feb9` | context-snapshot | fix: window=3, threshold=2 |
-| `184d1e1` | cline-plus | fix: Loop Guard 参数调整 |
+| `37b5bc0` | cline-plus | refactor: 顶层规则减法整理 + 项目健康度审查报告 |
+| `3449f50` | cline-plus | feat: 补全项目级规则 + handoff 交接语句恢复 + 顶层冻结声明（K1-K3） |
+| `0d359f9` | cline-plus | docs: 第二档止血 - 文档一致性 + ADR 时效 + Hypothesis 生命周期机制 |
+| `79ba6fd` | cline-plus | docs: 第三档机制缺口 - 工作流退出/读取机制化 + 子代理证据规则 + 外部评审闭环 |
+| `a49c6a4` | cline-plus | docs: 第四档第一批 - 退休机制 + Hypothesis 生命周期执行 + 外部评审归档 |
+| `d22835b` | cline-plus | docs: 第四档第二批 - 工作流可操作化 + 评审经验沉淀 |
+| `9048461` | cline-plus | docs: 第四档第三批 - 规则退役流程 + 定期审查退出条件 + 源码快照时效 + Confidence 正交 |
 
 ## 未完成项
 
 | id | 方向 | 说明 | 优先级 | confidence | depends_on |
 |----|------|------|--------|-----------|------------|
-| `issue-11944` | GitHub #11944 跟进 | SDK 迁移时间线 | 🟡 中 | Verified | — |
-| `f1-compaction` | F1 compaction.ts string content | 同类 bug，**已修复**（commit `5ac7cec`，string → ContentBlock[]） | 🟢 低 | Verified | `codec-bug-fix` |
-| `h2-h3-evidence` | 补证 H2/H3 | image 分支 undefined 丢弃 | 🟢 低 | Hypothesis | — |
+| `tier4-deferred` | 第四档暂缓项 | D1/D3/D4/D6/D7（Investigation Note 模板细化）+ G4-G5（外部评审 SOP + Claude vs GPT 对比）+ H3/H6（A/B 方法论跨功能沉淀 + outline §5 修正）+ I1-I3（SKILL 治理）+ 根因4（阶段性收缩机制化） | 🟢 低 | Hypothesis | — |
+| `issue-11944` | GitHub #11944 跟进 | SDK 迁移时间线（影响 VS Code 扩展 plugin 系统恢复） | 🟡 中 | Verified | — |
+| `pr-12032` | PR #12032 合并监控 | CLI codec bug 修复 PR（Open），合并 + CLI 发版后触发 §1.15 解除流程 7 步 | 🟡 中 | Verified | — |
 | `vscode-monitor` | 监控 VS Code release | 关键词 Plugins / registerMessageBuilder | 🟢 低 | Verified | `issue-11944` |
+| `mech-retirement` | mechanism-candidates 退休执行 | 2026-08-01 到期将 #17/#19/#24 移入归档 | 🟢 低 | Verified | — |
+| `h2-h3-evidence` | 补证 H2/H3 | image 分支 undefined 丢弃（受 §1.15 阻塞，等 PR #12032） | 🟢 低 | Hypothesis | `pr-12032` |
+| `next-audit` | 下次文档健康度审查 | 2026-08-02（30 天后），按 §6.5 触发条件执行 | 🟢 低 | Verified | — |
 
 ## 权威源
 
-[dev-rules.md](dev-rules.md) · [design.md](plugin/design.md) · [v2a-static-audit-report.md](plugin/v2a-static-audit-report.md) · [snapshot-extractor-design.md](plugin/snapshot-extractor-design.md) · [investigation-note-cli-codec-content-map-bug.md](decisions/investigation-note-cli-codec-content-map-bug.md)
+[dev-rules.md](dev-rules.md) · [evidence-governance.md](evidence-governance.md) · [plugin/project-rules.md](plugin/project-rules.md) · [reviewer-personas.md](reviewer-personas.md) · [project-health-audit-2026-07-02.md](project-health-audit-2026-07-02.md) · [mechanism-candidates.md](mechanism-candidates.md)
 
-> **新会话首动作**：除读 dev-rules.md + handoff.md 外，必须读 [plugin/project-rules.md](plugin/project-rules.md) §3 治理类规则——context-snapshot 开发期项目级规则承载位。
+> **新会话首动作**：除读 dev-rules.md + handoff.md 外，必须读 [plugin/project-rules.md](plugin/project-rules.md) §3 治理类规则——context-snapshot 开发期项目级规则承载位。如需推进暂缓项，先读 [project-health-audit-2026-07-02.md §12 第四档](project-health-audit-2026-07-02.md) 暂缓清单。
 
 ---
 
 ## Handoff
 
 ```text
-P0/P1 全部完成。剩余项均为中/低优先级（监控 + 受阻塞项）。读 docs/dev-rules.md §1.15 了解 codec bug 现状。
+项目健康度审查四档执行闭环完成（7 commits，56 项问题中可执行项全部完成或显式暂缓）。剩余项均为中/低优先级（监控 + 暂缓项 + 受阻塞项）。读 docs/dev-rules.md §1.15 了解 codec bug 现状，§6.4/§6.5 了解规则退役与审查退出机制。
 ```
 
 **后续动作**（无紧急项）：
-1. **🟡 中：跟进 GitHub #11944** — SDK 迁移时间线
-2. ~~**🟡 中：F1 compaction.ts string content**~~ — ✅ 已修复（commit `5ac7cec`，string → ContentBlock[]）
-3. **🟢 低：监控 VS Code release** — 关键词 Plugins / registerMessageBuilder
+1. **🟡 中：跟进 GitHub #11944** — SDK 迁移时间线（影响 VS Code 扩展 plugin 系统恢复）
+2. **🟡 中：监控 PR #12032** — CLI codec bug 修复 PR，合并 + 发版后触发 §1.15 解除流程 7 步
+3. **🟢 低：2026-08-01 到期** — mechanism-candidates #17/#19/#24 移入归档
+4. **🟢 低：2026-08-02 下次审查** — 按 dev-rules §6.5 触发条件执行
+5. **🟢 低：第四档暂缓项** — D1/D3/D4/D6/D7 + G4-G5 + H3/H6 + I1-I3 + 根因4（需新建文档或大改，下一会话评估）
