@@ -387,3 +387,76 @@ expires_if_unchanged: <YYYY-MM-DD>     # 默认 evidence_as_of + 14 天（外部
 ## 18. 产源说明（§15-§17 补充）（已合并至 §14）
 
 本节产源表已合并至 [§14 产源说明](#14-产源说明成熟实践映射) 表格：§15/§17 行新增，§16 产源并入 §3 行。§15-§17 无创新部分，均为成熟实践的本项目适配。
+
+---
+
+## 19. Hypothesis 生命周期管理
+
+> **源由**：2026-07-02 项目健康度审查 E4——codec-note H2/H3、dual-setup 3 条、vscode-settings-inventory 多项 U 项均无补证计划，7 月中旬多项将超期却无机制触发复查。Hypothesis 登记无"生命周期管理"，与 §15 ADR 时效性模型形成断层。
+>
+> **设计意图**：Hypothesis 是 [§2.1 状态机](#2-证据生命周期状态机) 的中间状态——已基于证据形成解释，但尚未达到 Verified。Hypothesis **不是"暂存区"**，而是"待补证活跃态"，必须有生命周期终点。无终点的 Hypothesis 会沉积为"既不能用于决策、又不会被否决"的僵尸假设，污染后续推理。
+
+### 19.1 生命周期字段
+
+每条 Hypothesis **必须**在所在 Investigation Note 中登记以下字段：
+
+| 字段 | 必填 | 说明 | 示例 |
+|------|------|------|------|
+| `声明日` | ✅ | Hypothesis 形成日（YYYY-MM-DD） | 2026-06-30 |
+| `必须补证日` | ✅ | 默认 `声明日 + 14 天`（外部生态）/ `+30 天`（官方文档/版本号） | 2026-07-14 |
+| `补证路径` | ✅ | 升级到 Verified 所需的下一证据类型（按 [§8 Evidence Escalation](#8-evidence-escalation)） | 实测 / unminified 源码 |
+| `超期处置` | ✅ | `降级为 Unknown` / `排除出结论链` / `保留并延期（需说明理由）` | 降级为 Unknown |
+
+### 19.2 超期处置规则
+
+1. **未超期**（`必须补证日` 在未来）：可继续作为 Hypothesis 引用，但**不可**作为 Decision 论据（[§2.3 禁止跳级](#23-禁止跳级)）
+2. **已超期**（`必须补证日` 在过去）：
+   - 停止引用该 Hypothesis 作为推理依据
+   - 按 `超期处置` 字段执行（降级或排除）
+   - 登记 [Conflict Registry（§6）](#6-conflict-registry证据冲突登记) 若涉及冲突
+3. **缺字段**（存量 Hypothesis 未填）：在下次 Investigation Note 修改时补齐；引用前需人工判断时效
+
+### 19.3 与 §15 ADR 时效的关系
+
+| 维度 | [§15 ADR 时效](#15-结论时效性模型) | §19 Hypothesis 生命周期 |
+|------|-------------|----------------------|
+| 适用对象 | 已达 Decision 状态的 ADR 结论 | 处于 Hypothesis 中间状态的假设 |
+| 默认时效 | 14 天（外部生态）/ 30 天（官方文档） | 14 天（外部生态）/ 30 天（官方文档） |
+| 超期后果 | 降级为 Hypothesis，触发复查 | 降级为 Unknown 或排除出结论链 |
+| 登记位置 | ADR frontmatter `evidence_as_of` / `expires_if_unchanged` | Investigation Note 内 Hypothesis 段 |
+
+**联动**：ADR 超期降级为 Hypothesis 后，自动适用 §19 生命周期管理；Hypothesis 升级为 Verified 并写入 ADR 后，适用 §15 时效模型。两者构成"结论时效双轨制"——已定论结论与未定论假设各有生命周期，互不遗漏。
+
+### 19.4 登记表模板
+
+Investigation Note 的 Hypothesis 段应采用以下格式：
+
+```
+### Hypothesis
+- H1: <假设陈述>（基于证据 X+Y，置信度：低/中）
+  - 声明日: YYYY-MM-DD
+  - 必须补证日: YYYY-MM-DD
+  - 补证路径: <下一证据类型>
+  - 超期处置: <降级为 Unknown / 排除 / 保留并延期（理由）>
+- H2: ...
+```
+
+### 19.5 复查节奏
+
+- **触发**：每次会话开始读 Investigation Note 时，检查 Hypothesis 字段是否超期
+- **批量复查**：每月文档健康度审查（见 [dev-rules.md §6](dev-rules.md)）时，统计超期 Hypothesis 数量
+- **退役**：Hypothesis 升级为 Verified 或降级为 Unknown 后，从活跃 Hypothesis 清单移除，但保留在原 Investigation Note 中作为推理历史
+
+### 19.6 存量 Hypothesis 补登
+
+本节建立时（2026-07-02），以下 Investigation Note 含未登记生命周期的 Hypothesis，需在下次修改时按 §19.4 模板补登：
+
+| Investigation Note | Hypothesis 项 | 来源 |
+|------------------|-------------|------|
+| [codec-content-map-bug](decisions/investigation-note-cli-codec-content-map-bug.md) | H2 / H3 | 审查 E1 |
+| [dual-setup](decisions/investigation-note-dual-setup.md) | 3 条 | 审查 E2 |
+| [vscode-settings-inventory](decisions/investigation-note-vscode-settings-inventory.md) | 多项 U 项 | 审查 E3 |
+
+**成熟实践映射**：
+- Hypothesis 生命周期 ↔ **Lab Notebook 实验记录的"待验证假设"追踪** + **Scrum 任务的 Definition of Done**——假设必须有"完成"或"放弃"的判据，不可无限期待定
+- 与 §15 一致，无创新部分，均为成熟实践的本项目适配

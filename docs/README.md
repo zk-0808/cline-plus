@@ -11,25 +11,43 @@ docs/
 ├── README.md                     ← 本文件
 ├── PROJECT_DEV_OUTLINE.md        全局工程纪律（A/B/C 分类 / 五问门控 / 停止条件 / 协作流程）
 ├── dev-rules.md                  跨功能通用防漂移规则（执行边界 / handoff 通用触发器 / 状态值约定，永久保留）
+├── evidence-governance.md        证据治理框架（Level 1 元规则，含 §15 ADR 时效 + §19 Hypothesis 生命周期）
+├── reviewer-personas.md          评审角色集（Level 1 元规则）
+├── handoff.md                    会话快照（本会话决策 / 净变化 / 下次第一句话）
+├── mechanism-candidates.md       经验机制化清单（A 类未来代码化的候选）
+├── project-health-audit-2026-07-02.md  项目健康度审查报告（审查基线，下次审查时归档）
+├── ARCHIVE.md                    根目录文档归档摘要
+│
 ├── search/                         search-orchestrator 功能文档
 │   ├── project-rules.md            search-orchestrator 开发期防漂移约束（功能冻结后删除）
 │   ├── blog/                       博客文章
 │   ├── research/                   搜索质量研究
 │   └── search-orchestrator/        搜索编排器文档 + 实验记录
 │
-├── plugin/                         Plugin 相关文档
-│   ├── design.md                   设计文档（ADR-005 更新）
-│   ├── mechanism-landing-assessment.md  机制落地评估（11 条候选可行性）
-│   └── refs/                       全局参考（不属任何功能）
-├── evidence-governance.md        证据治理框架（Level 1 元规则）
-├── reviewer-personas.md          评审角色集（Level 1 元规则）
-├── handoff.md                    会话快照（本会话决策 / 净变化 / 下次第一句话）
-├── mechanism-candidates.md       经验机制化清单（A 类未来代码化的候选）
-├── ARCHIVE.md                    根目录文档归档摘要
+├── plugin/                         context-snapshot Plugin 相关文档
+│   ├── project-rules.md            项目级规则（构建约束 §1 + 工作流 §2 + 治理类 §3，含 P 级 handoff 触发器）
+│   ├── plugin-dev-sop.md           Plugin 开发规划框架（三层计划强度）
+│   ├── design.md                   设计文档（ADR-005 更新，含不可抗力声明）
+│   ├── snapshot-extractor-design.md v0.7.0 提取器设计（数据模型 + 4 提取器 + 渲染层解耦）
+│   ├── mechanism-landing-assessment.md  机制落地评估（候选可行性 + V6 最终方案）
+│   ├── v2a-static-audit-report.md  V2-A 静态审计报告（tsc 零错误）
+│   ├── v6-cli-test-protocol.md     V6 Loop Guard CLI 测试协议
+│   ├── development-summary.md      阶段性开发总结
+│   ├── cline-plus-deep-research-brief.md  深度研究简报
+│   ├── claude-external-review/     Claude 外部评审（深度研究 + 闭环报告）
+│   ├── gpt-external-review/        GPT 外部评审
+│   ├── external-review-handoff-foundation.md  外部评审 Phase 1-4 handoff
+│   ├── external-review-round2-handoff.md      外部评审 round2 handoff
+│   ├── response-to-external-review-handoff.md 项目方回应
+│   └── refs/                       全局参考（架构图鉴 / 开发指南 / 快速参考）
 │
-├── decisions/                    所有决策：ADR-*（战略）+ D-*（运营）
+├── decisions/                    所有决策：ADR-*（战略）+ D-*（运营）+ investigation-note-* + draft-issue-*
 │   └── README.md                 决策索引表
+│
+└── archive/                      历史归档（按子目录分类）
 ```
+
+> **布局原则**：功能文档负责记录事实（调研、实验、参考、现状）；决策文档负责记录结论（采纳、回退、延期、替代）。`plugin/` 子目录按"规则 / 设计 / 评估 / 测试 / 评审 / 参考"分类组织，单文件不超过一份职责。
 
 ## 核心约定
 

@@ -195,9 +195,9 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 - **路径 A（MCP tool_result）**：原已知，Hypothetical（content 经 JSON.stringify 有损转换变非数组）
 - **路径 B（beforeModel 注入）**：**Verified** — [index.ts:146](context-snapshot/src/index.ts#L146) 注入 content 为 string 类型，codec `Nd` 函数调用 `n.content.map()` 必崩。**与消息数量/token 总量无关**，任何步骤下 beforeModel 返回 string content 都会崩溃
 
-**O8 对影响范围的修正**：原"🟡 Loop Guard 实测"分级基于"避免 MCP + 避免长输出"假设，但路径 B 表明 beforeModel 注入本身即触发 bug，不分步骤数量。Loop Guard 注入层应改为 **🔴 阻塞**，检测层仍为 🟢。替代方案见 [mechanism-landing-assessment.md Q2 V6 路径](plugin/mechanism-landing-assessment.md)（afterTool + registerRule 绕过 codec）。
+**O8 对影响范围的修正**：原"🟡 Loop Guard 实测"分级基于"避免 MCP + 避免长输出"假设，但路径 B 表明 beforeModel 注入本身即触发 bug，不分步骤数量。Loop Guard 注入层应改为 **🔴 阻塞**，检测层仍为 🟢。替代方案见 [mechanism-landing-assessment.md Q2 V6 路径](plugin/mechanism-landing-assessment.md)（afterTool + messageBuilder 绕过 codec）。
 
-**V6 实现已完成**（2026-07-01）：Loop Guard 改用 registerRule 动态注入（rules → system prompt，不经过 message codec），beforeModel hook 已移除。注入层从 🔴 阻塞恢复为 🟢 可用（V6 路径）。A1 修复（content string → array）+ V6 替代实现双保险。
+**V6 实现已完成**（2026-07-01）：Loop Guard 改用 messageBuilder 注入（afterTool 检测循环 → loopState → messageBuilder 注入 user-role 消息，content 为 ContentBlock[] 格式绕过 codec），beforeModel hook 已移除。注入层从 🔴 阻塞恢复为 🟢 可用（V6 路径）。A1 修复（content string → array）+ V6 替代实现双保险。**注**：registerRule 路径已废弃——rule content 函数在 CLI 3.0.34 只在 session 启动时评估一次，运行时永不重新求值（死路径），详见 [handoff.md §4 V6 测试记录](handoff.md)。
 
 **workaround 不等同环境可用**（§1.15 禁止条款）：workaround 期间实测结果仅证明"避开 bug 的路径可用"，不证明"环境完整可用"。
 

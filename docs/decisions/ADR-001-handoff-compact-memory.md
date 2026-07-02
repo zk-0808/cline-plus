@@ -5,6 +5,8 @@
 - **Deciders**: 项目所有者
 - **Supersedes**: 无
 - **Related**: 后续 Capability Probe / Handoff-v2 Design Doc
+- **Evidence as of**: 2026-06-23
+- **Expires if unchanged**: 2026-07-23（官方文档/版本号类，30 天）
 
 ---
 

@@ -5,6 +5,8 @@
 - **Deciders**: 项目所有者
 - **Supersedes**: ADR-001 中关于 compact 双产物的部分（A 方案的实现方式）
 - **Related**: [ADR-001](ADR-001-handoff-compact-memory.md)、[design.md](../plugin/design.md)、[mechanism-candidates.md](../mechanism-candidates.md) #5/#6
+- **Evidence as of**: 2026-06-28
+- **Expires if unchanged**: 2026-07-28（依赖 ADR-001/004，按上游 ADR 时效联动复查，30 天）
 
 ---
 

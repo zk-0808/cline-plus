@@ -101,7 +101,7 @@
 | V3 | 静态代码审计（tsc + 契约对照）| 推荐 | 落地为 V2-A 静态审计 |
 | V4 | 低 message 数量场景 | 降级方案 | 后被审查推翻 |
 | V5 | 技术论证注入层无法绕过 codec bug | Sound | 结论：注入层阻塞 |
-| **V6** | **afterTool + registerRule 动态注入** | **Sound** | **最终方案** |
+| **V6** | **afterTool + messageBuilder 注入（ContentBlock[] 绕过 codec；registerRule 路径已废弃）** | **Sound** | **最终方案** |
 
 V6 后续修正：registerRule content 函数在 CLI 3.0.34 只评估一次（死路径），切换到 messageBuilder 注入（每次 model request 调用）。
 

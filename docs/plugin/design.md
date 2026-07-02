@@ -58,7 +58,7 @@
 
 | Probe | 结果 | 关键证据 |
 |-------|------|---------|
-| Probe 5（plugin 自动发现）| ✅ VS Code 扩展 4.0.0 通过 Customize marketplace 加载全局 plugin store，setup() 执行 | 用户实测 Customize UI 显示已装 plugin |
+| Probe 5（plugin 自动发现）| ⚠️ **已推翻**（2026-06-28 v4.0.1 回滚）——原结论"VS Code 扩展 4.0.0 通过 Customize marketplace 加载，setup() 执行"已被证伪：UI 发现 ≠ sandbox 激活。详见头部不可抗力声明 + [investigation-note-vscode-bootstrap-missing.md](../decisions/investigation-note-vscode-bootstrap-missing.md) | ~~用户实测 Customize UI 显示已装 plugin~~ → 8 条证据交叉验证 sandbox 永不执行 |
 | Probe 5（workspace 级 `.cline/plugins/`）| ⏳ 优先级降低——全局 store 已是更优路径 | investigation-note-probe-5.md |
 | `registerMessageBuilder` 介入点 | ✅ 确认——custom-compaction.ts 6.3KB 源码，0 截断 | GitHub API WebFetch 确认 |
 | Cline 原生 compact 架构 | ✅ ARCHITECTURE.md §9 Design Seam：core 拥有 compaction policy，agents 拥有 turn-preparation seam | sdk/ARCHITECTURE.md |

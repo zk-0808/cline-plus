@@ -52,7 +52,7 @@ x = retired        对应规则/提示词已确认删除，整行移入归档区
 | 1 | 终端命令假死 / Shell 阻塞 | 系统提示词、SKILL 规则 | A | terminal-watchdog plugin（`tool_call_after` hook 检测超时） | 候选 |
 | 2 | PowerShell 阻塞用 `-NoProfile` 等参数 | 系统提示词 | A | shell-wrapper plugin（safe-exec） | 候选 |
 | 3 | UTF-8 输出乱码处理 | 系统提示词 | A | shell-wrapper plugin（环境变量注入） | 候选 |
-| 4 | 重复循环要主动跳出 | 提示词 / Skill | A | loop-guard plugin（基于工具调用相似度） | **实验中** — V6 实现已完成：afterTool 检测 + registerRule 动态注入（绕过 codec 路径）。tsc --noEmit 零错误。检测层 + 注入层均就绪，待 CLI 实测验证 |
+| 4 | 重复循环要主动跳出 | 提示词 / Skill | A | loop-guard plugin（基于工具调用相似度） | **实验中** — V6 实现已完成：afterTool 检测 + messageBuilder 注入（ContentBlock[] 绕过 codec 路径；registerRule 路径已废弃——死路径）。tsc --noEmit 零错误。检测层 + 注入层均就绪，待 CLI 实测验证 |
 | 5 | 长会话要主动 compact + 写 handoff | Skill / 提示词 | A | **拆分**（[ADR-005](decisions/ADR-005-split-compact-from-handoff.md)）：Compaction 归 Cline 原生，Handoff 归 Plugin 独立触发 | **实验中（重构中）** — ADR-005 决定将 Compaction 与 Handoff 拆分为两个独立机制。Phase 2 全链路验证通过（2026-06-28）但产物定位调整：compact 时不再产出 handoff.md（那是 Cline 的事），handoff 改为独立触发器（用户指令 / 决策信号 / 定时）。详见 [ADR-005](decisions/ADR-005-split-compact-from-handoff.md) | |
 | 6 | 跨会话续作要先读上次 handoff | 提示词 / Skill | A | **写入 Cline 动态 rules**（[ADR-005](decisions/ADR-005-split-compact-from-handoff.md)）：读 handoff.md 注入新会话 rules | 候选（重构中）— ADR-005 将 #6 从独立 session_start hook 改为写入 Cline 动态 rules。handoff.md 内容注入到新会话的 rules capability 中，不依赖 index.jsonl。触发条件：见 [ADR-004](decisions/ADR-004-p5-spike-pause.md) | |
 | 7 | Windows 不支持 Cline 早期 Hook | OUTLINE §6.1 | B | SDK plugin hook（已确认存在，需 Phase 2 验证 Windows 可用性） | 候选（待验证）— 外部评审指出：官方 hook 文件无扩展名、放 `.clinerules/hooks/`（项目级）或 `~/Documents/Cline/Rules/Hooks/`（全局），`.ps1` / `.cline/Hooks/` 写法与官方不符。Windows `.ps1` 支持查无实据，需实测确认。[Cline v3.36 Hooks](https://cline.ghost.io/cline-v3-36-hooks) |
