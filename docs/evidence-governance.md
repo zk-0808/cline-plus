@@ -119,6 +119,41 @@ Verified → Decision:       需通过 Decision Readiness Checklist（§7）
 Remaining Unknown：手动放文件能否触发 setup（待实测）
 ```
 
+### 4.1 Confidence 与状态机的正交关系
+
+**Confidence**（高/中/低）与 §2 状态机（Observation / Evidence / Hypothesis / Verified / Decision）是**两个独立维度**，回答不同问题：
+
+| 维度 | 回答的问题 | 取值 |
+|------|-----------|------|
+| **Confidence** | "这条结论的证据有多强？" | 高 / 中 / 低 |
+| **State** | "这条结论已被允许用于哪种决策？" | Observation → Evidence → Hypothesis → Verified → Decision |
+
+**正交关系矩阵**：
+
+| State ＼ Confidence | 高 | 中 | 低 |
+|--------------------|----|----|----|
+| Observation | 罕见（单点观察也可靠，如 `properties: {}` 直接读 package.json）| 常见 | 常见 |
+| Evidence | 罕见 | 常见 | 常见 |
+| Hypothesis | 罕见（高置信 + 仅 Hypothesis 通常意味着状态滞后，应升级 Verified）| 常见 | 常见 |
+| Verified | 允许（满足 ≥3 独立证据）| **典型**（满足 ≥2 独立证据）| 不允许（违反状态转换条件 §2.2）|
+| Decision | **典型**（≥3 独立 + 无冲突 + 通过 §7 Checklist）| 允许（特殊情形：来源极权威且通过 §7 Checklist）| 不允许 |
+
+**正交关系的三个含义**：
+
+1. **Confidence 升降不自动改 State**：新证据出现使 Hypothesis 的 Confidence 从低升到中，**不**等于该 Hypothesis 自动变成 Verified——必须显式走 §2.2 状态转换（"需 ≥2 个独立证据类型一致"作为升级判据，由人工/评审显式判定，而非由 Confidence 数值机械触发）。
+2. **State 升降不自动改 Confidence**：一条 Verified 结论被新证据颠覆，State 可回退 Unknown（§5），但其原 Confidence 标注保留作为历史记录——Confidence 不被 State 回退覆盖。
+3. **门槛关系**：State 转换条件**借用** Confidence 等级作为最低门槛（如 Verified 需 Confidence ≥ 中），但 Confidence 达标**不**意味着 State 必须升级——State 升级还需 §7 Decision Readiness Checklist（针对 Decision）或人工评审。
+
+**反例**（混淆两个维度）：
+
+- ❌ "这条 Hypothesis 标了 Confidence 高，所以可以直接写入 ADR" —— 违反 §2.3 禁止跳级（Hypothesis → Decision 必须经 Verified）
+- ❌ "Decision 状态的结论一定是 Confidence 高" —— 特殊情形下 Decision 可为中（如来源极权威且通过 Checklist），Confidence 与 State 不一一对应
+- ❌ "新证据颠覆原结论，所以把原 Confidence 改为低" —— 应保留原 Confidence 标注，State 回退到 Unknown（§5），新结论重新走状态机
+
+**成熟实践映射**：
+- Confidence 与 State 正交 ↔ **Bug 状态机（New/Confirmed/Fixed/Closed）与严重度（Critical/Major/Minor）正交** —— 一条 Bug 可严重度不变而状态流转，也可状态不变而严重度调整（如复现条件变化）
+- Confidence 借用为 State 转换门槛 ↔ **CI 流水线 stage gate 借用测试覆盖率作为门控** —— 覆盖率是属性，stage 是流程位置，门控借用属性但不等同属性
+
 ---
 
 ## 5. Unknown 状态原则
@@ -335,11 +370,19 @@ ADR 之前应有 Investigation Note 记录证据链，**不直接从搜索跳到
 
 涉及**官方文档/版本号**的结论，时效期绑定为"下一版本发布"或 **30 天**（取先到者）。
 
+涉及**源码快照（main 分支）**的结论（如"X 函数在第 N 行实现 Y" / "X hook 注册路径" / "X bug 触发链"），时效期 **7 天**——上游 main 持续演进（PR 合并 / 重构 / 回滚），snapshot 失效速度远高于 release 生态。**release tag 源码**不属本类，按"官方文档/版本号"对待（绑定为"下一版本发布"或 30 天）。
+
+**判别要点**：
+- 抓取自 `main` / `master` / 默认分支 → 源码快照类（7 天）
+- 抓取自 release tag / 已发布版本号 → 官方文档类（30 天或绑版本）
+- 不确定时取较短时效期
+
 **ADR frontmatter 强制字段**（新增 ADR 必填，存量 ADR 在下次 Update 时补）：
 
 ```yaml
 evidence_as_of: <YYYY-MM-DD>           # 结论形成日
-expires_if_unchanged: <YYYY-MM-DD>     # 默认 evidence_as_of + 14 天（外部生态）/ + 30 天（官方文档）
+expires_if_unchanged: <YYYY-MM-DD>     # 默认 evidence_as_of + 7 天（源码快照 main）/ + 14 天（外部生态）/ + 30 天（官方文档/release tag）
+evidence_source_kind: <source-snapshot-main | ecosystem | doc-release>  # 时效类别，用于自动计算
 ```
 
 **超期处置**：
@@ -350,6 +393,7 @@ expires_if_unchanged: <YYYY-MM-DD>     # 默认 evidence_as_of + 14 天（外部
 
 **成熟实践映射**：
 - 时效期模型 ↔ **Refresh Token 生命周期**（认证令牌的过期与刷新机制）+ **Nutrition Facts"as of"标注**（科学数据的有效期声明）
+- 源码快照时效分类 ↔ **VCS pinned commit vs rolling branch**（包管理中 commit hash 锁定与 floating tag 的可信度差异）+ **Reproducible Build 的源码快照声明**（可复现构建要求声明源码取自哪一 commit，rolling 分支必须明确取点）
 
 ---
 
