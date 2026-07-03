@@ -1,7 +1,9 @@
-# Semantic Object Model — 语义对象模型规范 (V1)
+# Semantic Object Model — 语义对象模型规范 (V2)
 
 > **生命周期**：永久保留——跨项目通用的底层语义模型规范。
 > **定位**：定义 `context-snapshot` (机械投影) 与 `handoff.md` (叙事投影) 共同依赖的核心对象模型。不拘泥于特定存储格式，仅约束字段定义、稳定 ID 生成与共享词汇表。
+>
+> **V2 变更（2026-07-03）**：1.5 Handoff 对象新增 `depends_on` 字段（Handoff 间依赖）；明确 `blocker_ref` vs `depends_on` 的 ID 前缀区分规则（`B-` = Blocker / 其他 = Handoff）。V1 中 `blocker_ref` 错误映射到 handoff.md `depends_on` 列的歧义由此消除。
 
 ---
 
@@ -43,7 +45,17 @@
 - `kind`: `conclusion` (结论型) | `action` (动作型)。
 - `exit_when`: 退出或完成的判定条件。
 - `confidence`: 取值与 `evidence-governance.md` 一致：`Verified` / `Likely` / `Hypothesis`。
-- `blocker_ref`: 指向 Blocker ID (若有阻塞，非自然语言，格式如 `B-cli-codec-bug`)。
+- `depends_on`: 依赖的其他 **Handoff ID** 列表 (逗号分隔，例如 `issue-11944`)。**禁止**指向 Blocker ID——Blocker 关系用 `blocker_ref`。
+- `blocker_ref`: 指向 **Blocker ID** (若有阻塞，非自然语言，格式如 `B-cli-codec-bug`)。
+
+**ID 前缀区分规则（V2 核心）**：
+
+| ID 前缀 | 类型 | 写入字段 |
+|---------|------|---------|
+| `B-` | Blocker | `blocker_ref` |
+| 其他（如 `pr-` / `issue-` / 自定义短 ID）| Handoff | `depends_on` |
+
+混用判据：若同一未完成项同时依赖 Blocker 解除和其他 Handoff 完成，两字段都填。例：`h2-h3-evidence` 同时 `blocker_ref = B-cli-codec-bug`（codec bug 阻塞）+ `depends_on = pr-12032`（PR 合并动作完成）。
 
 ---
 
@@ -54,7 +66,12 @@
 - `id` ↔ 列 `id`
 - `kind` / `exit_when` ↔ 列 `方向` / `说明` 中的 `[kind] exit_when` 标记
 - `confidence` ↔ 列 `confidence`
-- `blocker_ref` ↔ 列 `depends_on` (指向 Block ID，无 block 时空缺)
+- `depends_on` ↔ 列 `depends_on` (指向其他 Handoff ID，逗号分隔)
+- `blocker_ref` ↔ 列 `blocker_ref` (指向 Blocker ID，`B-` 前缀；无阻塞时空缺)
+
+**前缀区分规则（V2）**：
+- 列 `depends_on` 中的 ID 若以 `B-` 开头 → 实为 Blocker 关系，应迁到 `blocker_ref` 列
+- 列 `blocker_ref` 中的 ID 若不以 `B-` 开头 → 实为 Handoff 依赖，应迁到 `depends_on` 列
 
 ---
 

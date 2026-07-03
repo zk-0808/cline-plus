@@ -10,7 +10,7 @@
 >
 > **与 `.clinerules` 的关系**：`.clinerules` 约束模型**执行行为**（遇不明确条件即停止询问）；本文件约束**执行主体边界与方法论**。两者互补，不重叠。
 >
-> **当前状态**：🔴 冻结中（正式进入 handoff 语义对象模型第一阶段开发）— 交界期已于 2026-07-03 结束，handoff.md 轻量 schema 化（语义对象模型 · 第一阶段）正式启动。按 [governance-procedure.md §5.2 步骤 7](governance-procedure.md) 硬约束重新冻结，本文件不新增规则。新规则沉淀至对应功能专属 `project-rules-<功能>.md`。解冻条件：handoff schema 第一阶段验收通过（语义对象模型草案产出 + 现有 handoff.md 无损映射测试 + 验收查询可回答）。
+> **当前状态**：🟢 解冻（2026-07-03）— handoff-schema 第一阶段三项验收判据已通过（schema V1 + 无损映射 9/9 + 验收查询可回答依赖链）+ V2 文档层改进已完成（schema 1.5 补 `depends_on` 字段 + 明确 `blocker_ref` vs `depends_on` 区分规则）。按 [本文件 L487 维护节奏](#)，单一功能开发期间本文件基本冻结——V2 改动沉淀在 [handoff-schema/project-rules.md](handoff-schema/project-rules.md)，未迁入 dev-rules（V2 规则尚未验证跨功能通用）。下次扩容窗口：handoff-schema 第二阶段（snapshot schema 化）开始时，按迁入判据评估。
 
 ---
 
