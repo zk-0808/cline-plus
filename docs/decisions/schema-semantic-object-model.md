@@ -9,6 +9,18 @@
 
 ## 1. 核心五类对象模型
 
+### 1.0 Confidence 词汇表（共享）
+
+`confidence` 字段统一映射 [evidence-governance.md §4](../evidence-governance.md) 三档（schema 用状态机词汇，evidence-governance 用高/中/低，两者通过下表对齐）：
+
+| schema 取值 | evidence-governance §4 | 定义 | 可进入的状态 |
+|------------|----------------------|------|------------|
+| `Verified` | 高 | ≥3 个独立证据类型一致，无冲突 | Decision |
+| `Likely` | 中 | 2 个独立证据类型一致，或单源但来源权威 | Verified |
+| `Hypothesis` | 低 | 单一证据，或存在未解决冲突 | Hypothesis |
+
+**注**：schema 用状态机词汇（Verified/Likely/Hypothesis）便于跨对象复用——同一套词汇既能标注 Verification 对象的验证强度，也能标注 Handoff 对象的判断强度。evidence-governance §4 用高/中/低便于人工记忆。两者通过本表对齐，**不是字面一致**。
+
 ### 1.1 Decision (决策对象)
 记录项目中的架构决策、规则变化或关键方向转变。
 - `id`: 格式为 `D-YYYY-MM-DD-short-name` 或 `ADR-NNN`。
@@ -28,7 +40,7 @@
 ### 1.3 Verification (验证对象)
 记录实验、测试、双盲验证或实证的结论。
 - `id`: 格式为 `V-run-N` 或 `verification-short-name`。
-- `confidence`: 取值与 `evidence-governance.md §4` 一致：`Verified` / `Likely` / `Hypothesis`。
+- `confidence`: 见 [§1.0](#10-confidence-词汇表共享) 词汇表（`Verified` / `Likely` / `Hypothesis`）。
 - `evidence_refs`: 支撑该验证结论 of 证据 ID 列表（如 `O1`, `E1`）。
 - `outcome`: 验证结果描述。
 
@@ -44,7 +56,7 @@
 - `id`: 稳定短 ID，小写字母 + 数字 + 连字符 (例如 `next-feature-direction`)。
 - `kind`: `conclusion` (结论型) | `action` (动作型)。
 - `exit_when`: 退出或完成的判定条件。
-- `confidence`: 取值与 `evidence-governance.md` 一致：`Verified` / `Likely` / `Hypothesis`。
+- `confidence`: 见 [§1.0](#10-confidence-词汇表共享) 词汇表（`Verified` / `Likely` / `Hypothesis`）。
 - `depends_on`: 依赖的其他 **Handoff ID** 列表 (逗号分隔，例如 `issue-11944`)。**禁止**指向 Blocker ID——Blocker 关系用 `blocker_ref`。
 - `blocker_ref`: 指向 **Blocker ID** (若有阻塞，非自然语言，格式如 `B-cli-codec-bug`)。
 
