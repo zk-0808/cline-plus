@@ -87,6 +87,7 @@
 | id | 方向 | 说明 | 优先级 | confidence | depends_on | blocker_ref |
 |----|------|------|--------|-----------|------------|-------------|
 | `handoff-schema-v2-kind-exit` | kind/exit_when 显式化 | 在 handoff.md 未完成项表中显式标注 `[kind] exit_when`（V2 延伸项，可选）| 🟢 低 | Hypothesis | — | — |
+| `assertion-semantic-model` | Assertion 语义模型讨论 | 把 handoff 基本单位从"字段"抽象为"Assertion"（Claim/Evidence/Justification/Confidence 四属性）；材料已写见 [assertion-semantic-model.md](handoff-schema/assertion-semantic-model.md)；不立即改 schema/规则 ← 上轮 §6 推理链约束是局部补丁，需先定语义模型再统一重构，否则陷入"补字段循环" | 🟡 中 | Hypothesis | — | — |
 | `schema-v2-snapshot-align` | snapshot 数据模型对齐 schema V2 | types.ts 字段对齐 + extractors 调整 + 短对话实测（workaround 路径 `MAX_INPUT_TOKENS=1000`）；字段对齐/单元测试不依赖 codec bug ← codec bug 只阻塞真实长对话路径（≥90K tokens），不阻塞代码层字段对齐 | 🟡 中 | Hypothesis | — | — |
 | `schema-v2-snapshot-e2e` | snapshot 真实长对话实测 | 真实 90K+ token 长对话路径实测 + frontmatter 显式化 + confidence 计算固化进 plugin；depends_on=pr-12032 ← 真实长对话路径触发 codec bug 必崩，需等修复 PR 合并 + CLI 发版 | 🟡 中 | Hypothesis | `pr-12032` | `B-cli-codec-bug` |
 | `issue-11944` | GitHub #11944 跟进 | SDK 迁移时间线（影响 VS Code 扩展 plugin 系统恢复） | 🟡 中 | Verified | — | — |
