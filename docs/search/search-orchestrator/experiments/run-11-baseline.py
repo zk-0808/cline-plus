@@ -7,9 +7,11 @@ Run #11 Baseline — SimHash/Jaccard + URL 规范化
 注：§2 仅存摘要非完整正文，基线用 title + snippet + fetch 摘要作为输入文本
 """
 
-import re
-import hashlib
-from urllib.parse import urlparse, urlunparse
+from _baseline_common import (
+    normalize_url, tokenize, shingles, simhash, hash_md5,
+    hamming_distance, jaccard, union_find_groups,
+    SIMHASH_THRESHOLD, JACCARD_THRESHOLD,
+)
 
 # ============================================================
 # 数据：8 个 fetch 成功的 URL（从 run-11-output.md §1+§2 提取）
@@ -124,120 +126,23 @@ GROUND_TRUTH = {
 }
 
 # ============================================================
-# 1. URL 规范化
+# 基线合并决策
 # ============================================================
 
-TRACKING_PARAMS = {"utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "fbclid", "gclid"}
-
-def normalize_url(url):
-    """URL 规范化：去 fragment、去 tracking 参数、统一 scheme/host、去 trailing slash"""
-    parsed = urlparse(url)
-    # 统一 scheme 和 host
-    scheme = parsed.scheme.lower()
-    netloc = parsed.netloc.lower()
-    # 去 trailing slash（但保留根路径）
-    path = parsed.path.rstrip("/") if parsed.path != "/" else ""
-    # 过滤 tracking 参数
-    if parsed.query:
-        params = []
-        for pair in parsed.query.split("&"):
-            if "=" in pair:
-                key = pair.split("=")[0].lower()
-                if key not in TRACKING_PARAMS:
-                    params.append(pair)
-            else:
-                params.append(pair)
-        query = "&".join(params)
-    else:
-        query = ""
-    return urlunparse((scheme, netloc, path, "", query, ""))
-
-# ============================================================
-# 2. SimHash（64-bit 指纹）
-# ============================================================
-
-def tokenize(text):
-    """简单分词：英文按空格+标点，中文按字符"""
-    # 英文 token
-    en_tokens = re.findall(r'[a-zA-Z0-9]+', text.lower())
-    # 中文 token（逐字符）
-    zh_chars = re.findall(r'[\u4e00-\u9fff]', text)
-    return en_tokens + zh_chars
-
-def simhash(text, hash_bits=64):
-    """计算 SimHash 指纹"""
-    tokens = tokenize(text)
-    if not tokens:
-        return 0
-    # 每个 token 的 hash
-    v = [0] * hash_bits
-    for token in tokens:
-        h = int(hashlib.md5(token.encode('utf-8')).hexdigest(), 16)
-        for i in range(hash_bits):
-            bit = (h >> i) & 1
-            v[i] += 1 if bit else -1
-    # 生成指纹
-    fingerprint = 0
-    for i in range(hash_bits):
-        if v[i] > 0:
-            fingerprint |= (1 << i)
-    return fingerprint
-
-def hamming_distance(a, b):
-    """计算汉明距离"""
-    x = a ^ b
-    dist = 0
-    while x:
-        dist += x & 1
-        x >>= 1
-    return dist
-
-# ============================================================
-# 3. Jaccard 系数（k-shingle, k=4）
-# ============================================================
-
-def shingles(text, k=4):
-    """生成 k-shingle 集合（按字符级）"""
-    # 去空格和标点，统一小写
-    cleaned = re.sub(r'\s+', '', text.lower())
-    cleaned = re.sub(r'[^\u4e00-\u9fffa-z0-9]', '', cleaned)
-    if len(cleaned) < k:
-        return {cleaned}
-    return {cleaned[i:i+k] for i in range(len(cleaned) - k + 1)}
-
-def jaccard(set_a, set_b):
-    """计算 Jaccard 系数"""
-    if not set_a and not set_b:
-        return 1.0
-    if not set_a or not set_b:
-        return 0.0
-    intersection = set_a & set_b
-    union = set_a | set_b
-    return len(intersection) / len(union)
-
-# ============================================================
-# 4. 基线合并决策
-# ============================================================
-
-SIMHASH_THRESHOLD = 3  # 汉明距 ≤ 3
-JACCARD_THRESHOLD = 0.9  # Jaccard ≥ 0.9
 
 def baseline_merge_decision(url_a, url_b, text_a, text_b, title_a, title_b):
     """基线合并决策：URL 规范化 OR SimHash OR Jaccard 任一命中则合并"""
-    # 1. URL 规范化
     norm_a = normalize_url(url_a)
     norm_b = normalize_url(url_b)
     url_match = (norm_a == norm_b)
 
-    # 2. SimHash（对 title + text）
     combined_a = title_a + " " + text_a
     combined_b = title_b + " " + text_b
-    hash_a = simhash(combined_a)
-    hash_b = simhash(combined_b)
+    hash_a = simhash(tokenize(combined_a), hash_fn=hash_md5)
+    hash_b = simhash(tokenize(combined_b), hash_fn=hash_md5)
     hdist = hamming_distance(hash_a, hash_b)
     simhash_match = (hdist <= SIMHASH_THRESHOLD)
 
-    # 3. Jaccard（对 title 的 k-shingle）
     shingle_a = shingles(title_a)
     shingle_b = shingles(title_b)
     jac = jaccard(shingle_a, shingle_b)
@@ -253,8 +158,9 @@ def baseline_merge_decision(url_a, url_b, text_a, text_b, title_a, title_b):
         "merge": merge,
     }
 
+
 # ============================================================
-# 5. 运行基线 + 对比 Ground Truth
+# 运行基线 + 对比 Ground Truth
 # ============================================================
 
 print("=" * 80)
@@ -296,7 +202,7 @@ for i in range(len(URLS)):
               f"{'合并' if result['merge'] else '不合并':>8} | {correct:>6}")
 
 # ============================================================
-# 6. 指标计算
+# 指标计算
 # ============================================================
 
 print("\n" + "=" * 80)
@@ -308,6 +214,7 @@ print("=" * 80)
 # 传递性：8→3→1，所以最终合并组：{1,3,8}, {4,6}, {2,7}
 p4_groups = [{1, 3, 8}, {4, 6}, {2, 7}, {5}]  # 5 独立
 
+
 def in_same_group(a, b, groups):
     """检查 a 和 b 是否在同一合并组"""
     for g in groups:
@@ -315,30 +222,9 @@ def in_same_group(a, b, groups):
             return True
     return False
 
-# 基线合并组（用 union-find 计算）
-parent = list(range(9))  # 0-8, 用 1-8
-def find(x):
-    while parent[x] != x:
-        parent[x] = parent[parent[x]]
-        x = parent[x]
-    return x
-def union(x, y):
-    px, py = find(x), find(y)
-    if px != py:
-        parent[px] = py
 
-for (a_id, b_id), merge in baseline_merges.items():
-    if merge:
-        union(a_id, b_id)
-
-# 获取基线合并组
-baseline_groups_map = {}
-for i in range(1, 9):
-    root = find(i)
-    if root not in baseline_groups_map:
-        baseline_groups_map[root] = set()
-    baseline_groups_map[root].add(i)
-baseline_groups = list(baseline_groups_map.values())
+# 基线合并组（union-find）
+baseline_groups = union_find_groups(baseline_merges, range(1, 9))
 
 print("\n基线合并组:")
 for g in sorted(baseline_groups, key=lambda x: min(x)):

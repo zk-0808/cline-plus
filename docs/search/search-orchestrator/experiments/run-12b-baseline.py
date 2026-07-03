@@ -1,8 +1,18 @@
-import hashlib
+# -*- coding: utf-8 -*-
+"""
+Run #12b Baseline — SimHash/Jaccard + URL 规范化
+读取 run-12b-output.md，输出基线评估报告到 run-12b-baseline-output.md
+"""
+
 import itertools
 import re
 from pathlib import Path
-from urllib.parse import urlparse
+
+from _baseline_common import (
+    normalize_url_simple as normalize_url,
+    shingles, simhash, hash_blake2b,
+    hamming_distance, jaccard,
+)
 
 ROOT = Path(__file__).resolve().parent
 OUTPUT = ROOT / "run-12b-output.md"
@@ -19,35 +29,21 @@ GT_SUMMARY = {tuple(sorted(pair)) for pair in [(1, 6), (1, 11), (3, 7)]}
 GT_REWRITE = {tuple(sorted(pair)) for pair in [(1, 10), (1, 9)]}
 
 T_LEVEL = {
-    1: "T1",
-    2: "T1",
-    3: "T1",
-    4: "T2",
-    5: "T1",
-    6: "T3",
-    7: "T3",
-    8: "T2",
-    9: "T3",
-    10: "T3",
-    11: "T3",
-    12: "T4",
-    13: "T1",
-    14: "T4",
+    1: "T1", 2: "T1", 3: "T1", 4: "T2", 5: "T1",
+    6: "T3", 7: "T3", 8: "T2", 9: "T3", 10: "T3",
+    11: "T3", 12: "T4", 13: "T1", 14: "T4",
 }
 
 T_RANK = {"T1": 4, "T2": 3, "T3": 2, "T4": 1}
 
-
-def normalize_url(url: str) -> str:
-    parsed = urlparse(url.strip())
-    host = parsed.netloc.lower()
-    if host.startswith("www."):
-        host = host[4:]
-    path = re.sub(r"/+$", "", parsed.path)
-    return f"{host}{path}"
+SHINGLE_WIDTH = 5
+HAMMING_THRESHOLD = 3
+JACCARD_THRESHOLD = 0.90
+JACCARD_SENSITIVITY = 0.80
 
 
 def extract_url_blocks(text: str) -> dict[int, dict[str, str]]:
+    """Parse markdown to extract URL blocks with body text."""
     matches = list(SUCCESS_RE.finditer(text))
     blocks = {}
     for index, match in enumerate(matches):
@@ -60,48 +56,17 @@ def extract_url_blocks(text: str) -> dict[int, dict[str, str]]:
         block = text[start:end]
         if "**fetch 状态**: 成功" not in block:
             continue
-        body_match = re.search(r"(?:\*\*正文\*\*[:：]|\*\*正文开头 1000 字\*\*[:：])\s*(.*)", block, re.DOTALL)
+        body_match = re.search(
+            r"(?:\*\*正文\*\*[:：]|\*\*正文开头 1000 字\*\*[:：])\s*(.*)",
+            block, re.DOTALL,
+        )
         body = body_match.group(1).strip() if body_match else block.strip()
         blocks[number] = {"url": url, "body": body}
     return blocks
 
 
-def shingles(text: str, width: int = 5) -> set[str]:
-    normalized = re.sub(r"\s+", "", text.lower())
-    if len(normalized) <= width:
-        return {normalized} if normalized else set()
-    return {normalized[i : i + width] for i in range(len(normalized) - width + 1)}
-
-
-def stable_hash64(token: str) -> int:
-    return int.from_bytes(hashlib.blake2b(token.encode("utf-8"), digest_size=8).digest(), "big")
-
-
-def simhash(tokens: set[str]) -> int:
-    vector = [0] * 64
-    for token in tokens:
-        value = stable_hash64(token)
-        for bit in range(64):
-            vector[bit] += 1 if value & (1 << bit) else -1
-    fingerprint = 0
-    for bit, score in enumerate(vector):
-        if score >= 0:
-            fingerprint |= 1 << bit
-    return fingerprint
-
-
-def hamming(a: int, b: int) -> int:
-    return (a ^ b).bit_count()
-
-
-def jaccard(a: set[str], b: set[str]) -> float:
-    if not a and not b:
-        return 1.0
-    union = len(a | b)
-    return len(a & b) / union if union else 0.0
-
-
 def retained_url(a: int, b: int) -> int:
+    """Determine which URL to retain based on trust-level ranking."""
     rank_a = T_RANK[T_LEVEL[a]]
     rank_b = T_RANK[T_LEVEL[b]]
     if rank_a != rank_b:
@@ -109,32 +74,42 @@ def retained_url(a: int, b: int) -> int:
     return min(a, b)
 
 
-def metrics(predicted: set[tuple[int, int]], positives: set[tuple[int, int]]) -> tuple[float, float, float]:
+def compute_metrics(
+    predicted: set[tuple[int, int]], positives: set[tuple[int, int]],
+) -> tuple[float, float, float]:
+    """Compute precision, recall, F1."""
     tp = len(predicted & positives)
     precision = tp / len(predicted) if predicted else 1.0
     recall = tp / len(positives) if positives else 1.0
-    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    f1 = (2 * precision * recall / (precision + recall)
+           if precision + recall else 0.0)
     return precision, recall, f1
 
 
 def main() -> None:
     text = OUTPUT.read_text(encoding="utf-8")
     blocks = extract_url_blocks(text)
-    token_sets = {number: shingles(data["url"] + "\n" + data["body"]) for number, data in blocks.items()}
-    simhashes = {number: simhash(tokens) for number, tokens in token_sets.items()}
-    normalized_urls = {number: normalize_url(data["url"]) for number, data in blocks.items()}
+    token_sets = {
+        n: shingles(data["url"] + "\n" + data["body"], k=SHINGLE_WIDTH)
+        for n, data in blocks.items()
+    }
+    simhashes = {
+        n: simhash(tokens, hash_fn=hash_blake2b)
+        for n, tokens in token_sets.items()
+    }
+    normalized_urls = {n: normalize_url(data["url"]) for n, data in blocks.items()}
 
     rows = []
-    predicted = set()
-    sensitivity_extra = set()
+    predicted: set[tuple[int, int]] = set()
+    sensitivity_extra: set[tuple[int, int]] = set()
 
     for a, b in itertools.combinations(sorted(blocks), 2):
         url_equal = normalized_urls[a] == normalized_urls[b]
-        distance = hamming(simhashes[a], simhashes[b])
+        distance = hamming_distance(simhashes[a], simhashes[b])
         jac = jaccard(token_sets[a], token_sets[b])
-        simhash_hit = distance <= 3
-        jaccard_hit = jac >= 0.90
-        sensitivity_hit = jac >= 0.80
+        simhash_hit = distance <= HAMMING_THRESHOLD
+        jaccard_hit = jac >= JACCARD_THRESHOLD
+        sensitivity_hit = jac >= JACCARD_SENSITIVITY
         decision = url_equal or simhash_hit or jaccard_hit
         pair = tuple(sorted((a, b)))
         if decision:
@@ -143,7 +118,7 @@ def main() -> None:
             sensitivity_extra.add(pair)
         rows.append((a, b, url_equal, distance, jac, sensitivity_hit, decision, retained_url(a, b)))
 
-    p, r, f1 = metrics(predicted, GT_POSITIVE)
+    p, r, f1 = compute_metrics(predicted, GT_POSITIVE)
     summary_recall = len(predicted & GT_SUMMARY) / len(GT_SUMMARY)
     rewrite_recall = len(predicted & GT_REWRITE) / len(GT_REWRITE)
     false_merge = len(predicted - GT_POSITIVE)
@@ -171,7 +146,9 @@ def main() -> None:
     for a, b, url_equal, distance, jac, sensitivity_hit, decision, retain in rows:
         if decision or sensitivity_hit or tuple(sorted((a, b))) in GT_POSITIVE:
             lines.append(
-                f"| #{a} | #{b} | {'是' if url_equal else '否'} | {distance} | {jac:.3f} | {'是' if sensitivity_hit else '否'} | {'合并' if decision else '不合并'} | #{retain if decision else '—'} |"
+                f"| #{a} | #{b} | {'是' if url_equal else '否'} | {distance} | {jac:.3f} "
+                f"| {'是' if sensitivity_hit else '否'} | {'合并' if decision else '不合并'} "
+                f"| #{retain if decision else '—'} |"
             )
 
     lines.extend(
@@ -180,8 +157,8 @@ def main() -> None:
             "## 统计",
             "",
             f"- URL 规范化合并对数：{sum(1 for row in rows if row[2])}",
-            f"- SimHash 合并对数：{sum(1 for row in rows if row[3] <= 3)}",
-            f"- Jaccard 0.90 合并对数：{sum(1 for row in rows if row[4] >= 0.90)}",
+            f"- SimHash 合并对数：{sum(1 for row in rows if row[3] <= HAMMING_THRESHOLD)}",
+            f"- Jaccard 0.90 合并对数：{sum(1 for row in rows if row[4] >= JACCARD_THRESHOLD)}",
             f"- 总合并对数（去重）：{len(predicted)}",
             f"- Jaccard 0.80 sensitivity 额外命中：{len(sensitivity_extra)}",
             "",
@@ -206,7 +183,10 @@ def main() -> None:
 
     for pair in sorted(GT_POSITIVE):
         category = "summary" if pair in GT_SUMMARY else "rewrite"
-        lines.append(f"| #{pair[0]}-#{pair[1]} | {category} | {'命中' if pair in predicted else '漏检'} |")
+        lines.append(
+            f"| #{pair[0]}-#{pair[1]} | {category} "
+            f"| {'命中' if pair in predicted else '漏检'} |"
+        )
 
     RESULT.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
