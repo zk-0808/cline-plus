@@ -79,9 +79,11 @@
 - **不预写**未来阶段的字段（如 snapshot 专属字段，等第二阶段再加）
 - **不做** `kind` / `exit_when` 在 handoff.md 中的显式标注（延伸项 `handoff-schema-v2-kind-exit`，可选推进）
 
-### 6. Hypothesis 条目推理链（机制改进）
+### 6. Assertion Justification 属性过渡表达（v0.1 过渡版）
 
-`confidence = Hypothesis` 的未完成项**必须**在"说明"列写简短推理链，说明关键字段判断（`depends_on` / `blocker_ref`）的依据。Verified / Likely 条目推理链可选。
+> **状态**：v0.1 过渡版——Assertion 语义模型已落地 schema §0.2，本节内容是模型在 handoff.md 表达层的过渡约束。待 V2 字段重写（实施第 6 步）后，本节内容迁移到统一 Assertion 表达，本节删除。
+
+**规则**：`Evidence.kind = None` 或 `confidence = Hypothesis` 的未完成项**必须**在"说明"列写简短 Justification，说明关键字段判断（`depends_on` / `blocker_ref`）的依据。其他档可选。
 
 **格式**：`<字段判断> ← <依据>`（一句话，写在"说明"列内）
 
@@ -89,16 +91,43 @@
 - ❌ `说明: snapshot schema 化 | depends_on=pr-12032 | Hypothesis`（下游无法核查，只能采信或全盘否定）
 - ✅ `说明: snapshot schema 化（字段对齐不依赖 PR / 长对话实测依赖 codec bug）| depends_on=pr-12032 | Hypothesis`（下游可定向判断）
 
-**设计意图**：
-- `confidence` 标注的是**条目整体**证据强度，但下游需要的是**哪个字段判断弱**的定向指引
-- 没有推理链时，下游读到 `depends_on=X` 是 State 级断言——要么采信（假设上游判断正确）要么全盘否定（无依据），没有"部分采信 + 核查"的中间地带
-- Hypothesis 是低置信度条目，最需要推理链支撑；推理链本质是 agent 撰写时**已经在做的判断的显式化**，不是新增认知负担
+**与 schema §0.2 的关系**：
+- schema §0.2 Assertion 模型定义了 Justification 作为基本单位属性（普适）
+- 本节是 Justification 属性在 handoff.md "说明"列的**过渡表达**——V2 字段尚未重写，handoff.md 仍用现有六字段表格
+- 过渡期约束：高风险条目（`Hypothesis` / `Evidence.kind = None`）必须显式化 Justification，避免下游无判断空间
+- 实施第 6 步（V2 字段重写）后，所有条目统一表达 Assertion 完整属性，本节过渡约束被吸收删除
+
+**源由**：2026-07-03 会话——`schema-v2-snapshot` 标 `depends_on=pr-12032 + Hypothesis` 但未写 Justification。下游模型（下一会话）读到时直接采信为"snapshot schema 化整体依赖 PR #12032"，直到用户提问才读源码发现过度打包（schema 化本可拆为 align 不依赖 PR + e2e 依赖 PR）。这是 §0.2.3 反面教材的具体来源——伪装成事实的 None。
+
+### 7. 消费层规则：高风险字段默认核查（Assertion 模型消费侧）
+
+> **生命周期标注**：本规则本质普适（跨功能通用），但 dev-rules 当前冻结。短期沉淀在本文件，**待第二阶段开始时迁入 `dev-rules.md`**——迁入时机与 §6 重构同步评估。
+
+**规则**：下游会话引用下列**高风险字段**时，必须先核查其 Assertion 属性（Evidence + Justification），再决定是否采信：
+
+| 高风险字段 | 核查理由 |
+|---|---|
+| `depends_on` | 依赖关系直接影响后续规划——误采信会传播过度打包/错位阻塞 |
+| `blocker_ref` | 阻塞关系直接影响推进判断——误采信会错位阻塞或漏判阻塞 |
+
+**核查动作**（任选其一，按成本低者优先）：
+1. **读 Justification**（最低成本）——若条目已写推理链（§6 v0 过渡版约束），直接读"说明"列
+2. **核查 Evidence**（中等成本）——读引用的源文档（design.md / investigation-note / 源码）
+3. **重跑 Assertion**（最高成本）——重新评估断言是否仍成立
+
+**核查判据**：
+- 若 Justification 充分且 Evidence.kind ≠ None → 采信 Claim
+- 若 Justification 缺失或 Evidence.kind = None → **不直接采信**，必须先重跑 Assertion 或标记为待核查
+- 若重跑结果与原 Claim 不一致 → 修正断言并记录新决策
+
+**与 §0.1 原则的关系**：
+- §0.1 高层原则要求"任何可被继承的断言都必须能被低成本重新评估"
+- 本规则是 §0.1 在消费侧的落地——下游不主动核查就等于放弃了"重新评估"能力
+- 但消费侧补丁不能替代表达层——若上游表达不足（缺 Justification/Evidence），下游仍需读源码，handoff 价值降低（见 [assertion-semantic-model.md §3 GPT 警告](./assertion-semantic-model.md)）
 
 **适用范围**：
-- 新增条目立即适用
-- 现有条目下次修改时补齐（不强制本次修改）
-
-**源由**：2026-07-03 会话——`schema-v2-snapshot` 标 `depends_on=pr-12032 + Hypothesis` 但未写推理链。下游模型（下一会话）读到时直接采信为"snapshot schema 化整体依赖 PR #12032"，直到用户提问才读源码发现过度打包（schema 化本可拆为 align 不依赖 PR + e2e 依赖 PR）。`confidence = Hypothesis` 标了整体证据弱，但未定向指引"哪个字段判断弱"，下游无判断空间。
+- 新会话开始时读 handoff.md 未完成项表，凡引用 `depends_on` / `blocker_ref` 的字段都适用
+- 不适用于 `id` / `kind` / `exit_when` 等低风险字段（这些字段错误易在 30 秒约束内被发现）
 
 ---
 
