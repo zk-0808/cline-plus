@@ -1,4 +1,4 @@
-# Handoff — ADR-006 原生机制优先原则确立 + snapshot-trigger-tuning 砍掉
+# Handoff — native-condense-semantic-audit 探查规划产出
 
 > **生命周期**：每次覆写，无归档——会话交接文件。
 
@@ -6,144 +6,44 @@
 
 | id | 决策 | confidence | depends_on |
 |----|------|-----------|------------|
-| `adr-006-native-first-principle` | "完美利用 cline 的原生机制"提升到最高级原则——优先于所有功能设计/字段决策/阈值调优；元规则自检"是不是又在造原生已有的轮子"；审计发现 `schema-v2-snapshot-align` 违反 ADR-005 拆分原则（snapshot 写入绑定 compact 触发 + buildCompactionSummary 死代码）；分支 A（schema/handoff.md 语义对象）保留符合元原则；分支 B（snapshot/compaction/trigger-tuning）砍/缩/转；`snapshot-trigger-tuning` 整条砍掉；详见 [ADR-006](decisions/adr/ADR-006-native-mechanism-first-principle.md) | Verified | `schema-v2-snapshot-align-completed` |
-| `schema-v2-snapshot-align-completed` | context-snapshot 对齐 schema V2 §1.5 六字段（数据模型层有效）；但**实现方式违反 ADR-005**——snapshot 写入与 compact 触发深度耦合 + buildCompactionSummary 死代码；ADR-006 区分数据模型（保留）与触发实现（违反，需重构为薄适配层）；submodule commit 74429de + 父仓库 commit 538eaa0 已 push | Verified | `snapshot-v2-decouple` |
-| `dev-rules-refreeze` | dev-rules L13 状态从 🟢 解冻回 🔴 冻结（2026-07-03 回冻）；上一会话 `dev-rules-unfreeze` 决策标 superseded；L518 解冻条件精确化为"子项目基本结束、进入交接期时"；project-rules §7 迁入时机同步为"handoff-schema 功能整体结束、进入交接期时" | Verified | — |
-| `snapshot-trigger-analysis` | ~~评估 COMPACT_AT_RATIO 0.75 高于行业经验 0.60-0.70；建议调低阈值或加预写机制~~ **[部分失效：被 ADR-006 推翻]**——"调阈值"前提被推翻，原生 auto-condense 已覆盖触发；本决策的"snapshot 是被动响应式无 cache 防备"观察仍有效，但结论应改为"砍掉自研触发，改 hook 原生 condense" | Likely | `schema-v2-snapshot-align-completed` |
-| `v2-decouple` | V2 解耦：拆 `handoff-schema-v2` → `handoff-schema-v2-doc`（已完成，不依赖 PR）+ `schema-v2-snapshot`（保留，依赖 PR #12032）+ `handoff-schema-v2-kind-exit`（延伸项，可选）| Verified | `v2-doc-completed` |
-| `handoff-statement-simplify` | handoff.md 末尾两处交接语句精简：去赘述（决策/净变化/状态已在结构化部分），仅保留读文档指引 | Verified | — |
-| `dev-rules-unfreeze` | ~~dev-rules 🔴 冻结 → 🟢 解冻（第一阶段验收通过 + V2 文档层改进完成，解冻条件命中）~~ **[superseded by `dev-rules-refreeze` 2026-07-03]** | Verified | `v2-doc-completed` |
-| `mapping-test-rerun` | V2 schema 落地后无损映射测试重跑 11/11 通过（拆分后条目 9→11，六字段全覆盖，前缀规则无违反）| Verified | `v2-doc-completed` |
-| `snapshot-v2-decouple` | 解耦 `schema-v2-snapshot` → `schema-v2-snapshot-align`（不依赖 PR，字段对齐+短对话实测）+ `schema-v2-snapshot-e2e`（依赖 PR，长对话实测+frontmatter+confidence 固化）；纠正原"snapshot schema 化整体阻塞"过度打包 | Verified | `v2-doc-completed` |
-| `confidence-vocab-fix` | schema §1.0 新增 Confidence 词汇表；修正 §1.3/§1.5 字段描述错误（原写"取值与 §4 一致"但字面不一致，schema 用 Verified/Likely/Hypothesis，§4 用高/中/低，需查表对齐） | Verified | `snapshot-v2-decouple` |
-| `hypothesis-reasoning-rule` | 新增 project-rules §6：Hypothesis 条目强制推理链（`<字段判断> ← <依据>`）；解决"confidence 标整体证据弱但未定向指引哪个字段弱，下游无判断空间"机制缺口 | Verified | `snapshot-v2-decouple` |
-| `assertion-semantic-model-confirmed` | Assertion 语义模型决策落地——基本单位=Assertion（Claim/Evidence/Justification/Confidence 四属性）；Evidence.kind 5 档枚举（Code/Test/Discussion/Inference/None）+ Inference vs None 边界写死；Confidence 条件必填（仅 None 时必填）；原则写 schema §0；消费规则写 project-rules 标注待迁入；V2 五类对象调整为"Assertion 载体分类"；新增元规则"是否在打字段补丁"防复发 | Verified | `hypothesis-reasoning-rule` |
-| `assertion-model-impl-step1-5` | Assertion 模型实施第 1-5 步完成：schema V2→V3（标题调整 + §0 原则 + §0.2 Assertion 模型定义 + §0.3 五类对象重定位）；project-rules §6 v0→v0.1（Hypothesis 推理链→Assertion Justification 过渡表达）+ §7 新增消费层规则（高风险字段默认核查，待迁入 dev-rules）；第 6 步 V2 字段重写按材料 §9.3 暂不推进保持缓冲 | Verified | `assertion-semantic-model-confirmed` |
+| `native-condense-semantic-audit-plan` | 产出 4 子代理并行探查规划回答 ADR-006 §4.1 问题 1（cline 原生 condense 到底丢了什么 handoff 需要的语义）；关键发现 `cline --help` 暴露 `--compaction <agentic\|basic\|off>` 一级公开选项（默认 basic）——原生 condense 是公开接口而非深埋内部；复用 investigation-note O5 已 verified 的云端子代理读 cline/cline 仓库源码路径与方法；4 任务包：A 文档面（CLI help + docs.cline.bot 查三模式语义）/ B 源码面（ContextManager 实现 + condense 产物数据结构 + 字段覆盖矩阵）/ C 源码面（hook 暴露面 + 推荐插入点）/ D 实测面（本地短对话 + MAX_INPUT_TOKENS=1000 触发，用户终端执行 §1.2）；A/B/C 可云端并行无依赖，D 需 A/B/C 完成后启动（产物解读需 B 的字段覆盖矩阵对照）；对照标准=schema V2 §1.5 六字段（id/kind/exit_when/confidence/depends_on/blocker_ref）+ 五类对象；判定标准：答不出丢失点→B 分支整条砍掉，答出丢失点→做 §3.3 薄适配层 | Verified | `adr-006-native-first-principle` |
 
 ## 本会话净变化
 
-### 治理层（父仓库 cline-plus，commit `538eaa0`）
+### 探查规划产出（未写入仓库文件，仅在对话中）
 
-- `docs/dev-rules.md` L13：状态 🟢 解冻 → 🔴 冻结（2026-07-03 回冻）；L518 解冻条件表述精确化为"子项目基本结束、进入交接期时"
-- `docs/handoff-schema/project-rules.md` §7：迁入时机同步为"handoff-schema 功能整体结束、进入交接期时"；末段 L487 → L518 行号引用同步
+- `native-condense-semantic-audit` 探查规划：4 子代理任务包（A/B/C/D），每包含目标 / 输入线索 / 任务步骤 / 产出格式
+- 关键发现：`cline --help` 暴露 `--compaction <agentic|basic|off>` 一级选项（默认 basic）——condense 触发与模式是 CLI 公开接口
+- 复用线索：[investigation-note-cli-codec-content-map-bug.md O5](decisions/investigation/investigation-note-cli-codec-content-map-bug.md) 已 verified 云端子代理读 cline/cline 仓库源码的路径（`sdk/packages/core/src/runtime/config/agent-message-codec.ts`）与方法
 
-### 功能层（submodule context-snapshot，commit `74429de`，push 至 origin/main）
+### 运行时探查（未修改代码，仅命令输出）
 
-- `src/types.ts`：TodoRecord 扩展六字段（id/kind/exitWhen/dependsOn/blockerRef）；Confidence 类型 `high|medium|low` → `Verified|Likely|Hypothesis`
-- `src/extractors/todo-extractor.ts`：新增 `parseHandoffTable()` 双 Pass 架构（Pass 1 表格解析 + Pass 2 关键词模式 fallback）；4 个辅助函数（normalizeConfidence / parseDependsOn / parseBlockerRef / parsePriority）；ID 前缀自动迁移规则（depends_on 误写 B- 前缀→blocker_ref）
-- `src/extractors/{decision,change,source}-extractor.ts`：Confidence 字面值同步（high→Verified, medium→Likely, low→Hypothesis）
-- `src/formatter.ts`：CONFIDENCE_LABELS 同步
-- `src/snapshot-writer.ts`：renderTodos 六字段表格渲染 + 无 id fallback 三字段格式
+- `cline --version` = 3.0.34（与 §1.15 不可抗力声明一致）
+- `cline --help` 确认 `--compaction` 选项 + `--hooks-dir` / `--config` / `--data-dir` 等相关选项
+- 本地 CLI 路径：`E:\node-global\node_modules\cline`（package.json 确认 dependencies `@cline/sdk` / `@cline/core` / `@cline/agents` / `@cline/llms` / `@cline/shared` 均 0.0.54）
+- 本地 cline.exe（Bun-embedded）：`E:\node-global\node_modules\.cline-mysker53\node_modules\@cline\cli-windows-x64\bin\cline.exe`
 
-### 触发机制评估发现（未修改代码，仅文档记录）
+## 历史净变化（上轮会话，已序列化于 commit `9a69ea9`）
 
-- `COMPACT_AT_RATIO = 0.75`（[compaction.ts:7](file:///e:/cline++/context-snapshot/src/compaction.ts#L7)）高于行业经验 0.60-0.70
-- snapshot 为被动响应式（压缩触发才写），无同 session cache miss 防备机制
-- 详见决策 `snapshot-trigger-analysis` + 未完成项 `snapshot-trigger-tuning`
+### 治理层（父仓库 cline-plus）
 
-## 历史净变化（上轮会话，已序列化于历史 commit）
+- ADR-006 落地：元原则"完美利用 cline 的原生机制"提升至最高级；分支 B（snapshot/compaction/trigger-tuning）砍/缩/转；`snapshot-trigger-tuning` 整条砍掉
+- dev-rules L13 回冻 🔴（上一会话 `dev-rules-unfreeze` 决策 superseded）
 
-### 1. schema V1 → V2（`docs/decisions/schema-semantic-object-model.md`）
+### 功能层（submodule context-snapshot，commit `74429de`）
 
-- 标题：V1 → V2，加 V2 变更说明块
-- §1.5 Handoff 对象新增 `depends_on` 字段（指向其他 Handoff ID，禁止指向 Blocker ID）
-- §1.5 新增 ID 前缀区分规则表（`B-` = Blocker / 其他 = Handoff）+ 混用判据说明
-- §2.1 映射表更新：`blocker_ref` 不再错误映射到 `depends_on` 列；新增"前缀区分规则"段（V2 检测与迁移规则）
+- schema V2 §1.5 六字段对齐（types/extractors/formatter/snapshot-writer）
 
-### 2. handoff.md 未完成项表扩展结构（`docs/handoff.md`）
+### Assertion 语义模型实施第 1-5 步（commit `048a876`）
 
-- 新增 `blocker_ref` 列（扩展结构，不改变现有条目语义）
-- `h2-h3-evidence` 显式化双字段并存：`depends_on = pr-12032`（PR 合并动作）+ `blocker_ref = B-cli-codec-bug`（codec bug 阻塞）
-- 拆分 `handoff-schema-v2` → `handoff-schema-v2-doc`（已完成，本会话）+ `handoff-schema-v2-kind-exit`（延伸项，可选）+ 保留 `schema-v2-snapshot`（依赖 PR #12032）
-
-### 3. handoff.md 末尾交接语句精简（`docs/handoff.md`）
-
-- "新会话首动作"段：去除赘述（决策/状态已在结构化部分），仅保留"读 handoff.md + dev-rules.md + handoff-schema/project-rules.md"
-- `## Handoff` 代码块：同样精简为单行读文档指引
-
-### 4. design.md V2 同步（`docs/handoff-schema/design.md`）
-
-- 标题：第一阶段 → V2 已推进；新增 V2 推进说明块
-- §1.1 第一阶段目标表新增"V2 文档层改进（解耦）"行（✅ 已完成）
-- §3.2 表格：`vscode-monitor` 行 ⚠️ → ✅（depends_on 字段已显式化）；`h2-h3-evidence` 行 ⚠️ → ✅（V2 显式化双字段并存）
-- §3.3 问题 1/2 标记 ✅ 已解决（删除线 + V2 落地说明）；问题 3 标"延伸项"保留
-- §3.4 测试结论更新；新增 §3.5 V2 重跑结果表（11/11 通过 + 前缀规则无违反）
-- §4.3/§4.4 验收查询更新（blocker_ref 直接 B- 前缀匹配，无需语义推断）
-- §5 演进路线重写：§5.1 第一阶段已完成 / §5.2 V2 文档层已完成 / §5.3 第二阶段（snapshot schema 化）/ §5.4 第三阶段
-- §6.1/§6.2 风险缓解更新（V2 已落地）；§7 评审对齐表 V2 注释
-
-### 5. project-rules.md V2 同步（`docs/handoff-schema/project-rules.md`）
-
-- §3 无损映射测试约束：五字段 → 六字段全覆盖；新增"前缀规则无违反"判据
-- §4 验收查询：预期答案注释更新（V2 后显式标注 blocker_ref）
-- §5 不做的事：补充 V2 后扩展说明（新增 blocker_ref 列为扩展结构非语义修改）+ 新增"kind/exit_when 显式化"作为可选延伸项
-
-### 6. dev-rules 状态错位处理（`docs/dev-rules.md`）
-
-- L13 顶部状态：🔴 冻结中 → 🟢 解冻（2026-07-03）
-- 解冻理由：第一阶段三项验收判据通过 + V2 文档层改进完成
-- 维护节奏声明：V2 改动沉淀在 handoff-schema/project-rules.md，未迁入 dev-rules（V2 规则尚未验证跨功能通用）；下次扩容窗口为第二阶段开始时
-
-### 7. schema-v2-snapshot 解耦 + 置信度机制改进（本轮会话）
-
-**解耦过度打包**（`docs/handoff.md` + `docs/handoff-schema/design.md`）：
-- `schema-v2-snapshot` 拆为 `schema-v2-snapshot-align`（不依赖 PR，可立即推进）+ `schema-v2-snapshot-e2e`（依赖 PR + blocker_ref=B-cli-codec-bug）
-- 修正原"snapshot schema 化整体阻塞"过度打包——codec bug 只阻塞真实长对话路径实测，不阻塞代码层字段对齐
-- design.md §5.3 第二阶段分两步推进说明（5.3.1 不依赖 PR / 5.3.2 依赖 PR）
-
-**置信度词汇表修正**（`docs/decisions/schema-semantic-object-model.md`）：
-- 新增 §1.0 Confidence 词汇表——显式映射 schema 词汇（Verified/Likely/Hypothesis）与 evidence-governance §4 词汇（高/中/低），两者字面不一致需查表对齐
-- 修正 §1.3/§1.5 字段描述错误（原写"取值与 §4 一致"但字面不一致）
-- 移除未完成项表 `handoff-schema-v2-doc`（已完成，状态不一致）
-
-**Hypothesis 推理链约束**（`docs/handoff-schema/project-rules.md` §6）：
-- 新增约束：`confidence = Hypothesis` 的未完成项必须在"说明"列写简短推理链（格式 `<字段判断> ← <依据>`），让下游有判断空间
-- 设计意图：confidence 标注整体证据强度，但下游需要"哪个字段判断弱"的定向指引，否则只能全采信或全盘否定
-- 立即应用：本轮新增的 `schema-v2-snapshot-align` / `schema-v2-snapshot-e2e` 已写推理链
-- 源由：上一会话 schema-v2-snapshot 标 Hypothesis 但未写推理链，下游模型直接采信为"整体依赖 PR"，直到用户提问才读源码发现过度打包
-
-### 8. Assertion 语义模型决策（`docs/handoff-schema/assertion-semantic-model.md`）
-
-材料从"讨论稿"升级为"决策版"——核心结论已定：
-- **Q1 已确认**：handoff 基本单位 = Assertion（解释力 + 正交性两检验通过）
-- **Q2 已确认**：四属性最小模型（Claim / Evidence / Justification / Confidence）；Evidence 含 kind 子属性；Confidence 条件必填（仅 None 时必填）
-- **Q3 已定**：Evidence.kind 5 档枚举（Code/Test/Discussion/Inference/None）+ Inference vs None 边界写死（Inference 有可追溯上游断言 / None 无来源纯判断）+ 起源事件作反面教材写入
-- **Q4 已定**：高层原则写 schema §0 设计原则（统领 V2 对象 + Assertion 两套东西）
-- **Q5 已定**：消费层规则短期写 project-rules 标注"待第二阶段迁入 dev-rules"
-- **Q6 已定**：V2 五类对象定位调整为"Assertion 载体分类"（字段不变仅表述更新）
-- **新增 §10 元规则**：每个决策前自检"是不是又在打字段补丁"——约束思考方式防复发
-- **§9.2 实施顺序**：6 步（schema §0 原则 → 标题调整 → Assertion 模型定义 → 消费规则 → §6 处理 → V2 字段重写最后做）
-
-### 9. Assertion 模型实施第 1-5 步（`docs/decisions/schema-semantic-object-model.md` + `docs/handoff-schema/project-rules.md`）
-
-按材料 §9.2 顺序推进，每步用 §10 元规则自检（每步都不是加 V2 字段，是显式化 Assertion 属性 / 调整表述 / 落地原则推论）：
-
-**schema V2 → V3**（`docs/decisions/schema-semantic-object-model.md`）：
-- 标题调整：从"语义对象模型规范"→"Assertion 语义模型与载体分类规范"
-- 新增 §0.1 高层原则（任何可被继承的断言必须能被低成本重新评估）
-- 新增 §0.2 Assertion 语义模型（基本单位）：四属性 + Evidence.kind 5 档枚举 + Inference vs None 边界写死 + Confidence 条件必填规则
-- 新增 §0.3 五类对象 = Assertion 载体分类（V2 字段定义不变，仅表述更新）
-- §1 标题调整：从"核心五类对象模型"→"五类对象模型（Assertion 载体分类）"
-
-**project-rules §6 v0 → v0.1**（`docs/handoff-schema/project-rules.md`）：
-- §6 从"Hypothesis 条目推理链（机制改进）"→"Assertion Justification 属性过渡表达（v0.1 过渡版）"
-- 规则约束扩展：从仅 `Hypothesis` → `Evidence.kind = None 或 Hypothesis`
-- 增加与 schema §0.2 的关系说明（模型定义 vs 表达层过渡）
-- 标注 v0.1 状态——待 V2 字段重写（实施第 6 步）后内容被吸收删除
-
-**project-rules §7 新增**（`docs/handoff-schema/project-rules.md`）：
-- 消费层规则：高风险字段（`depends_on` / `blocker_ref`）默认核查
-- 三档核查动作（读 Justification / 核查 Evidence / 重跑 Assertion）
-- 核查判据（Justification 充分且 Evidence.kind ≠ None → 采信；缺失或 None → 不直接采信）
-- 与 §0.1 原则的关系说明
-- 标注"待第二阶段迁入 dev-rules"
-
-**第 6 步暂不推进**：V2 字段表达重写按材料 §9.3 保持缓冲——等第 1-5 步稳定后再由模型反推。
+- schema V2→V3（§0 原则 + §0.2 Assertion 模型 + §0.3 五类对象重定位）
+- project-rules §6 v0→v0.1（Hypothesis 推理链→Assertion Justification 过渡表达）+ §7 新增消费层规则
 
 ## Commits
 
 | Hash | Repo | Message |
 |------|------|---------|
+| `9a69ea9` | cline-plus (父仓库) | feat(decisions): ADR-006 原生机制优先原则 - 元规则提升至最高级 + snapshot-trigger-tuning 砍掉 |
 | `74429de` | context-snapshot (submodule) | feat(snapshot): schema V2 §1.5 六字段对齐 - types/extractors/formatter/snapshot-writer |
 | `538eaa0` | cline-plus (父仓库) | feat: schema V2 §1.5 对齐 - dev-rules 回冻 + context-snapshot submodule 升级 |
 
@@ -151,9 +51,9 @@
 
 | id | 方向 | 说明 | 优先级 | confidence | depends_on | blocker_ref |
 |----|------|------|--------|-----------|------------|-------------|
+| `native-condense-semantic-audit` | cline 原生 condense 语义丢失点实测 | **已产出 4 子代理探查规划，待派发**——A 文档面（CLI help + docs.cline.bot 查 `--compaction` 三模式语义）/ B 源码面（ContextManager 实现 + condense 产物数据结构 + 字段覆盖矩阵）/ C 源码面（hook 暴露面 + 推荐插入点）/ D 实测面（本地短对话 + MAX_INPUT_TOKENS=1000 触发，用户终端执行 §1.2）；A/B/C 云端并行无依赖，D 需 A/B/C 完成后启动；规划详情见本会话决策 `native-condense-semantic-audit-plan`；判定标准：答不出丢失点→B 分支整条砍掉，答出丢失点→做 §3.3 薄适配层；不依赖 PR #12032（短对话不触发 codec bug 路径 B）| 🟡 中 | Verified | — | — |
 | `handoff-schema-v2-kind-exit` | kind/exit_when 显式化 | 在 handoff.md 未完成项表中显式标注 `[kind] exit_when`（V2 延伸项，可选）| 🟢 低 | Hypothesis | — | — |
-| `assertion-semantic-model` | Assertion 语义模型决策（已落地，待实施） | 决策版材料见 [assertion-semantic-model.md](handoff-schema/assertion-semantic-model.md)；Q1-Q6 已定 + 元规则已加；下次会话进入实施阶段（按材料 §9.2 顺序推进 6 步）；不立即改 schema/规则 ← 上轮 §6 是局部补丁，需先定语义模型再统一重构，否则陷入"补字段循环"；元规则约束思考方式防复发 | 🟡 中 | Verified | — | — |
-| `native-condense-semantic-audit` | cline 原生 condense 语义丢失点实测 | ADR-006 §4 问题 1：实测 cline 原生 condense 产物形态，对比 schema V2 §1.5 六字段 + 五类对象，找具体丢失点；判定 B 分支最终砍/缩/转；不依赖 PR，可立即推进（MAX_INPUT_TOKENS=1000 短对话触发）；回答路径见 [ADR-006 §4.1](decisions/adr/ADR-006-native-mechanism-first-principle.md) | 🟡 中 | Likely | — | — |
+| `assertion-semantic-model` | Assertion 语义模型决策（已落地，待实施） | 决策版材料见 [assertion-semantic-model.md](handoff-schema/assertion-semantic-model.md)；Q1-Q6 已定 + 元规则已加；第 1-5 步已完成（commit `048a876`）；第 6 步 V2 字段表达重写按材料 §9.3 暂缓保持缓冲 | 🟡 中 | Verified | — | — |
 | `buildCompactionSummary-cleanup` | 死代码清理 | 删 [compaction.ts:109-143](../context-snapshot/src/compaction.ts#L109-L143) `buildCompactionSummary` 函数（计算了但 index.ts 未使用 `result.messages`）；可与 `native-condense-semantic-audit` 合并推进；属 ADR-006 §3.4 清理动作 | 🟢 低 | Verified | `native-condense-semantic-audit` | — |
 | `schema-v2-snapshot-e2e` | snapshot 真实长对话实测（重新定位） | 原目标"frontmatter 显式化 + confidence 计算固化进 plugin"保留；删去"长对话触发原生 compact"的实测依赖（codec bug 阻塞的只是原生 compact 路径，与 plugin 语义抽取无关）；ADR-006 §3.2 重新定位 | 🟡 中 | Hypothesis | `pr-12032` | `B-cli-codec-bug` |
 | `issue-11944` | GitHub #11944 跟进 | SDK 迁移时间线（影响 VS Code 扩展 plugin 系统恢复） | 🟡 中 | Verified | — | — |
@@ -167,7 +67,7 @@
 
 ## 权威源
 
-[dev-rules.md](dev-rules.md)（🟢 解冻）· [evidence-governance.md](evidence-governance.md) · [governance-procedure.md](governance-procedure.md) · [reviewer-personas.md](reviewer-personas.md) · [mechanism-candidates.md](mechanism-candidates.md) · [handoff-schema/project-rules.md](handoff-schema/project-rules.md)（功能专属，活跃执行）· [decisions/schema-semantic-object-model.md](decisions/schema-semantic-object-model.md) · [handoff-schema/design.md](handoff-schema/design.md)
+[dev-rules.md](dev-rules.md)（🔴 冻结）· [evidence-governance.md](evidence-governance.md) · [governance-procedure.md](governance-procedure.md) · [reviewer-personas.md](reviewer-personas.md) · [mechanism-candidates.md](mechanism-candidates.md) · [handoff-schema/project-rules.md](handoff-schema/project-rules.md)（功能专属，活跃执行）· [decisions/schema-semantic-object-model.md](decisions/schema-semantic-object-model.md) · [handoff-schema/design.md](handoff-schema/design.md) · [decisions/adr/ADR-006-native-mechanism-first-principle.md](decisions/adr/ADR-006-native-mechanism-first-principle.md)（本会话核心引用）
 
 > **新会话首动作**：读 [handoff.md](handoff.md) + [dev-rules.md](dev-rules.md) + [handoff-schema/project-rules.md](handoff-schema/project-rules.md)。其余状态以这三份文档自述为准。
 
@@ -180,7 +80,7 @@
 ```
 
 **后续动作**（无紧急项）：
-1. **🟡 中：cline 原生 condense 语义丢失点实测** — `native-condense-semantic-audit`（ADR-006 §4 问题 1，不依赖 PR 可立即推进；判定 B 分支最终砍/缩/转）
+1. **🟡 中：派发 native-condense-semantic-audit 4 子代理探查** — A/B/C 云端并行（文档面 / 源码面 ContextManager / 源码面 hook），D 实测面需 A/B/C 完成后用户终端执行；规划详情见本会话决策 `native-condense-semantic-audit-plan`
 2. **🟢 低：kind/exit_when 显式化** — `handoff-schema-v2-kind-exit` 延伸项（可选）
 3. **🟢 低：buildCompactionSummary 死代码清理** — `buildCompactionSummary-cleanup`（可与 #1 合并推进）
 4. **🟡 中：跟进 GitHub #11944** — SDK 迁移时间线（影响 VS Code 扩展 plugin 系统恢复）
