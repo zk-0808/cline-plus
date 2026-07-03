@@ -17,22 +17,22 @@
 
 | 已有产出 | 覆盖内容 | 文件路径 |
 |---------|---------|---------|
-| Cline Runtime 源码探查 | compact 执行链 / checkpoint / messageBuilder 时机 / rules 注入 | `docs/decisions/investigation-note-cline-runtime-probe.md` |
+| Cline Runtime 源码探查 | compact 执行链 / checkpoint / messageBuilder 时机 / rules 注入 | `docs/decisions/investigation/investigation-note-cline-runtime-probe.md` |
 | Plugin 架构 Atlas | 7 层生命周期 / 7 个稳定 API / 诊断流程图 / 超时策略 | `docs/plugin/refs/cline-plugin-architecture-atlas.md` |
 | Plugin 开发指南 | Sandbox 架构 / VS Code workaround / 调试技巧 / 已知坑 | `docs/plugin/refs/cline-plugin-dev-guide.md` |
-| CLI Plugin 全链路验证 | setup/build/rules/hooks 实测 + 2 个 bug 发现 | `docs/decisions/investigation-note-cli-plugin-verification.md` |
-| 双重 setup 调查 | setup() 双调用现象 + hub 模式根因假设 | `docs/decisions/investigation-note-dual-setup.md` |
-| Codec bug 定位 | `n.content.map is not a function` 崩溃链路 | `docs/decisions/investigation-note-cli-codec-content-map-bug.md` |
-| VS Code Plugin 不可用根因 | bootstrap.js 打包遗漏 + workaround | `docs/decisions/investigation-note-vscode-bootstrap-missing.md` |
-| Marketplace 机制 | 上架流程 / catalog.json / 社区活跃度数据 | `docs/decisions/investigation-note-marketplace-dev-mechanism.md` |
+| CLI Plugin 全链路验证 | setup/build/rules/hooks 实测 + 2 个 bug 发现 | `docs/decisions/investigation/investigation-note-cli-plugin-verification.md` |
+| 双重 setup 调查 | setup() 双调用现象 + hub 模式根因假设 | `docs/decisions/investigation/investigation-note-dual-setup.md` |
+| Codec bug 定位 | `n.content.map is not a function` 崩溃链路 | `docs/decisions/investigation/investigation-note-cli-codec-content-map-bug.md` |
+| VS Code Plugin 不可用根因 | bootstrap.js 打包遗漏 + workaround | `docs/decisions/investigation/investigation-note-vscode-bootstrap-missing.md` |
+| Marketplace 机制 | 上架流程 / catalog.json / 社区活跃度数据 | `docs/decisions/investigation/investigation-note-marketplace-dev-mechanism.md` |
 | Plugin 设计文档 | context-snapshot plugin 完整架构 + Phase 1-4 | `docs/plugin/design.md` |
-| 机制落地评估 | #1-#7 落地可行性 + Cline API 能力表 | `docs/plugin/mechanism-landing-assessment.md` |
+| 机制落地评估 | #1-#7 落地可行性 + Cline API 能力表 | `docs/plugin/audit/mechanism-landing-assessment.md` |
 | 机制候选清单 | 24 条经验机制化候选 + 状态机 | `docs/mechanism-candidates.md` |
 | Runtime 评审框架 | 8 维度（State/Control Flow/Planner/Evaluator/Observation/Memory/Tooling/Architecture）| `docs/reviewer-personas.md` §2.6 |
 | 项目开发提纲 | A/B/C 分类 / 五问法 / 能力验证清单 | `docs/PROJECT_DEV_OUTLINE.md` |
 | 当前状态快照 | v0.6.0 实测结果 + 未完成项 | `docs/handoff.md` |
 | 提取器设计 | v0.7.0 SnapshotData 模型 + 4 个 Extractor | `docs/plugin/snapshot-extractor-design.md` |
-| 外部评审材料 | handoff 机制化方向 + 双投影模型 | `docs/plugin/external-review-*.md`（3 份）|
+| 外部评审材料 | handoff 机制化方向 + 双投影模型 | `docs/plugin/review/external-review-*.md`（3 份）|
 
 ### 0.2 已确认的不可抗力（执行方需纳入约束）
 
@@ -315,14 +315,14 @@
 5. `docs/reviewer-personas.md` §2.6 — Runtime 8 维度框架
 
 **按需读**（任务 1 数据源）：
-6. `docs/decisions/investigation-note-cline-runtime-probe.md` — 已有源码探查
+6. `docs/decisions/investigation/investigation-note-cline-runtime-probe.md` — 已有源码探查
 7. `docs/plugin/refs/cline-plugin-architecture-atlas.md` — Plugin 架构 Atlas
 
 **按需读**（任务 4 数据源）：
-8. `docs/plugin/mechanism-landing-assessment.md` — 落地评估
+8. `docs/plugin/audit/mechanism-landing-assessment.md` — 落地评估
 9. `docs/plugin/plugin-dev-sop.md` — 开发 SOP
-10. `docs/decisions/ADR-005-split-compact-from-handoff.md` — 拆分决策
+10. `docs/decisions/adr/ADR-005-split-compact-from-handoff.md` — 拆分决策
 
 **按需读**（任务 5 数据源）：
 11. `docs/plugin/snapshot-extractor-design.md` — v0.7.0 设计
-12. `docs/plugin/external-review-round2-handoff.md` — 语义对象模型方向
+12. `docs/plugin/review/external-review-round2-handoff.md` — 语义对象模型方向

@@ -73,7 +73,7 @@
 | # | 问题 | 证据 |
 |---|------|------|
 | A1 | [dev-rules.md:§1.15](dev-rules.md) V6 路径描述错误："registerRule 动态注入" → 实际是 messageBuilder | 交叉对比 handoff.md |
-| A2 | [mechanism-landing-assessment.md](plugin/mechanism-landing-assessment.md) V6 标"registerRule 已采纳"但已废弃 | 同上 |
+| A2 | [mechanism-landing-assessment.md](plugin/audit/mechanism-landing-assessment.md) V6 标"registerRule 已采纳"但已废弃 | 同上 |
 | A3 | [handoff.md](handoff.md) F1 标 Likely/阻塞，但 [development-summary.md](plugin/development-summary.md) 记载已修复 Verified | 交叉对比 |
 | A4 | [design.md:§2.2](plugin/design.md) Probe 5 表格"setup() 执行"与同文件不可抗力声明矛盾 | 文件内部矛盾 |
 
@@ -354,7 +354,7 @@
 ## 16. 权威源
 
 - 5 份规则文档：[dev-rules.md](dev-rules.md) / [evidence-governance.md](evidence-governance.md) / [plugin/project-rules.md](plugin/project-rules.md) / [search/project-rules.md](search/project-rules.md) / [reviewer-personas.md](reviewer-personas.md)
-- 4 份 ADR：[ADR-001](decisions/ADR-001-handoff-compact-memory.md) ~ [ADR-005](decisions/ADR-005-split-compact-from-handoff.md)
+- 4 份 ADR：[ADR-001](decisions/adr/ADR-001-handoff-compact-memory.md) ~ [ADR-005](decisions/adr/ADR-005-split-compact-from-handoff.md)
 - 7 份 Investigation Note：[decisions/](decisions/) 下 investigation-note-*.md
 - 外部评审：[plugin/claude-external-review/](plugin/claude-external-review/) / [plugin/gpt-external-review/](plugin/gpt-external-review/)
 - 阶段总结：[plugin/development-summary.md](plugin/development-summary.md)

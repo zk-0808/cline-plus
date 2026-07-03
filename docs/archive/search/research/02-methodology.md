@@ -108,7 +108,7 @@ P3 引入 fetch 覆盖率作为环境依赖变量，与机制质量解耦：
 | 2/5 | Merge Precision < 60% 但无系统性误合并 |
 | 1/5 | False Merge > 2 或存在系统性信息损失 |
 
-**关键修订**：Run #7 发现"域名多样性 ≠ 内容多样性"——合并的 segmentfault.com 是转载站，释放的 slot 被同腾讯云其他文章填入。Top-5 域名多样性从 4→3 不是退化，是合并正确。详见 [D-2026-06-24-search-revise-p4-metrics](../decisions/D-2026-06-24-search-revise-p4-metrics.md)。
+**关键修订**：Run #7 发现"域名多样性 ≠ 内容多样性"——合并的 segmentfault.com 是转载站，释放的 slot 被同腾讯云其他文章填入。Top-5 域名多样性从 4→3 不是退化，是合并正确。详见 [D-2026-06-24-search-revise-p4-metrics](../decisions/search/D-2026-06-24-search-revise-p4-metrics.md)。
 
 ### 2.4 P5 评分（双盲 + 非结构化证据集）
 

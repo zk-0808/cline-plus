@@ -4,7 +4,7 @@
 > **生命周期**：事件绑定——issue 提交后归档。
 > **表单来源**: https://github.com/cline/cline/issues/new?template=bug_report.yml
 >
-> **关联**：[investigation-note-cli-codec-content-map-bug.md](investigation-note-cli-codec-content-map-bug.md) — 完整证据链
+> **关联**：[investigation-note-cli-codec-content-map-bug.md](../investigation/investigation-note-cli-codec-content-map-bug.md) — 完整证据链
 
 ---
 

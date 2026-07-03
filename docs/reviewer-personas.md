@@ -296,7 +296,7 @@
 | 日期 | 问题 | 映射的成熟实践 | 本地扩展 | 文档 |
 |------|------|--------------|---------|------|
 | 2026-06-27 | ADR-002 Update 1-4 连续颠覆 | EBSE（Evidence-Based Software Engineering）+ RCA（Root Cause Analysis）+ ADR Methodology | evidence-governance.md（针对 AI agent 调研工作流的 Observation/Inference 分离 + Confidence 标注 + Unknown 状态）| [workflow-review-2026-06-27.md](archive/workflow-review-2026-06-27.md) |
-| 2026-06-30 | snapshot 写入实测中：①下"功能没验证"前未检查 .md 文件（Verification Gap）②从"验证 snapshot"漂移到"追 console.log 去向"（Goal Drift）③PR #5246 单源当独立来源引用（Evidence Priority Imbalance）④降阈值漏改 PRESERVE_RECENT_TOKENS ⑤读日志错过 setup() 双重调用并行异常 | Loop Engineering（Addy Osmani, 2026-06）三大 failure mode：Verification Gap / Comprehension Debt / Cognitive Surrender + maker/checker 分离 + "agent forgets, repo doesn't" State 持久化 | `.trae/skills/verification-discipline/SKILL.md`（§1.3 阴性结论门控的 checklist 落地，触发时强制问"最直接 artifact 证据是什么？我检查过吗？"） | [draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md) + 本文件 §2.6 |
+| 2026-06-30 | snapshot 写入实测中：①下"功能没验证"前未检查 .md 文件（Verification Gap）②从"验证 snapshot"漂移到"追 console.log 去向"（Goal Drift）③PR #5246 单源当独立来源引用（Evidence Priority Imbalance）④降阈值漏改 PRESERVE_RECENT_TOKENS ⑤读日志错过 setup() 双重调用并行异常 | Loop Engineering（Addy Osmani, 2026-06）三大 failure mode：Verification Gap / Comprehension Debt / Cognitive Surrender + maker/checker 分离 + "agent forgets, repo doesn't" State 持久化 | `.trae/skills/verification-discipline/SKILL.md`（§1.3 阴性结论门控的 checklist 落地，触发时强制问"最直接 artifact 证据是什么？我检查过吗？"） | [draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue/draft-issue-cli-codec-content-map-bug.md) + 本文件 §2.6 |
 | 2026-07-02 | 项目健康度审查 56 项问题 + 5 个方法论根因：①规则制定无可执行性评估 ②知识沉淀无生命周期管理 ③工作流重触发轻退出 ④治理预算缺失 ⑤规则演进加法 only；K 类分层治理违反（顶层冻结被违反 8 次）| 文档健康度审查（Documentation Health Audit）+ 治理预算（One-in-one-out，降为方向性原则）+ 分层治理（Top-level freeze + Project-level rules）+ 严重度分级（Systemic vs Local）+ 审查退出条件（重触发轻退出的自指修复）| dev-rules §6 维护节奏 + evidence-governance §15 ADR 时效 + §19 Hypothesis 生命周期 + §20 子代理协作证据规则 + plugin/project-rules §3 项目级规则承载位 | [project-health-audit-2026-07-02.md](project-health-audit-2026-07-02.md) |
 
 ---
@@ -327,7 +327,7 @@
 
 ## 9. 第 6 角色（Senior Agent Developer Reviewer）加入理由
 
-本角色由 2026-06-30 snapshot 写入实测事故催生，论证"现有 5 角色无法覆盖 agent 运行时行为漂移"——本角色不停在行为层 Failure Mode（Verification Gap / Goal Drift 等），必须继续追问系统层 Runtime Architecture（"Runtime 为什么允许这种行为发生，应该在哪一层修复"）与责任层归属（Prompt / Skill / Runtime / Tool / Framework）。问题有成熟实践可借鉴（Loop Engineering [Addy Osmani, 2026-06] / Harness Engineering / Subagent-driven Development / ReAct / Plan-Execute / Reflection / Runtime Loop 设计），符合 §8"优先借鉴"原则，非本项目独创。完整论证（含 5 角色覆盖盲区表、事故暴露问题表、行为层 vs 系统层 vs 责任层对照、与 [verification-discipline](../.trae/skills/verification-discipline/SKILL.md) skill 的三层落地协同）见 docs/decisions/ADR-006-senior-agent-reviewer-role.md（待创建）。本节为决策记录摘要，非永久规则；角色定义见 §2.6，调用规则见 §4.1。
+本角色由 2026-06-30 snapshot 写入实测事故催生，论证"现有 5 角色无法覆盖 agent 运行时行为漂移"——本角色不停在行为层 Failure Mode（Verification Gap / Goal Drift 等），必须继续追问系统层 Runtime Architecture（"Runtime 为什么允许这种行为发生，应该在哪一层修复"）与责任层归属（Prompt / Skill / Runtime / Tool / Framework）。问题有成熟实践可借鉴（Loop Engineering [Addy Osmani, 2026-06] / Harness Engineering / Subagent-driven Development / ReAct / Plan-Execute / Reflection / Runtime Loop 设计），符合 §8"优先借鉴"原则，非本项目独创。完整论证（含 5 角色覆盖盲区表、事故暴露问题表、行为层 vs 系统层 vs 责任层对照、与 [verification-discipline](../.trae/skills/verification-discipline/SKILL.md) skill 的三层落地协同）见 docs/decisions/adr/ADR-006-senior-agent-reviewer-role.md（待创建）。本节为决策记录摘要，非永久规则；角色定义见 §2.6，调用规则见 §4.1。
 
 ---
 

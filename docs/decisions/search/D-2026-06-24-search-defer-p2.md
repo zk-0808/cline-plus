@@ -15,7 +15,7 @@ evidence:
     section: "10.7 P2 收敛决策"
   - file: search/search-orchestrator/experiments/run-3-fanout-tuned.md
     section: "决策"
-  - file: decisions/D-2026-06-24-search-rollback-diversity.md
+  - file: decisions/search/D-2026-06-24-search-rollback-diversity.md
     section: "三条 C 类教训"
   - file: mechanism-candidates.md
     section: "条目 20：反证检索机制"

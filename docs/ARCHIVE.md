@@ -46,8 +46,8 @@
 | `plugin/claude-external-review/` 其余文档 | ✅ 已闭环 | 意见已纳入 review-closure-report | Claude 评审输入材料 |
 | `plugin/gpt-external-review/deep-research-summary.md` | ✅ 已闭环 | 意见已纳入 review-closure-report §3 | GPT 评审摘要 |
 | `plugin/gpt-external-review/` 其余文档 | ✅ 已闭环 | 同上 | GPT 评审输入材料 |
-| `plugin/external-review-handoff-foundation.md` | ✅ 已闭环 | 第 1 轮评审输入，已由 response-to-external-review-handoff 回应 | 第 1 轮 |
-| `plugin/response-to-external-review-handoff.md` | ✅ 已闭环 | 项目方第 1 轮回应，已由 round2 评审回复 | 第 1 轮回应 |
-| `plugin/external-review-round2-handoff.md` | 🔄 活跃 | 第 2 轮评审 + §7 项目方第 2 轮回应（2026-07-02 追加） | **不归档**——round2 回应刚完成，后续可能触发第 3 轮 |
+| `plugin/review/external-review-handoff-foundation.md` | ✅ 已闭环 | 第 1 轮评审输入，已由 response-to-external-review-handoff 回应 | 第 1 轮 |
+| `plugin/review/response-to-external-review-handoff.md` | ✅ 已闭环 | 项目方第 1 轮回应，已由 round2 评审回复 | 第 1 轮回应 |
+| `plugin/review/external-review-round2-handoff.md` | 🔄 活跃 | 第 2 轮评审 + §7 项目方第 2 轮回应（2026-07-02 追加） | **不归档**——round2 回应刚完成，后续可能触发第 3 轮 |
 
 **归档判据**：闭环文档保留在原位（不移动到 archive/），因仍有引用（如 review-closure-report B1-B5 跟踪表、round2-handoff §7 回应）。下次文档健康度审查时复查是否可物理归档。

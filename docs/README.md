@@ -94,7 +94,7 @@ evidence:
 | 看证据治理框架 | [evidence-governance.md](evidence-governance.md) |
 | 看评审角色集 | [reviewer-personas.md](reviewer-personas.md) |
 | 看 Plugin 设计文档 | [plugin/design.md](plugin/design.md) |
-| 看机制落地评估 | [plugin/mechanism-landing-assessment.md](plugin/mechanism-landing-assessment.md) |
+| 看机制落地评估 | [plugin/audit/mechanism-landing-assessment.md](plugin/audit/mechanism-landing-assessment.md) |
 | 看 search-orchestrator 开发期约束 | [search/project-rules.md](search/project-rules.md) |
 | 看所有决策时间线 | [decisions/README.md](decisions/README.md) |
 | 看搜索编排主题状态 | [search-orchestrator/README.md](search/search-orchestrator/README.md) |

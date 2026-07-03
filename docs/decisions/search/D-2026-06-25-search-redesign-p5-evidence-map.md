@@ -12,7 +12,7 @@ evidence:
     section: "§5.6 评分理由"
   - file: search/search-orchestrator/experiments/run-9c-p5-output-schema-v3.md
     section: "§5.7 决策"
-  - file: decisions/D-2026-06-24-search-evaluate-p5-output-schema.md
+  - file: decisions/search/D-2026-06-24-search-evaluate-p5-output-schema.md
     section: "Q2：P5 机制是什么"
   - file: search/search-orchestrator/survey.md
     section: "§9.3 最终路线状态"

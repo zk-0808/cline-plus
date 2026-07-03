@@ -8,14 +8,14 @@
 
 | 路线项 | 状态 | 决策 |
 |--------|------|------|
-| P1 Domain Goggles | ✅ active | [D-2026-06-23-search-adopt-goggles](../../decisions/D-2026-06-23-search-adopt-goggles.md) |
-| P1.5 FinalScore 联动 | ✅ active | [D-2026-06-23-search-finalscore-coupling](../../decisions/D-2026-06-23-search-finalscore-coupling.md) |
-| P2 Query Rewrite + Fanout | ⏸ deferred | [D-2026-06-24-search-defer-p2](../../decisions/D-2026-06-24-search-defer-p2.md) |
-| DiversityPenalty + R1 保底 | ⛔ rolled-back | [D-2026-06-24-search-rollback-diversity](../../archive/decisions/D-2026-06-24-search-rollback-diversity.md) |
-| P3 Evidence-bound Citation | ✅ active（三档模式）| [D-2026-06-24-search-adopt-p3](../../decisions/D-2026-06-24-search-adopt-p3.md) |
-| P4 Evidence Deduplication | ✅ active（同源内容合并）| [D-2026-06-24-search-adopt-p4-same-source-merge](../../decisions/D-2026-06-24-search-adopt-p4-same-source-merge.md) |
-| P5 Output Schema / Evidence Map | ⬜ proposed | [D-2026-06-25-search-redesign-p5-evidence-map](../../decisions/D-2026-06-25-search-redesign-p5-evidence-map.md) |
-| P6 Highlights / Relevance Compression | ✅ active | [D-2026-06-25-search-adopt-p6-highlights](../../decisions/D-2026-06-25-search-adopt-p6-highlights.md) |
+| P1 Domain Goggles | ✅ active | [D-2026-06-23-search-adopt-goggles](../../decisions/search/D-2026-06-23-search-adopt-goggles.md) |
+| P1.5 FinalScore 联动 | ✅ active | [D-2026-06-23-search-finalscore-coupling](../../decisions/search/D-2026-06-23-search-finalscore-coupling.md) |
+| P2 Query Rewrite + Fanout | ⏸ deferred | [D-2026-06-24-search-defer-p2](../../decisions/search/D-2026-06-24-search-defer-p2.md) |
+| DiversityPenalty + R1 保底 | ⛔ rolled-back | [D-2026-06-24-search-rollback-diversity](../../archive/decisions/search/D-2026-06-24-search-rollback-diversity.md) |
+| P3 Evidence-bound Citation | ✅ active（三档模式）| [D-2026-06-24-search-adopt-p3](../../decisions/search/D-2026-06-24-search-adopt-p3.md) |
+| P4 Evidence Deduplication | ✅ active（同源内容合并）| [D-2026-06-24-search-adopt-p4-same-source-merge](../../decisions/search/D-2026-06-24-search-adopt-p4-same-source-merge.md) |
+| P5 Output Schema / Evidence Map | ⬜ proposed | [D-2026-06-25-search-redesign-p5-evidence-map](../../decisions/search/D-2026-06-25-search-redesign-p5-evidence-map.md) |
+| P6 Highlights / Relevance Compression | ✅ active | [D-2026-06-25-search-adopt-p6-highlights](../../decisions/search/D-2026-06-25-search-adopt-p6-highlights.md) |
 
 ## 文档导航
 
@@ -32,10 +32,10 @@
 
 ### 决策（结论层，在 `../decisions/`）
 
-- [D-2026-06-23-search-adopt-goggles](../../decisions/D-2026-06-23-search-adopt-goggles.md)
-- [D-2026-06-23-search-finalscore-coupling](../../decisions/D-2026-06-23-search-finalscore-coupling.md)
-- [D-2026-06-24-search-rollback-diversity](../../archive/decisions/D-2026-06-24-search-rollback-diversity.md)
-- [D-2026-06-24-search-defer-p2](../../decisions/D-2026-06-24-search-defer-p2.md)
+- [D-2026-06-23-search-adopt-goggles](../../decisions/search/D-2026-06-23-search-adopt-goggles.md)
+- [D-2026-06-23-search-finalscore-coupling](../../decisions/search/D-2026-06-23-search-finalscore-coupling.md)
+- [D-2026-06-24-search-rollback-diversity](../../archive/decisions/search/D-2026-06-24-search-rollback-diversity.md)
+- [D-2026-06-24-search-defer-p2](../../decisions/search/D-2026-06-24-search-defer-p2.md)
 
 ### Skill 实体
 

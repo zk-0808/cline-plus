@@ -4,7 +4,7 @@
 >
 > **定位**：本文件是 handoff.md schema 化的设计文档，不重复 schema 字段定义（权威源为 [schema-semantic-object-model.md](../decisions/schema-semantic-object-model.md)）。本文件承载映射规则、frontmatter 扩展方案、验收查询、演进路线。
 >
-> **决策依据**：[external-review-round2-handoff.md](../plugin/external-review-round2-handoff.md)（评审 Round 2 核心结论——snapshot 与 handoff 是同一套语义对象模型的两种投影，先做 handoff 因不受 codec bug 阻塞）。
+> **决策依据**：[external-review-round2-handoff.md](../plugin/review/external-review-round2-handoff.md)（评审 Round 2 核心结论——snapshot 与 handoff 是同一套语义对象模型的两种投影，先做 handoff 因不受 codec bug 阻塞）。
 
 ---
 

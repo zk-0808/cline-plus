@@ -5,7 +5,7 @@
 > **回应对象**：[external-review-handoff-foundation.md](external-review-handoff-foundation.md) 中归档的外部评审意见
 > **撰写日期**：2026-07-01
 > **用途**：作为下一轮外部评审的输入材料，提供项目实际上下文 + 项目方对评审建议的消化判断 + 待外部评审回答的具体问题
-> **关联**：[ADR-001](../decisions/ADR-001-handoff-compact-memory.md) · [ADR-005](../decisions/ADR-005-split-compact-from-handoff.md) · [design.md](design.md) · [mechanism-candidates.md](../mechanism-candidates.md) #5/#6 · [evidence-governance.md](../evidence-governance.md) · [dev-rules.md](../dev-rules.md)
+> **关联**：[ADR-001](../decisions/adr/ADR-001-handoff-compact-memory.md) · [ADR-005](../decisions/adr/ADR-005-split-compact-from-handoff.md) · [design.md](design.md) · [mechanism-candidates.md](../mechanism-candidates.md) #5/#6 · [evidence-governance.md](../evidence-governance.md) · [dev-rules.md](../dev-rules.md)
 
 ---
 
@@ -21,7 +21,7 @@
 
 ### 1.1 handoff 和 context snapshot 是两个已被 ADR-005 拆分的独立机制
 
-评审通篇把 handoff.md 和 context snapshot 当作一个对象讨论。但项目在 2026-06-28 已通过 [ADR-005](../decisions/ADR-005-split-compact-from-handoff.md) 决议将两者拆分：
+评审通篇把 handoff.md 和 context snapshot 当作一个对象讨论。但项目在 2026-06-28 已通过 [ADR-005](../decisions/adr/ADR-005-split-compact-from-handoff.md) 决议将两者拆分：
 
 | 维度 | context snapshot | handoff |
 |------|-----------------|---------|

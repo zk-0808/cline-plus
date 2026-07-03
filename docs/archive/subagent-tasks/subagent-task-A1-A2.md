@@ -9,7 +9,7 @@
 
 ## 背景
 
-[investigation-note O8](../decisions/investigation-note-cli-codec-content-map-bug.md)（Verified，4 来源）发现：[index.ts:146](../../context-snapshot/src/index.ts#L146) beforeModel hook 返回的注入消息 content 为 **string 类型**，而 Cline codec 的 `Nd` 函数对每条消息调用 `n.content.map(eK)`——string 无 `.map()` 方法，必然崩溃。
+[investigation-note O8](../decisions/investigation/investigation-note-cli-codec-content-map-bug.md)（Verified，4 来源）发现：[index.ts:146](../../context-snapshot/src/index.ts#L146) beforeModel hook 返回的注入消息 content 为 **string 类型**，而 Cline codec 的 `Nd` 函数对每条消息调用 `n.content.map(eK)`——string 无 `.map()` 方法，必然崩溃。
 
 这与消息数量/token 总量无关，任何步骤下 beforeModel 返回 string content 都会触发 codec bug。
 
@@ -219,7 +219,7 @@ npx tsc --noEmit
 
 | 文档 | 用途 |
 |------|------|
-| [investigation-note O8](../decisions/investigation-note-cli-codec-content-map-bug.md) | A1 根因依据 |
+| [investigation-note O8](../decisions/investigation/investigation-note-cli-codec-content-map-bug.md) | A1 根因依据 |
 | [handoff.md](../handoff.md) | 当前状态 + 未完成项 |
 | [dev-rules.md §1.15](../dev-rules.md) | 不可抗力门控 |
 | [plugin-dev-sop.md](plugin-dev-sop.md) | Plugin 开发规划框架 |

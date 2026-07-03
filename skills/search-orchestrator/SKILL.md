@@ -123,13 +123,13 @@ Q3 Hypothesis: Rust developers are scarce and expensive [unverified]
 
 ### 1.4 Query Rewrite + Fanout（建议 3 路改写）
 
-> **背景**：第二轮调研（[D-2026-06-23-search-adopt-goggles](../../docs/decisions/D-2026-06-23-search-adopt-goggles.md) 同期评审，参见 survey §4 启示 3）指出，主流 agent（Tavily auto_parameters / Azure Semantic Rewrite / Agent4Ranking）都把 query 改写视为搜索阶段的核心动作。本节把"人工写 2-4 条 query"升级为**结构化的 3 路 fanout**：直白 / 限域 / 反证。
+> **背景**：第二轮调研（[D-2026-06-23-search-adopt-goggles](../../docs/decisions/search/D-2026-06-23-search-adopt-goggles.md) 同期评审，参见 survey §4 启示 3）指出，主流 agent（Tavily auto_parameters / Azure Semantic Rewrite / Agent4Ranking）都把 query 改写视为搜索阶段的核心动作。本节把"人工写 2-4 条 query"升级为**结构化的 3 路 fanout**：直白 / 限域 / 反证。
 >
 > **目标**：让每个 sub-question 产生 3 条**视角不同**的 query 并行执行，合并去重后再交给 §3.5 / §3.5.5 处理。
 >
 > **触发条件**：L2 建议三路；L3 建议三路并可增加反证扩展（见 §1.4.4）；L1 可只用 R1；L0 不适用。
 >
-> **执行强度（Run #2/#3 之后的诚实定位）**：本节是"软要求"——三路 fanout 在多样性与反证覆盖上**确有边际收益**，但 A/B 实测显示提示词层无法把多样性/反垄断/反证召回率**保证到达标线**（详见 [D-2026-06-24-search-defer-p2](../../docs/decisions/D-2026-06-24-search-defer-p2.md) 与 [D-2026-06-24-search-rollback-diversity](../../docs/decisions/D-2026-06-24-search-rollback-diversity.md)）。LLM 应当尽力执行三路，并在 Phase 4 显式说明每路的可达性与不足。
+> **执行强度（Run #2/#3 之后的诚实定位）**：本节是"软要求"——三路 fanout 在多样性与反证覆盖上**确有边际收益**，但 A/B 实测显示提示词层无法把多样性/反垄断/反证召回率**保证到达标线**（详见 [D-2026-06-24-search-defer-p2](../../docs/decisions/search/D-2026-06-24-search-defer-p2.md) 与 [D-2026-06-24-search-rollback-diversity](../../docs/decisions/search/D-2026-06-24-search-rollback-diversity.md)）。LLM 应当尽力执行三路，并在 Phase 4 显式说明每路的可达性与不足。
 
 #### 1.4.1 三路 fanout 模板
 
@@ -227,7 +227,7 @@ Step 3  按 URL 精确去重；合并后期望规模 ≈ 3 × N_subQ × max_resu
 Step 3.bis  同源内容合并（P4）—— 对去重后的结果集，判断是否有同一篇文章被不同站点转载/镜像。
               若判断为同源转载，只保留权威分级最高的版本（T1 > T2 > T3 > T4；同级保留 SearchRank 更高的）。
               被合并的 URL 在 Source 表中标注 [同源合并]。
-              详见 [D-2026-06-24-search-adopt-p4-same-source-merge](../../docs/decisions/D-2026-06-24-search-adopt-p4-same-source-merge.md)。
+              详见 [D-2026-06-24-search-adopt-p4-same-source-merge](../../docs/decisions/search/D-2026-06-24-search-adopt-p4-same-source-merge.md)。
 Step 4  把合并集交给 §3.5（Goggle 打标）→ §3.5.5（FinalScore 重排）→ §3.1（充分性评分）
 ```
 
@@ -570,13 +570,13 @@ FinalScore(result) = SearchRank + GoggleWeight + SourceWeight
 | Goggle 仅覆盖**高频垃圾域** + **少数普世权威域**（github/docs/arxiv） | 长尾交给 Source Weighting |
 | **不在提示词层引入多样性/反垄断算分**（如 DiversityPenalty） | Run #3（2026-06-24）证实：LLM 在提示词层算分不可靠，且 ±2 量级压不过 T1 SourceWeight ±10。多样性排序属机制层问题，见 mechanism-candidates #21 |
 
-> **Run #3 教训**：曾尝试新增 §3.5.6 DiversityPenalty + R1 保底来缓解 fanout 单一路垄断，复测综合 2.6/5，倒退。**回退** —— 多样性约束移交机制层（见 mechanism-candidates #21），SKILL 层不再算分。详见实验报告 [run-3-fanout-tuned](../../docs/search-orchestrator/experiments/run-3-fanout-tuned.md) 与决策 [D-2026-06-24-search-rollback-diversity](../../docs/decisions/D-2026-06-24-search-rollback-diversity.md) / [D-2026-06-24-search-defer-p2](../../docs/decisions/D-2026-06-24-search-defer-p2.md)。
+> **Run #3 教训**：曾尝试新增 §3.5.6 DiversityPenalty + R1 保底来缓解 fanout 单一路垄断，复测综合 2.6/5，倒退。**回退** —— 多样性约束移交机制层（见 mechanism-candidates #21），SKILL 层不再算分。详见实验报告 [run-3-fanout-tuned](../../docs/search-orchestrator/experiments/run-3-fanout-tuned.md) 与决策 [D-2026-06-24-search-rollback-diversity](../../docs/decisions/search/D-2026-06-24-search-rollback-diversity.md) / [D-2026-06-24-search-defer-p2](../../docs/decisions/search/D-2026-06-24-search-defer-p2.md)。
 
 ---
 
 ## Phase 3.6: P6 Highlights（fetch 后 verbatim 抽取）
 
-> **机制来源**：[D-2026-06-25-search-adopt-p6-highlights](../../docs/decisions/D-2026-06-25-search-adopt-p6-highlights.md)（active）
+> **机制来源**：[D-2026-06-25-search-adopt-p6-highlights](../../docs/decisions/search/D-2026-06-25-search-adopt-p6-highlights.md)（active）
 > **验证**：[run-10-p6-highlights](../../docs/search-orchestrator/experiments/run-10-p6-highlights.md) — 评分 4/5，Extractive Fidelity 92.3%
 
 ### 3.6.1 触发条件
@@ -719,7 +719,7 @@ Credibility order: 实测 > 源码 > 文档 > 社区 > 推测
 
 > **来源**：借鉴 Perplexity Sonar Pro 架构强制 citation 的设计——"product architecture forces citation discipline"（survey §2 M8）。Perplexity 的 citation hallucination rate 37% vs ChatGPT 67%，差距核心在于架构强制而非模型自觉。
 >
-> **A/B 验证**：Run #5（英文 query，fetch 5/5，误引用 0）+ Run #6（中文 query，fetch 1/10，误引用 0）共同确认 P3 机制零误引用。详见 [D-2026-06-24-search-adopt-p3](../../docs/decisions/D-2026-06-24-search-adopt-p3.md)。
+> **A/B 验证**：Run #5（英文 query，fetch 5/5，误引用 0）+ Run #6（中文 query，fetch 1/10，误引用 0）共同确认 P3 机制零误引用。详见 [D-2026-06-24-search-adopt-p3](../../docs/decisions/search/D-2026-06-24-search-adopt-p3.md)。
 
 #### 档位判定
 

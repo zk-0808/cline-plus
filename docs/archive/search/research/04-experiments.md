@@ -100,7 +100,7 @@
 
 衍生候选：#20 反证检索 / #21 多样性排序 → 保持候选（暂缓，后续可由检索策略+架构缓解，非"完全不可治"）。
 
-详见 [run-3-fanout-tuned.md](../search-orchestrator/experiments/run-3-fanout-tuned.md)；决策 [D-2026-06-24-search-defer-p2](../decisions/D-2026-06-24-search-defer-p2.md)。
+详见 [run-3-fanout-tuned.md](../search-orchestrator/experiments/run-3-fanout-tuned.md)；决策 [D-2026-06-24-search-defer-p2](../decisions/search/D-2026-06-24-search-defer-p2.md)。
 
 ---
 
@@ -249,7 +249,7 @@ D-2026-06-24-search-adopt-p3（active）；SKILL.md §4.3 新增 §4.3 Output-Ci
 
 **HTTP 层成功不代表浏览器 JS 执行成功**。juejin 等站点用 JS Challenge 在 HTTP 200 后追加 challenge 页面。后续若启动 #22，应选"住宅代理 + 真实浏览器 + CAPTCHA solver"多层叠加方案而非裸 Playwright。
 
-详见 [run-8a-mcp-backend.md](../search-orchestrator/experiments/run-8a-mcp-backend.md)；决策 [D-2026-06-24-search-infra-mcp-upgrade](../decisions/D-2026-06-24-search-infra-mcp-upgrade.md)（rolled-back）。
+详见 [run-8a-mcp-backend.md](../search-orchestrator/experiments/run-8a-mcp-backend.md)；决策 [D-2026-06-24-search-infra-mcp-upgrade](../decisions/search/D-2026-06-24-search-infra-mcp-upgrade.md)（rolled-back）。
 
 ---
 
@@ -382,7 +382,7 @@ D-2026-06-25-search-redesign-p5-evidence-map 启动 v2 重设计（Evidence Map 
 - highlights 使用了 verbatim 引用格式（Claim/Quote/Source 三元组变体），基本符合 Tier A 要求
 - §2 fetch_content 全文归档只存了摘要非完整正文（Q2-4 引用的 pgbench.html 未归档）→ 催生 Iron Law §2.1
 
-详见 [run-10-p6-highlights.md](../search-orchestrator/experiments/run-10-p6-highlights.md)；决策 [D-2026-06-25-search-adopt-p6-highlights](../decisions/D-2026-06-25-search-adopt-p6-highlights.md)（active）。
+详见 [run-10-p6-highlights.md](../search-orchestrator/experiments/run-10-p6-highlights.md)；决策 [D-2026-06-25-search-adopt-p6-highlights](../decisions/search/D-2026-06-25-search-adopt-p6-highlights.md)（active）。
 
 ---
 

@@ -119,7 +119,7 @@
 | 方案 | GPT 建议 | 整合方评估 |
 |------|---------|-----------|
 | A. 分片模拟长上下文 | 提前向会话追加大量消息片段，观察是否触发 compact | **不可行**——codec bug 在长消息序列下崩溃，追加消息会触发同样路径 |
-| B. 单元测试 compact 逻辑 | 写临时脚本调用核心 compaction 函数白盒测试 | **方向正确但约束不足**——需确认 compact 函数是否可独立调用（[investigation-note-cline-runtime-probe.md](../decisions/investigation-note-cline-runtime-probe.md) Task A 显示 compact 在 `prepareProviderMessagesForApi` 内部，非独立函数）|
+| B. 单元测试 compact 逻辑 | 写临时脚本调用核心 compaction 函数白盒测试 | **方向正确但约束不足**——需确认 compact 函数是否可独立调用（[investigation-note-cline-runtime-probe.md](../decisions/investigation/investigation-note-cline-runtime-probe.md) Task A 显示 compact 在 `prepareProviderMessagesForApi` 内部，非独立函数）|
 | C. 分段对话逐步评估 | 降低规模分段模拟 | **当前 workaround 的延伸**——已验证（降阈值到 1000 tokens）|
 | D. SDK 单元测试框架 | 利用 SDK 测试框架白盒测试 | **待评估**——需确认 Cline 是否暴露测试入口 |
 
@@ -152,7 +152,7 @@ GPT 的结论"只能通过降低规模和分段模拟进行部分验证"与项�
 | 组件 | Cline 原生能力（证据等级）| 项目雏形（候选#）| Plugin 可扩展性 | 扩展路径建议 | 成熟实践差距 |
 |------|------------------------|----------------|----------------|------------|------------|
 | **Runtime State** | Plan/Act 双模式切换（Likely）；无公开状态机定义 | 无 | 可通过 hooks 监控状态切换 | 设计状态侦听器插件，记录模式切换 | ReAct/Plan-Execute 已部分实现，缺状态机文档 |
-| **Control Flow** | /undo + checkpoint（Verified，[runtime-probe](../decisions/investigation-note-cline-runtime-probe.md) Task B）；最大迭代次数；无自动目标锁 | [#4 Loop Guard](../mechanism-candidates.md)（检测层 Verified）| 可通过 hooks 每轮验证结束条件 | 实现自动目标锁：检测目标完成即终止 | Termination Guard 缺失，仅有迭代上限 |
+| **Control Flow** | /undo + checkpoint（Verified，[runtime-probe](../decisions/investigation/investigation-note-cline-runtime-probe.md) Task B）；最大迭代次数；无自动目标锁 | [#4 Loop Guard](../mechanism-candidates.md)（检测层 Verified）| 可通过 hooks 每轮验证结束条件 | 实现自动目标锁：检测目标完成即终止 | Termination Guard 缺失，仅有迭代上限 |
 | **Planner** | 内部规划，无显式多级规划模块（Likely）；Focus Chain 双阶段（Likely）| [#6 记忆注入](../mechanism-candidates.md)（候选）| 可提供规划工具插件 | 集成"目标一致性检查"：Plan 结束前复述目标对比原始请求 | 缺 Objective Drift 检查 |
 | **Evaluator** | 用户 + 内置测试判断；无 maker/checker 分离；LLM 自我判断为主 | [#4 Loop Guard](../mechanism-candidates.md)（部分）| 可注册后验验证工具（文件差异断言）| 实现 Maker/Checker 分离：确定性验证器优先 | 确定性验证缺失，依赖 LLM 判断 |
 | **Observation** | 事件/日志采集（执行命令/文件变化）；Hooks 可捕获文件信号（Verified，[architecture-atlas §4](refs/cline-plugin-architecture-atlas.md)）| [#1 Terminal Watchdog](../mechanism-candidates.md)（降级）| 可监听 hooks 收集原始输出 | 设计观察优先级策略：结构化事件 > 非结构化日志 | 缺一级证据优先原则 |
@@ -184,7 +184,7 @@ GPT 的结论"只能通过降低规模和分段模拟进行部分验证"与项�
 | W2 | handoff schema 化（三字段）| medium | medium | none | low | **3** | [外部评审最小一步建议](external-review-handoff-foundation.md)，成本最低但不阻塞 W1/W3 |
 | W5 | 真实长对话 compact 验证 | high | high | **codec-bug** | high | **4**（阻塞，解除后优先）| 价值高但受 §1.15 阻塞，[任务 2](#2-任务-2绕过-codec-bug-的验证路径) 未找到有效绕过路径 |
 | W4 | Loop Guard 注入层验证 | medium | medium | **codec-bug** | medium | **5**（阻塞）| 检测层已 Verified，注入层受 §1.15 阻塞，任务 2 未找到有效绕过路径 |
-| W6 | dual-setup 根因升级到 Verified | low | low | external | low | **6** | [investigation-note-dual-setup.md](../decisions/investigation-note-dual-setup.md) 当前 Likely，需 Cline 官方说明，不阻塞任何工作 |
+| W6 | dual-setup 根因升级到 Verified | low | low | external | low | **6** | [investigation-note-dual-setup.md](../decisions/investigation/investigation-note-dual-setup.md) 当前 Likely，需 Cline 官方说明，不阻塞任何工作 |
 | W7 | design.md §3.3.2 废弃标注 | — | — | — | — | **completed** | v0.6.x 收尾已完成 |
 | W8 | README 术语统一 | — | — | — | — | **completed** | v0.6.x 收尾已完成 |
 | W9-W14 | 任务 3 识别的扩展路径 | 见任务 3 | — | — | — | **待评估** | GPT 未对 W9-W14 单独打分 |
@@ -221,7 +221,7 @@ GPT 排序 W1 > W3 > W2，与项目 [handoff.md](../handoff.md) 的"下次首要
 
 | 阻塞项 | 影响范围 | 当前状态 | 解除条件 |
 |--------|---------|---------|---------|
-| §1.15 codec bug | W4 / W5 / 真实长对话 compact 验证 | [investigation-note-cli-codec-content-map-bug.md](../decisions/investigation-note-cli-codec-content-map-bug.md) 已定位，等官方修复 | Cline CLI 修复 `n.content.map` 守卫 |
+| §1.15 codec bug | W4 / W5 / 真实长对话 compact 验证 | [investigation-note-cli-codec-content-map-bug.md](../decisions/investigation/investigation-note-cli-codec-content-map-bug.md) 已定位，等官方修复 | Cline CLI 修复 `n.content.map` 守卫 |
 | issue #11944（SDK 迁移）| VS Code 扩展 Plugin 恢复 | 待作者回复 | VS Code 扩展重新合入 SDK 代码基 |
 | 任务 1 源码验证缺失 | L2-1 / L2-2 | GPT 未给出源码路径 | 需按任务书要求补做 Cline GitHub 源码探查 |
 
@@ -271,11 +271,11 @@ GPT 的两层路线图框架正确，但 L2 里程碑过于乐观——3 个里�
 ### 7.2 整合方引用的项目文件
 
 - [PROJECT_DEV_OUTLINE.md](../PROJECT_DEV_OUTLINE.md) §5 — 能力验证清单
-- [investigation-note-cline-runtime-probe.md](../decisions/investigation-note-cline-runtime-probe.md) — Cline Runtime 源码探查
+- [investigation-note-cline-runtime-probe.md](../decisions/investigation/investigation-note-cline-runtime-probe.md) — Cline Runtime 源码探查
 - [architecture-atlas.md](refs/cline-plugin-architecture-atlas.md) §4 — 7 个稳定 API
 - [mechanism-candidates.md](../mechanism-candidates.md) — 24 条候选
 - [handoff.md](../handoff.md) — 当前状态快照
 - [external-review-*.md](external-review-handoff-foundation.md) — 外部评审材料（3 份）
 - [snapshot-extractor-design.md](snapshot-extractor-design.md) — v0.7.0 设计
-- [investigation-note-dual-setup.md](../decisions/investigation-note-dual-setup.md) — 双重 setup 调查
-- [investigation-note-cli-codec-content-map-bug.md](../decisions/investigation-note-cli-codec-content-map-bug.md) — codec bug 定位
+- [investigation-note-dual-setup.md](../decisions/investigation/investigation-note-dual-setup.md) — 双重 setup 调查
+- [investigation-note-cli-codec-content-map-bug.md](../decisions/investigation/investigation-note-cli-codec-content-map-bug.md) — codec bug 定位

@@ -55,7 +55,7 @@
 
 | id | 方向 | 说明 | 优先级 | confidence | depends_on |
 |----|------|------|--------|-----------|------------|
-| `next-feature-direction` | 下一功能方向决策 | 候选：记忆系统 D' 索引层（ADR-001 预留）/ 经验机制化（mechanism-candidates A 类推进）/ 其他。需读 [external-review-round2-handoff.md](plugin/external-review-round2-handoff.md) 全文 + [response-to-external-review-handoff.md](plugin/response-to-external-review-handoff.md) 后决定 | 🟡 中 | Hypothesis | — |
+| `next-feature-direction` | 下一功能方向决策 | 候选：记忆系统 D' 索引层（ADR-001 预留）/ 经验机制化（mechanism-candidates A 类推进）/ 其他。需读 [external-review-round2-handoff.md](plugin/review/external-review-round2-handoff.md) 全文 + [response-to-external-review-handoff.md](plugin/review/response-to-external-review-handoff.md) 后决定 | 🟡 中 | Hypothesis | — |
 | `issue-11944` | GitHub #11944 跟进 | SDK 迁移时间线（影响 VS Code 扩展 plugin 系统恢复，#4/#5 退休解除依赖） | 🟡 中 | Verified | — |
 | `pr-12032` | PR #12032 合并监控 | CLI codec bug 修复 PR（Open），合并 + CLI 发版后触发 §1.15 解除流程 7 步 | 🟡 中 | Verified | — |
 | `mech-stale-scan` | mechanism-candidates stale 扫描 | #1/#2/#3 长期候选无进展（>90 天），按 stale 规则标 ⚠️ 评估保留/降级/删除 | 🟡 中 | Verified | — |

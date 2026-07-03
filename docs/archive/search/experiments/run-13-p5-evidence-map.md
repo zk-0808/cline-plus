@@ -263,6 +263,6 @@ Step 4 — Final Answer
 
 ## 7. 参考
 
-- [D-2026-06-25-search-redesign-p5-evidence-map.md](../../decisions/D-2026-06-25-search-redesign-p5-evidence-map.md)
+- [D-2026-06-25-search-redesign-p5-evidence-map.md](../../decisions/search/D-2026-06-25-search-redesign-p5-evidence-map.md)
 - [run-9c-p5-output-schema-v3.md](run-9c-p5-output-schema-v3.md)
-- [D-2026-06-24-search-evaluate-p5-output-schema.md](../../decisions/D-2026-06-24-search-evaluate-p5-output-schema.md)
+- [D-2026-06-24-search-evaluate-p5-output-schema.md](../../decisions/search/D-2026-06-24-search-evaluate-p5-output-schema.md)

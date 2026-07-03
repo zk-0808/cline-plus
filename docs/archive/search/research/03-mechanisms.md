@@ -49,7 +49,7 @@ Query: `"K8s 滚动更新 ImagePullBackOff 排查方法"`
 
 ### 1.5 决策文档
 
-[D-2026-06-23-search-adopt-goggles.md](../decisions/D-2026-06-23-search-adopt-goggles.md)（status: active）
+[D-2026-06-23-search-adopt-goggles.md](../decisions/search/D-2026-06-23-search-adopt-goggles.md)（status: active）
 
 ---
 
@@ -73,7 +73,7 @@ Run #1 同期验证：Top-5 中至少 1 条升入 T1/T2（kubernetes.io 升 T1�
 
 ### 2.4 决策文档
 
-[D-2026-06-23-search-finalscore-coupling.md](../decisions/D-2026-06-23-search-finalscore-coupling.md)（status: active）
+[D-2026-06-23-search-finalscore-coupling.md](../decisions/search/D-2026-06-23-search-finalscore-coupling.md)（status: active）
 
 ---
 
@@ -115,7 +115,7 @@ Run #1 同期验证：Top-5 中至少 1 条升入 T1/T2（kubernetes.io 升 T1�
 
 ### 3.5 决策文档
 
-[D-2026-06-24-search-adopt-p3.md](../decisions/D-2026-06-24-search-adopt-p3.md)（status: active）
+[D-2026-06-24-search-adopt-p3.md](../decisions/search/D-2026-06-24-search-adopt-p3.md)（status: active）
 
 ---
 
@@ -163,7 +163,7 @@ lexical baseline 在跨语言 / 摘要 / 改写场景下召回近 0（属算法�
 
 ### 4.4 关键修订
 
-Run #7 发现 "Top-5 域名多样性从 4 → 3" 看似退化，实际是合并正确（segmentfault.com 是知乎转载站，释放 slot 被同腾讯云其他文章填入）。**域名多样性 ≠ 内容多样性**——观察指标，不参与判定。详见 [D-2026-06-24-search-revise-p4-metrics](../decisions/D-2026-06-24-search-revise-p4-metrics.md)。
+Run #7 发现 "Top-5 域名多样性从 4 → 3" 看似退化，实际是合并正确（segmentfault.com 是知乎转载站，释放 slot 被同腾讯云其他文章填入）。**域名多样性 ≠ 内容多样性**——观察指标，不参与判定。详见 [D-2026-06-24-search-revise-p4-metrics](../decisions/search/D-2026-06-24-search-revise-p4-metrics.md)。
 
 ### 4.5 失败模式
 
@@ -172,7 +172,7 @@ Run #7 发现 "Top-5 域名多样性从 4 → 3" 看似退化，实际是合并�
 
 ### 4.6 决策文档
 
-[D-2026-06-24-search-adopt-p4-same-source-merge.md](../decisions/D-2026-06-24-search-adopt-p4-same-source-merge.md)（active）
+[D-2026-06-24-search-adopt-p4-same-source-merge.md](../decisions/search/D-2026-06-24-search-adopt-p4-same-source-merge.md)（active）
 
 ---
 
@@ -291,7 +291,7 @@ Query: PostgreSQL 17 vs MySQL 8.4，4 sub-Q，26 highlights
 
 ### 6.5 决策文档
 
-[D-2026-06-25-search-adopt-p6-highlights.md](../decisions/D-2026-06-25-search-adopt-p6-highlights.md)（status: active）
+[D-2026-06-25-search-adopt-p6-highlights.md](../decisions/search/D-2026-06-25-search-adopt-p6-highlights.md)（status: active）
 
 ---
 
@@ -393,7 +393,7 @@ class ThrottledSearchWrapper {
 
 ### 7.5 决策文档
 
-[D-2026-06-26-search-adopt-mcp-throttle-wrapper.md](../decisions/D-2026-06-26-search-adopt-mcp-throttle-wrapper.md)（status: active）
+[D-2026-06-26-search-adopt-mcp-throttle-wrapper.md](../decisions/search/D-2026-06-26-search-adopt-mcp-throttle-wrapper.md)（status: active）
 
 ---
 
@@ -417,7 +417,7 @@ class ThrottledSearchWrapper {
 
 **衍生候选**：#20 反证检索 / #21 多样性排序 → 保持候选（暂缓）
 
-**决策文档**：[D-2026-06-24-search-defer-p2.md](../decisions/D-2026-06-24-search-defer-p2.md)（deferred）
+**决策文档**：[D-2026-06-24-search-defer-p2.md](../decisions/search/D-2026-06-24-search-defer-p2.md)（deferred）
 
 ### 8.2 P5 v1 字段对齐 Output Schema（superseded）
 
@@ -435,7 +435,7 @@ class ThrottledSearchWrapper {
 
 **衍生**：D-2026-06-25-search-redesign-p5-evidence-map 取代 v1，启动 v2 重设计
 
-**决策文档**：[D-2026-06-24-search-evaluate-p5-output-schema.md](../decisions/D-2026-06-24-search-evaluate-p5-output-schema.md)（superseded）
+**决策文档**：[D-2026-06-24-search-evaluate-p5-output-schema.md](../decisions/search/D-2026-06-24-search-evaluate-p5-output-schema.md)（superseded）
 
 ### 8.3 P5 v2 Evidence Map / Claim Graph（保持 proposed 不再推进）
 
@@ -456,7 +456,7 @@ class ThrottledSearchWrapper {
 
 **衍生**：放弃完整 Evidence Map，只验证"追加 Gap Ledger / 证据缺口枚举"最小机制 → Run #14 → 升级 active（见 §5）
 
-**决策文档**：[D-2026-06-25-search-redesign-p5-evidence-map.md](../decisions/D-2026-06-25-search-redesign-p5-evidence-map.md)（proposed，不再推进）
+**决策文档**：[D-2026-06-25-search-redesign-p5-evidence-map.md](../decisions/search/D-2026-06-25-search-redesign-p5-evidence-map.md)（proposed，不再推进）
 
 ### 8.4 MCP 后端切换（rolled-back）
 
@@ -476,7 +476,7 @@ class ThrottledSearchWrapper {
 
 **衍生**：#22 Browser-backed Fetch 候选（暂缓）——触发条件为 Tier C snippet-only 被证明严重影响答案质量；启动时选多层叠加方案（住宅代理 + 真实浏览器 + solver）而非裸 Playwright
 
-**决策文档**：[D-2026-06-24-search-infra-mcp-upgrade.md](../decisions/D-2026-06-24-search-infra-mcp-upgrade.md)（rolled-back）
+**决策文档**：[D-2026-06-24-search-infra-mcp-upgrade.md](../decisions/search/D-2026-06-24-search-infra-mcp-upgrade.md)（rolled-back）
 
 ### 8.5 DiversityPenalty + R1 保底（rolled-back）
 
@@ -484,7 +484,7 @@ class ThrottledSearchWrapper {
 
 **证伪**：与 P2 同期证伪——LLM 提示词层算分量级压不过 SourceWeight ±10；±2 落在噪声地板内（4 倍方差压缩）。NumericBench 印证：LLM 算术本身不准，pointwise 逐条打分是排序家族里方差最大范式。
 
-**决策文档**：[D-2026-06-24-search-rollback-diversity.md](../decisions/D-2026-06-24-search-rollback-diversity.md)（rolled-back）
+**决策文档**：[D-2026-06-24-search-rollback-diversity.md](../decisions/search/D-2026-06-24-search-rollback-diversity.md)（rolled-back）
 
 ### 8.6 完整 Evidence Map / Claim Graph（保持 proposed 不再推进）
 

@@ -143,7 +143,7 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 **成熟实践映射**：
 - 结论时效性门控 ↔ **Refresh Token 验证**（使用前必须检查是否过期）+ **SLR 检索时间范围限定**（系统综述要求声明检索时间窗）
 
-源由：2026-06-27 [ADR-002-p5-experiment-exit-review §2.4](archive/decisions/ADR-002-p5-experiment-exit-review.md) 引用"社区无 Plugin 实战沉淀"（2026-06-23 形成于 ADR-002 Context §5）作为舍弃 P5 论据，未复查——4 天后该结论已被 5 类反证证伪。
+源由：2026-06-27 [ADR-002-p5-experiment-exit-review §2.4](archive/decisions/adr/ADR-002-p5-experiment-exit-review.md) 引用"社区无 Plugin 实战沉淀"（2026-06-23 形成于 ADR-002 Context §5）作为舍弃 P5 论据，未复查——4 天后该结论已被 5 类反证证伪。
 
 ### 1.14 子条款："无 X"类结论门控
 
@@ -184,26 +184,26 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 | 环境 | 状态 | 替代路径 | 恢复条件 |
 |------|------|---------|---------|
 | VS Code 扩展 4.0.x（plugin 系统）| 不可用 | CLI 3.0.30+ | SDK 迁移重新合入稳定版（issue #11944）|
-| CLI 3.0.34 `agent-message-codec.ts` 守卫缺失 | **部分受限**（长对话/异常 MCP tool_result 触发崩溃） | 分层推进：仅低风险实测（setup marker / rules 注入 / Loop Guard 短场景）| 上游修复 `agentMessageToMessageWithMetadata` / `agentMessagesToMessages` 加 `Array.isArray` 守卫 + 补测试。**修复 PR 已提交**：[PR #12032](https://github.com/cline/cline/pull/12032)（Open，2026-07-02，scope 命中两条 decode 路径 + regression test）——合并 + CLI 发版后解除；详见 [investigation-note O9](decisions/investigation-note-cli-codec-content-map-bug.md) |
+| CLI 3.0.34 `agent-message-codec.ts` 守卫缺失 | **部分受限**（长对话/异常 MCP tool_result 触发崩溃） | 分层推进：仅低风险实测（setup marker / rules 注入 / Loop Guard 短场景）| 上游修复 `agentMessageToMessageWithMetadata` / `agentMessagesToMessages` 加 `Array.isArray` 守卫 + 补测试。**修复 PR 已提交**：[PR #12032](https://github.com/cline/cline/pull/12032)（Open，2026-07-02，scope 命中两条 decode 路径 + regression test）——合并 + CLI 发版后解除；详见 [investigation-note O9](decisions/investigation/investigation-note-cli-codec-content-map-bug.md) |
 
 **CLI 3.0.34 codec bug 影响范围**：
 - 🔴 **搁置**：snapshot 写入实测（需 90K tokens 长对话，正是 bug 触发场景）
 - 🟡 **带观察推进**：Loop Guard 实测（构造场景时避免 MCP 工具 + 避免长输出，用小文件简单 read_file 重复）
 - 🟢 **可推进**：setup marker / rules 注入（短交互，不触发长对话路径）
 
-**2026-07-01 补充（O8 发现）**：[investigation-note O8](decisions/investigation-note-cli-codec-content-map-bug.md) 发现 codec bug 有两条独立触发路径：
+**2026-07-01 补充（O8 发现）**：[investigation-note O8](decisions/investigation/investigation-note-cli-codec-content-map-bug.md) 发现 codec bug 有两条独立触发路径：
 - **路径 A（MCP tool_result）**：原已知，Hypothetical（content 经 JSON.stringify 有损转换变非数组）
 - **路径 B（beforeModel 注入）**：**Verified** — [index.ts:146](context-snapshot/src/index.ts#L146) 注入 content 为 string 类型，codec `Nd` 函数调用 `n.content.map()` 必崩。**与消息数量/token 总量无关**，任何步骤下 beforeModel 返回 string content 都会崩溃
 
-**O8 对影响范围的修正**：原"🟡 Loop Guard 实测"分级基于"避免 MCP + 避免长输出"假设，但路径 B 表明 beforeModel 注入本身即触发 bug，不分步骤数量。Loop Guard 注入层应改为 **🔴 阻塞**，检测层仍为 🟢。替代方案见 [mechanism-landing-assessment.md Q2 V6 路径](plugin/mechanism-landing-assessment.md)（afterTool + messageBuilder 绕过 codec）。
+**O8 对影响范围的修正**：原"🟡 Loop Guard 实测"分级基于"避免 MCP + 避免长输出"假设，但路径 B 表明 beforeModel 注入本身即触发 bug，不分步骤数量。Loop Guard 注入层应改为 **🔴 阻塞**，检测层仍为 🟢。替代方案见 [mechanism-landing-assessment.md Q2 V6 路径](plugin/audit/mechanism-landing-assessment.md)（afterTool + messageBuilder 绕过 codec）。
 
 **V6 实现已完成**（2026-07-01）：Loop Guard 改用 messageBuilder 注入（afterTool 检测循环 → loopState → messageBuilder 注入 user-role 消息，content 为 ContentBlock[] 格式绕过 codec），beforeModel hook 已移除。注入层从 🔴 阻塞恢复为 🟢 可用（V6 路径）。A1 修复（content string → array）+ V6 替代实现双保险。**注**：registerRule 路径已废弃——rule content 函数在 CLI 3.0.34 只在 session 启动时评估一次，运行时永不重新求值（死路径），详见 [handoff.md §4 V6 测试记录](handoff.md)。
 
 **workaround 不等同环境可用**（§1.15 禁止条款）：workaround 期间实测结果仅证明"避开 bug 的路径可用"，不证明"环境完整可用"。
 
-源由 1：2026-06-28 VS Code 扩展 v4.0.0 bootstrap 缺失 → v4.0.1 官方回滚到 pre-SDK 代码基 → v4.0.2 继承回滚，Plugin 系统在 VS Code 端完全不存在。CLI 端为唯一可用运行环境。完整证据链见 [investigation-note-vscode-bootstrap-missing.md](decisions/investigation-note-vscode-bootstrap-missing.md) + [D-2026-06-28-cline-v401-sdk-rollback.md](decisions/D-2026-06-28-cline-v401-sdk-rollback.md) + [design.md 不可抗力声明](plugin/design.md)。
+源由 1：2026-06-28 VS Code 扩展 v4.0.0 bootstrap 缺失 → v4.0.1 官方回滚到 pre-SDK 代码基 → v4.0.2 继承回滚，Plugin 系统在 VS Code 端完全不存在。CLI 端为唯一可用运行环境。完整证据链见 [investigation-note-vscode-bootstrap-missing.md](decisions/investigation/investigation-note-vscode-bootstrap-missing.md) + [D-2026-06-28-cline-v401-sdk-rollback.md](decisions/D-2026-06-28-cline-v401-sdk-rollback.md) + [design.md 不可抗力声明](plugin/design.md)。
 
-源由 2：2026-06-30 用户报 `Error: n.content.map is not a function. (In 'n.content.map(eK)', 'n.content.map' is undefined)` 三次（duckduckgo 超时 / run_commands 843+ 行 / read E:\cline++\docs 后）。源码定位见 [investigation-note-cli-codec-content-map-bug.md](decisions/investigation-note-cli-codec-content-map-bug.md)。
+源由 2：2026-06-30 用户报 `Error: n.content.map is not a function. (In 'n.content.map(eK)', 'n.content.map' is undefined)` 三次（duckduckgo 超时 / run_commands 843+ 行 / read E:\cline++\docs 后）。源码定位见 [investigation-note-cli-codec-content-map-bug.md](decisions/investigation/investigation-note-cli-codec-content-map-bug.md)。
 
 **解除流程**（恢复条件命中后必须按序执行）：
 
@@ -212,8 +212,8 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 3. **回归实测**：在无 workaround 的环境下重跑原触发场景（长对话 ≥90K tokens / MCP tool_result 大输出 / beforeModel string content 注入），确认无崩溃
 4. **移除不可抗力声明**：删除本节"当前生效的不可抗力声明"表中对应行（codec bug 行），保留 VS Code 扩展行直至 SDK 迁移完成
 5. **恢复受阻验证项**：将本节"CLI 3.0.34 codec bug 影响范围"中标 🔴 的项（snapshot 写入实测）恢复为可推进，按原计划执行
-6. **更新引用文档**：同步更新 [design.md 不可抗力声明](plugin/design.md) / [mechanism-landing-assessment.md](plugin/mechanism-landing-assessment.md) / [investigation-note-cli-codec-content-map-bug.md](decisions/investigation-note-cli-codec-content-map-bug.md) 中对 codec bug 的引用状态
-7. **归档 draft-issue**：若 issue 已提交且 PR 已合并，将 [draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue-cli-codec-content-map-bug.md) 标注 issue 编号并移入归档流程
+6. **更新引用文档**：同步更新 [design.md 不可抗力声明](plugin/design.md) / [mechanism-landing-assessment.md](plugin/audit/mechanism-landing-assessment.md) / [investigation-note-cli-codec-content-map-bug.md](decisions/investigation/investigation-note-cli-codec-content-map-bug.md) 中对 codec bug 的引用状态
+7. **归档 draft-issue**：若 issue 已提交且 PR 已合并，将 [draft-issue-cli-codec-content-map-bug.md](decisions/draft-issue/draft-issue-cli-codec-content-map-bug.md) 标注 issue 编号并移入归档流程
 
 **部分解除条件**：若 PR 仅覆盖部分触发路径（如仅 beforeModel 注入路径，未覆盖 MCP tool_result 路径），按覆盖范围部分移除声明，保留未覆盖路径的受限标注。
 
@@ -264,7 +264,7 @@ handoff.md 的「未完成项 / 后续动作」表**必须**包含以下三列�
 | **confidence** | 取值与 [evidence-governance.md §4](evidence-governance.md) 一致：`Verified` / `Likely` / `Hypothesis` | `Verified` |
 | **depends_on** | 指向其他稳定 ID（逗号分隔），**禁止**自然语言描述 | `codec-bug-fix` 而非 “等 codec bug 修复” |
 
-**设计意图**（来源：[external-review-round2-handoff.md Q3/Q5](plugin/external-review-round2-handoff.md)）：
+**设计意图**（来源：[external-review-round2-handoff.md Q3/Q5](plugin/review/external-review-round2-handoff.md)）：
 - `id` 稳定 → `depends_on` 可遍历 → 依赖图可从 blocker_ref 边即时重建，不需要独立载体
 - `confidence` 复用 evidence-governance 词汇表 → snapshot（机械投影）和 handoff（叙事投影）共享同一套置信语义
 - 三字段是 agent 已有判断的结构化输出，不增加认知负担，30 秒约束不受威胁
@@ -308,7 +308,15 @@ handoff.md 的「未完成项 / 后续动作」表**必须**包含以下三列�
 
 ```
 docs/                     项目文档
-  decisions/              ADR + 调查笔记（Investigation Notes）
+  decisions/              决策 + 调查笔记（按类型聚类）
+    adr/                  ADR-NNN-<短描述>.md（架构决策记录）
+    search/               D-YYYY-MM-DD-search-*.md（search 功能决策）
+    investigation/        investigation-note-*.md（调查笔记）
+    draft-issue/          draft-issue-*.md（待提交 issue 草稿）
+    schema-*.md           跨功能 schema 规范（根目录）
+    observation-*.md      观察记录（根目录）
+    README.md / ARCHIVE.md
+  handoff-schema/         handoff schema 化功能
   search/                 搜索产品线
     search-orchestrator/  搜索编排器文档 + 实验记录
     research/             搜索质量研究
@@ -317,6 +325,8 @@ docs/                     项目文档
   plugin/                 Plugin 产品线
     design.md             context-snapshot 设计文档
     refs/                 架构参考 + 社区指南（对外可发布）
+    review/               外部评审 round + 项目方回应
+    audit/                审计报告 + 机制落地评估
 scripts/                  工具脚本（patch、自动化）
 context-snapshot/         Plugin 源码（独立 git 仓库，submodule）
 search-mcp-wrapper/       MCP wrapper（独立项目）
@@ -326,12 +336,33 @@ experiments/              Spike 实验
 
 **判定规则**：
 - 对外可发布的指南/参考 → `docs/plugin/refs/`
-- 内部决策记录（ADR / 调查笔记）→ `docs/decisions/`
+- 内部决策记录（ADR / 调查笔记）→ `docs/decisions/` 按类型入子目录
 - 可执行脚本（.ps1 / .sh / .py 工具）→ `scripts/`
 - 运行时日志（.log）→ gitignore，不入库
 - 独立项目的源码 → 各自子目录（context-snapshot/ / search-mcp-wrapper/）
 
-源由：2026-06-28 项目整理——根目录曾有 patch 脚本、测试日志、重复文档，缺乏存放规范导致每次新增文件都需人工判断位置。
+### 5.1 子条款：`docs/decisions/` 命名规范与路径约束
+
+`docs/decisions/` 按文档类型聚类为子目录，新增文件**必须**遵守下列命名格式与路径约束：
+
+| 类型 | 命名格式 | 路径约束 | 示例 |
+|------|---------|---------|------|
+| **ADR**（架构决策记录）| `ADR-NNN-<短描述>.md` | `decisions/adr/` | `ADR-005-split-compact-from-handoff.md` |
+| **D 决策**（功能决策）| `D-YYYY-MM-DD-<功能>-<动作>-<对象>.md` | `decisions/<功能>/`（功能名 = `docs/<功能>/` 目录名）；跨功能决策放根目录 | `D-2026-06-24-search-adopt-p3.md` → `decisions/search/` |
+| **investigation-note**（调查笔记）| `investigation-note-<对象>.md` | `decisions/investigation/` | `investigation-note-dual-setup.md` |
+| **draft-issue**（待提交 issue 草稿）| `draft-issue-<对象>.md` | `decisions/draft-issue/` | `draft-issue-cli-codec-content-map-bug.md` |
+| **observation**（观察记录）| `observation-<对象>.md` | `decisions/`（根目录）| `observation-write-retry-deadlock.md` |
+| **schema**（跨功能 schema 规范）| `schema-<对象>.md` | `decisions/`（根目录）| `schema-semantic-object-model.md` |
+
+**强制规则**：
+1. **ADR 编号必须连续**（NNN 三位补零，不跳号；已退役的编号不重用）
+2. **D 决策日期必须为决策建立日**（非文档撰写日，非决策生效日）
+3. **功能名必须与 `docs/<功能>/` 目录名一致**（如 search 功能的决策放 `decisions/search/`）
+4. **跨功能决策**（如 `D-2026-06-28-cline-v401-sdk-rollback`）放 `decisions/` 根目录，不强行归入某功能子目录
+5. **禁止**在 `decisions/` 根目录散落 ADR / D 决策 / investigation-note / draft-issue（必须入对应子目录）
+6. **禁止**为单一文件创建子目录（如只有一个 cline 决策时不建 `decisions/cline/`，放根目录）
+
+源由：2026-07-03 项目整理——`docs/decisions/` 根目录曾散落 24 个文件，缺乏聚类导致每次查找需在全目录扫描。按类型聚类后根目录降至 5 个文件（README / ARCHIVE / schema / observation / 跨功能 D 决策）。
 
 ---
 
