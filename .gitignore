@@ -8,6 +8,7 @@ $RECYCLE.BIN/
 # Editors
 .vscode/
 .idea/
+.trae/
 *.swp
 *.swo
 *~
