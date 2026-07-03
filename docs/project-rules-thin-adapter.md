@@ -94,7 +94,7 @@ const warningMsg: Message = {
 
 ### 6. 不做的事
 
-- **不做** 写 handoff.md（审批结果：仍写 snapshot 文件）
+- **不做** 写 `docs/handoff.md`（本项目交接文档，人 + AI 协作维护，plugin 自动覆写会破坏人工内容；审批结果：仍写 snapshot 文件——cline 产物，存储于 `getSnapshotDir()` 下）
 - **不做** 补 Verification/Blocker/Handoff 三类 extractor（审批结果：仍是 4 类）
 - **不做** 产物格式改为 schema V2 六字段表格（审批结果：仍是 5 段 Markdown）
 - **不做** 自研 token 估算 / 阈值判断 / compaction 触发逻辑（违反 ADR-006 §0 元原则）
