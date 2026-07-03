@@ -67,8 +67,6 @@ x = retired        对应规则/提示词已确认删除，整行移入归档区
 | 1 | 终端命令假死 / Shell 阻塞 | 系统提示词、SKILL 规则 | A | terminal-watchdog plugin（`tool_call_after` hook 检测超时） | 候选 |
 | 2 | PowerShell 阻塞用 `-NoProfile` 等参数 | 系统提示词 | A | shell-wrapper plugin（safe-exec） | 候选 |
 | 3 | UTF-8 输出乱码处理 | 系统提示词 | A | shell-wrapper plugin（环境变量注入） | 候选 |
-| 4 | 重复循环要主动跳出 | 提示词 / Skill | A | loop-guard plugin（基于工具调用相似度） | **实验中** — V6 实现已完成：afterTool 检测 + messageBuilder 注入（ContentBlock[] 绕过 codec 路径；registerRule 路径已废弃——死路径）。tsc --noEmit 零错误。检测层 + 注入层均就绪，待 CLI 实测验证 |
-| 5 | 长会话要主动 compact + 写 handoff | Skill / 提示词 | A | **拆分**（[ADR-005](decisions/ADR-005-split-compact-from-handoff.md)）：Compaction 归 Cline 原生，Handoff 归 Plugin 独立触发 | **实验中（重构中）** — ADR-005 决定将 Compaction 与 Handoff 拆分为两个独立机制。Phase 2 全链路验证通过（2026-06-28）但产物定位调整：compact 时不再产出 handoff.md（那是 Cline 的事），handoff 改为独立触发器（用户指令 / 决策信号 / 定时）。详见 [ADR-005](decisions/ADR-005-split-compact-from-handoff.md) | |
 | 6 | 跨会话续作要先读上次 handoff | 提示词 / Skill | A | **写入 Cline 动态 rules**（[ADR-005](decisions/ADR-005-split-compact-from-handoff.md)）：读 handoff.md 注入新会话 rules | **部分已机制化（读取流程规则化，注入机制仍候选）** — ADR-005 将 #6 从独立 session_start hook 改为写入 Cline 动态 rules。**读取流程**已规则化：[plugin/project-rules.md §3.5](plugin/project-rules.md) 跨会话续作读取门控 + handoff.md 末尾"新会话首动作"提示。**注入机制**（plugin rules 自动注入 handoff 内容）仍候选，受 §1.15 阻塞 |
 | 7 | Windows 不支持 Cline 早期 Hook | OUTLINE §6.1 | B | SDK plugin hook（已确认存在，需 Phase 2 验证 Windows 可用性） | 候选（待验证）— 外部评审指出：官方 hook 文件无扩展名、放 `.clinerules/hooks/`（项目级）或 `~/Documents/Cline/Rules/Hooks/`（全局），`.ps1` / `.cline/Hooks/` 写法与官方不符。Windows `.ps1` 支持查无实据，需实测确认。[Cline v3.36 Hooks](https://cline.ghost.io/cline-v3-36-hooks) |
 | 8 | 调研先行 / 五问门控 | OUTLINE §3 | **C** | 不可机制化 | 永久C类 |
@@ -125,4 +123,7 @@ x = retired        对应规则/提示词已确认删除，整行移入归档区
 
 ## 归档区（已退休 / 已机制化 经验）
 
-（暂空）
+| # | 经验 | 最终状态 | 归档原因 |
+|---|------|---------|---------|
+| 4 | 重复循环要主动跳出 | 实验中（V6 实现已完成，待 CLI 实测） | 暂时退休（2026-07-03）— 依赖 VS Code 扩展 plugin 系统（messageBuilder / afterTool hook），受 §1.15 阻塞。代码实现保留在 context-snapshot 子模块，待 plugin 系统恢复后可直接启用 |
+| 5 | 长会话要主动 compact + 写 handoff | 实验中（ADR-005 重构中，Phase 2 验证通过） | 暂时退休（2026-07-03）— 同上。Compaction 归 Cline 原生（不再需要 plugin），Handoff 独立触发机制依赖 plugin 系统。ADR-005 设计文档保留，待 §1.15 解除后继续推进 |
