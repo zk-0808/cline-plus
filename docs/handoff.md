@@ -14,6 +14,7 @@
 | `snapshot-v2-decouple` | 解耦 `schema-v2-snapshot` → `schema-v2-snapshot-align`（不依赖 PR，字段对齐+短对话实测）+ `schema-v2-snapshot-e2e`（依赖 PR，长对话实测+frontmatter+confidence 固化）；纠正原"snapshot schema 化整体阻塞"过度打包 | Verified | `v2-doc-completed` |
 | `confidence-vocab-fix` | schema §1.0 新增 Confidence 词汇表；修正 §1.3/§1.5 字段描述错误（原写"取值与 §4 一致"但字面不一致，schema 用 Verified/Likely/Hypothesis，§4 用高/中/低，需查表对齐） | Verified | `snapshot-v2-decouple` |
 | `hypothesis-reasoning-rule` | 新增 project-rules §6：Hypothesis 条目强制推理链（`<字段判断> ← <依据>`）；解决"confidence 标整体证据弱但未定向指引哪个字段弱，下游无判断空间"机制缺口 | Verified | `snapshot-v2-decouple` |
+| `assertion-semantic-model-confirmed` | Assertion 语义模型决策落地——基本单位=Assertion（Claim/Evidence/Justification/Confidence 四属性）；Evidence.kind 5 档枚举（Code/Test/Discussion/Inference/None）+ Inference vs None 边界写死；Confidence 条件必填（仅 None 时必填）；原则写 schema §0；消费规则写 project-rules 标注待迁入；V2 五类对象调整为"Assertion 载体分类"；新增元规则"是否在打字段补丁"防复发 | Verified | `hypothesis-reasoning-rule` |
 
 ## 本会话净变化
 
@@ -76,6 +77,18 @@
 - 立即应用：本轮新增的 `schema-v2-snapshot-align` / `schema-v2-snapshot-e2e` 已写推理链
 - 源由：上一会话 schema-v2-snapshot 标 Hypothesis 但未写推理链，下游模型直接采信为"整体依赖 PR"，直到用户提问才读源码发现过度打包
 
+### 8. Assertion 语义模型决策（`docs/handoff-schema/assertion-semantic-model.md`）
+
+材料从"讨论稿"升级为"决策版"——核心结论已定：
+- **Q1 已确认**：handoff 基本单位 = Assertion（解释力 + 正交性两检验通过）
+- **Q2 已确认**：四属性最小模型（Claim / Evidence / Justification / Confidence）；Evidence 含 kind 子属性；Confidence 条件必填（仅 None 时必填）
+- **Q3 已定**：Evidence.kind 5 档枚举（Code/Test/Discussion/Inference/None）+ Inference vs None 边界写死（Inference 有可追溯上游断言 / None 无来源纯判断）+ 起源事件作反面教材写入
+- **Q4 已定**：高层原则写 schema §0 设计原则（统领 V2 对象 + Assertion 两套东西）
+- **Q5 已定**：消费层规则短期写 project-rules 标注"待第二阶段迁入 dev-rules"
+- **Q6 已定**：V2 五类对象定位调整为"Assertion 载体分类"（字段不变仅表述更新）
+- **新增 §10 元规则**：每个决策前自检"是不是又在打字段补丁"——约束思考方式防复发
+- **§9.2 实施顺序**：6 步（schema §0 原则 → 标题调整 → Assertion 模型定义 → 消费规则 → §6 处理 → V2 字段重写最后做）
+
 ## Commits
 
 | Hash | Repo | Message |
@@ -87,7 +100,7 @@
 | id | 方向 | 说明 | 优先级 | confidence | depends_on | blocker_ref |
 |----|------|------|--------|-----------|------------|-------------|
 | `handoff-schema-v2-kind-exit` | kind/exit_when 显式化 | 在 handoff.md 未完成项表中显式标注 `[kind] exit_when`（V2 延伸项，可选）| 🟢 低 | Hypothesis | — | — |
-| `assertion-semantic-model` | Assertion 语义模型讨论 | 把 handoff 基本单位从"字段"抽象为"Assertion"（Claim/Evidence/Justification/Confidence 四属性）；材料已写见 [assertion-semantic-model.md](handoff-schema/assertion-semantic-model.md)；不立即改 schema/规则 ← 上轮 §6 推理链约束是局部补丁，需先定语义模型再统一重构，否则陷入"补字段循环" | 🟡 中 | Hypothesis | — | — |
+| `assertion-semantic-model` | Assertion 语义模型决策（已落地，待实施） | 决策版材料见 [assertion-semantic-model.md](handoff-schema/assertion-semantic-model.md)；Q1-Q6 已定 + 元规则已加；下次会话进入实施阶段（按材料 §9.2 顺序推进 6 步）；不立即改 schema/规则 ← 上轮 §6 是局部补丁，需先定语义模型再统一重构，否则陷入"补字段循环"；元规则约束思考方式防复发 | 🟡 中 | Verified | — | — |
 | `schema-v2-snapshot-align` | snapshot 数据模型对齐 schema V2 | types.ts 字段对齐 + extractors 调整 + 短对话实测（workaround 路径 `MAX_INPUT_TOKENS=1000`）；字段对齐/单元测试不依赖 codec bug ← codec bug 只阻塞真实长对话路径（≥90K tokens），不阻塞代码层字段对齐 | 🟡 中 | Hypothesis | — | — |
 | `schema-v2-snapshot-e2e` | snapshot 真实长对话实测 | 真实 90K+ token 长对话路径实测 + frontmatter 显式化 + confidence 计算固化进 plugin；depends_on=pr-12032 ← 真实长对话路径触发 codec bug 必崩，需等修复 PR 合并 + CLI 发版 | 🟡 中 | Hypothesis | `pr-12032` | `B-cli-codec-bug` |
 | `issue-11944` | GitHub #11944 跟进 | SDK 迁移时间线（影响 VS Code 扩展 plugin 系统恢复） | 🟡 中 | Verified | — | — |

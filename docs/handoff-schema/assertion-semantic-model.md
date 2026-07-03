@@ -1,12 +1,12 @@
-# Assertion 语义模型（讨论材料 · 未定稿）
+# Assertion 语义模型（决策版）
 
-> **状态**：讨论材料 / 思考笔记，**未定稿**，等待语义模型决策。
+> **状态**：**决策版**——核心结论已定（§4 四属性 / §5 原则 / §7 决策记录 / §10 元规则）。实施待推进。
 >
-> **生命周期**：handoff-schema 功能开发期产出。决策落地后内容会迁移到正式文档（schema/design/project-rules），本文件可归档或删除。
+> **生命周期**：handoff-schema 功能开发期产出。实施后内容迁移到正式文档（schema §0 原则 / §1 对象定位调整 / project-rules 消费规则），本文件归档或删除。
 >
-> **不适用范围**：本文件不是规则文档，不强制下游遵循。仅在下次会话作为讨论起点。
+> **不适用范围**：本文件不是规则文档，不强制下游遵循。实施前仅作为决策记录。
 >
-> **源由**：2026-07-03 会话——schema-v2-snapshot 过度打包事件复盘后，发现现有 schema 字段视角不足以解释"为什么 confidence 标注没生效"，进而抽象到 Assertion 语义模型。本文档记录从症状到抽象的完整推演过程。
+> **源由**：2026-07-03 会话——schema-v2-snapshot 过度打包事件复盘后，发现现有 schema 字段视角不足以解释"为什么 confidence 标注没生效"，进而抽象到 Assertion 语义模型。本文档记录从症状到抽象的完整推演 + 决策结论。
 
 ---
 
@@ -145,7 +145,7 @@ GPT 建议并列 Source + Justification。讨论中调整为：
 
 理由：以后一定会想加 link / commit / PR / 文件 / line / 实验编号——如果只有 `Source: Test`，迟早又要扩展。所以 Evidence 应该是一个对象，Source Type 是它的 `kind` 子属性。
 
-### 4.3 Evidence.kind 枚举（本地化待定）
+### 4.3 Evidence.kind 枚举（已定 5 档）
 
 GPT 给的 5 档：Code / Test / Discussion / Inference / Guess。
 
@@ -161,7 +161,12 @@ GPT 给的 5 档：Code / Test / Discussion / Inference / Guess。
 | Inference | 基于已有断言推断 |
 | ~~Guess~~ | 改为 `None`（用 confidence 表达）|
 
-是否合用，待讨论。
+**Inference vs None 边界（必须写死，防误用）**：
+
+- **Inference**：基于已有断言推导，**有可追溯的上游 Assertion**。例："codec bug 阻塞长对话路径"基于 §1.15 现象 + 调研断言推导
+- **None**：无任何来源，纯判断
+
+**反面教材**（起源事件）：上一会话写的 `depends_on = pr-12032` 既没标 Inference（没指出上游断言）也没标证据，属于"**伪装成事实的 None**"——下游采信为事实，直到用户提问才核查发现过度打包。把这个例子写进枚举定义，防止同类误用。
 
 ### 4.4 Claim / Evidence / Justification 的关系
 
@@ -183,13 +188,17 @@ Claim:
   depends_on = pr-12032
 ```
 
-### 4.5 Confidence 在新模型下的定位
+### 4.5 Confidence 在新模型下的定位（已定：条件必填）
 
-- 保留为 Assertion 的属性
-- 但降级为**辅助**——下游次要看，主要看 Evidence + Justification
-- GPT 建议放最后；讨论中保留必填但弱化权重
+**决策**：Confidence **条件必填**——`Evidence.kind = None` 时必填，其他档可选。
 
-待讨论：是否仍必填？还是 Evidence.kind = None 时才必填？
+理由（接受 GPT 判断 + 推进一步）：
+- 当 Evidence 和 Justification 都充分时，confidence 是可从证据强弱**推导**的冗余信息
+- 只有当 `kind = None`（即 §4.3 替代 Guess 的那档）时，confidence 才承担不可替代的表达职责
+- **confidence 的必填性应该和 Evidence 的强弱挂钩**，而不是无条件必填
+- 这呼应 §5 原则——"低成本重新评估"靠的是 Evidence+Justification，confidence 只是在证据缺位时的兜底信号
+
+GPT 建议放最后（弱化）；讨论中保留为 Assertion 属性但**条件必填**——比"必填但降级"更符合模型内在逻辑。
 
 ---
 
@@ -243,42 +252,59 @@ V2 schema 字段是载体层的合理表达。如果 Assertion 模型定下来�
 
 ---
 
-## 7. 冻结的待决策问题
+## 7. 决策记录（2026-07-03 已定）
 
-### Q1：handoff 保存的基本单位 = Assertion？
+### Q1：基本单位 = Assertion ✅ 已确认
 
-倾向：**是**。V2 五类对象是载体分类，Assertion 是基本单位，两者正交。
+**决策**：handoff 保存的基本单位是 Assertion。V2 五类对象是载体分类，Assertion 是基本单位，两者正交不冲突。
 
-待确认。
+**依据**：通过两个检验——
+- **解释力**：能解释起源事件——confidence 标注了却没生效，因为下游继承的是 Claim，而 Claim 缺 Evidence/Justification，confidence 只是给整条 item 贴了标签，无法阻止下游直接采信 `depends_on`
+- **正交性**：V2 五类对象是载体分类（按内容性质分），Assertion 是语义单位（按语义性质分），一个 Handoff 对象含多条 Assertion
 
-### Q2：Assertion 最小语义模型 = Claim / Evidence / Justification / Confidence？
+**代价**：承认"schema 从模型反推"路线，V2 字段最终要被重新组织。§6.3 用"不立即重写"做缓冲，避免一确认就触发大规模改动重蹈局部修补覆辙。
 
-倾向：**是**，四属性。
+### Q2：四属性最小模型 ✅ 已确认
 
-两个细节待定：
-- **Evidence 是否含 `kind` 子属性**——倾向有（Code/Test/Discussion/Inference/None）
-- **Confidence 是否仍必填**——倾向保留必填但降级为辅助
+**决策**：Assertion 最小语义模型 = Claim / Evidence / Justification / Confidence。
 
-### Q3：Evidence.kind 枚举是否定死？
+**两个子问题决策**：
+- **Evidence 含 `kind` 子属性** ✅——Evidence 是对象不是标量，kind 是它的子属性（Code/Test/Discussion/Inference/None）
+- **Confidence 条件必填** ✅——`Evidence.kind = None` 时必填，其他档可选（详见 §4.5）
 
-倾向：**先定 5 档**（Code/Test/Discussion/Inference/None），但留扩展空间。
+### Q3：Evidence.kind 枚举 ✅ 已定 5 档
 
-### Q4：高层原则写在哪个文档？
+**决策**：Code / Test / Discussion / Inference / None（详见 §4.3）。
 
-候选：
-- `schema-semantic-object-model.md` §0 设计原则（最高位）
-- `evidence-governance.md` 新章节
-- 单独文档
+**Inference vs None 边界**（必须写死，防误用）：
+- Inference：基于已有断言推导，有可追溯的上游 Assertion
+- None：无任何来源，纯判断
 
-### Q5：消费层规则（默认核查高风险字段）写哪里？
+**反面教材**：起源事件 `depends_on = pr-12032` 既没标 Inference 也没标证据，属于"伪装成事实的 None"。
 
-属于行为规则，但 dev-rules 已冻结。候选：
-- `handoff-schema/project-rules.md`（功能专属）
-- 等第二阶段开始时写入 dev-rules.md
+### Q4：高层原则位置 ✅ 已定
 
-### Q6：V2 五类对象的定位怎么调整？
+**决策**：写入 `schema-semantic-object-model.md` §0 设计原则（最高位）。
 
-从"语义对象模型"调整为"Assertion 的载体分类"——文档表述需要更新，但字段定义不变。
+**理由**：
+- 原则约束的是系统而非字段
+- `evidence-governance` 视角偏字段级（confidence 三档），把系统级原则塞进去会造成层次错配
+- 放在语义对象模型最高位，正好统领 V2 对象和 Assertion 两套东西
+
+### Q5：消费层规则位置 ✅ 已定
+
+**决策**：短期写入 `handoff-schema/project-rules.md`，标注"待第二阶段迁入 dev-rules"。
+
+**理由**：
+- dev-rules 已冻结是硬约束
+- 消费规则本质普适，但功能专属化是过渡
+- 标注"待迁入"避免忘记真实归属（与 §8 对 §6 的处理一致）
+
+### Q6：V2 五类对象定位调整 ✅ 已定
+
+**决策**：从"语义对象模型"调整为"Assertion 的载体分类"——字段定义不变，仅表述更新。
+
+**风险**：低。唯一要做的是确保 `schema-semantic-object-model.md` 的标题/首段不再暗示"五类对象是最小语义单位"，否则和 Q1 结论矛盾。
 
 ---
 
@@ -320,20 +346,54 @@ Assertion 语义模型决策落地后：
 读以下文档：
 - `docs/handoff.md`（会话快照 + 未完成项表）
 - `docs/handoff-schema/project-rules.md`（含 §6 v0 过渡版）
-- `docs/handoff-schema/assertion-semantic-model.md`（本文档）
+- `docs/handoff-schema/assertion-semantic-model.md`（本文档，决策版）
 
-### 9.2 待推进的决策
+### 9.2 待推进的实施（决策已定，进入实施阶段）
 
-1. 确认 §7 Q1（基本单位 = Assertion）
-2. 确认 §7 Q2（四属性最小模型）
-3. 讨论 §7 Q3-Q6（枚举 / 原则位置 / 消费规则位置 / V2 对象定位调整）
-4. 决策落地后才动 schema / project-rules 文档
+按以下顺序推进，每步前用 §10 元规则自检：
+
+1. **schema §0 加原则**——`schema-semantic-object-model.md` 新增 §0 设计原则（§5 高层原则措辞）
+2. **schema 标题/首段调整**——不再暗示"五类对象是最小语义单位"（Q6）
+3. **schema 新增 Assertion 模型定义**——§1.0 之前或 §0 之后，定义 Claim / Evidence / Justification / Confidence 四属性 + Evidence.kind 枚举 + Inference vs None 边界
+4. **handoff-schema/project-rules.md 新增消费层规则**——高风险字段默认核查，标注"待第二阶段迁入 dev-rules"（Q5）
+5. **§6 处理**——等上述 1-4 落地后，§6 内容迁移到 Assertion 模型 Justification 属性，§6 本身删除
+6. **V2 字段表达重写**——最后一步，由 Assertion 模型反推（不立即做，等 1-5 稳定）
 
 ### 9.3 暂不推进的项
 
-- 不立即改 schema V2 字段表达
-- 不立即扩展 §6（保持 v0 过渡版）
-- 不立即 commit 任何模型改动——先讨论清楚
+- 不立即重写 V2 五类对象字段表达（保持 §6.3 缓冲）
+- 不立即扩展 §6（保持 v0 过渡版直到第 5 步）
+
+---
+
+## 10. 元规则：自检问题（防止复发）
+
+> **每个决策前问自己：这个方案是不是又在打字段补丁？**
+
+### 10.1 起源
+
+§8 失败模式（`§6 → justification → source → confidence → schema` 的连环局部修补）和 §2.3"字段视角本身是错的"是同一件事的两种表述。
+
+### 10.2 自检问题
+
+如果某个方案又回到了"加一个字段"——那它多半没抽象到 Assertion 层。
+
+### 10.3 应用方式
+
+后续每个决策（无论 schema 改动 / 规则增补 / handoff 模板调整）前，先回答：
+- 这个改动是在**加字段**还是在**显式化已有 Assertion 属性**？
+- 如果是加字段：**问自己为什么**——是不是又陷入字段视角？
+- 如果是显式化属性：通过——继续推进
+
+### 10.4 元规则的价值
+
+这条元规则比任何单个字段决策都更能防止复发——因为它约束的是**思考方式**，不是具体字段。
+
+**示例应用**：
+- ❌ "给 Hypothesis 条目加推理链字段"——字段补丁
+- ✅ "Assertion 模型 Justification 属性在 handoff.md 的表达"——属性显式化
+- ❌ "给 depends_on 加 source 字段"——字段补丁
+- ✅ "Assertion 模型 Evidence.kind 子属性在 handoff.md 的表达"——属性显式化
 
 ---
 
