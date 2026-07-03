@@ -10,7 +10,7 @@
 >
 > **与 `.clinerules` 的关系**：`.clinerules` 约束模型**执行行为**（遇不明确条件即停止询问）；本文件约束**执行主体边界与方法论**。两者互补，不重叠。
 >
-> **当前状态**：🔴 冻结（2026-07-03 回冻）— handoff-schema 功能开发未结束，按 [本文件 L518 维护节奏](#) 保持冻结。上一会话 `dev-rules-unfreeze` 决策自创"第一阶段验收通过即解冻"条件，与 L518"功能开发结束"判据不等价（第一阶段完成 ≠ 整个功能开发结束），已 superseded。V2 改动继续沉淀在 [handoff-schema/project-rules.md](handoff-schema/project-rules.md)，待 handoff-schema 功能整体结束、进入交接期时再评估迁入。
+> **当前状态**：🟢 解冻（2026-07-03 handoff-schema 收口）— handoff-schema 功能整体结束，按 [本文件 L518 维护节奏](#) 进入交接期评估。project-rules.md 已归档至 [archive/handoff-schema-project-rules.md](archive/handoff-schema-project-rules.md)，预期迁入项为空（无规则迁入 dev-rules）。V2 改动历史见归档文件。thin-adapter-layer 作为新功能启动，需新建 `project-rules-thin-adapter.md` 沉淀其专属规则。
 
 ---
 
