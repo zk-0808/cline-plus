@@ -25,6 +25,7 @@
 
 | ID | 日期 | 主题 | 状态 | 标题 |
 |----|------|------|------|------|
+| [ADR-006-native-mechanism-first-principle](adr/ADR-006-native-mechanism-first-principle.md) | 2026-07-03 | global | active | **原生机制优先原则（元原则）** — "完美利用 cline 的原生机制"提升到最高级；审计 `schema-v2-snapshot-align` 违反 ADR-005 拆分原则的具体点；砍 `snapshot-trigger-tuning`；分支 A（schema/handoff.md）保留，分支 B（snapshot/compaction）砍/缩/转；待实测回答"cline 原生 condense 丢了什么 handoff 语义"完成最终裁决 |
 | [D-2026-06-28-cline-v401-sdk-rollback](D-2026-06-28-cline-v401-sdk-rollback.md) | 2026-06-28 | global | active | Cline v4.0.1 SDK 迁移回滚事件记录 — v4.0.0 引入 Plugins + Customize marketplace 但出现回归，v4.0.1 回退到 3.89.2 pre-SDK 代码基。**此事件是项目从 VS Code 扩展转 CLI 验证 plugin 的直接触发原因**（VS Code 端 plugin 系统随回滚消失） |
 | [ADR-004-p5-spike-pause](adr/ADR-004-p5-spike-pause.md) | 2026-06-27 | global | **superseded** | ~~P5 Plugin Spike 暂停（实验环境前提动摇）~~ — 已被 [ADR-005](adr/ADR-005-split-compact-from-handoff.md) 取代：compaction/handoff 拆分 + context-snapshot 插件继承架构路径。目录就地归档（DEPRECATED.md） |
 | [D-2026-06-26-search-adopt-mcp-throttle-wrapper](search/D-2026-06-26-search-adopt-mcp-throttle-wrapper.md) | 2026-06-26 | search-orchestrator | active | 采纳 MCP 反-bot 节流 wrapper（方案 C：强制 max_results≤10 + 跨调用状态 + 指数退避）— 对应 #24，Run #14 功能性验证通过（3 次熔断正确触发指数退避，fetch 独立通道不受影响） |

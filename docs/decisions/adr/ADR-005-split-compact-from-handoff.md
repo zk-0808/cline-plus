@@ -1,6 +1,6 @@
 # ADR-005: 拆分 Compaction 与 Handoff
 
-- **Status**: Accepted
+- **Status**: Accepted（拆分原则保留；实现方式部分被 [ADR-006](ADR-006-native-mechanism-first-principle.md) Supersede——compact-observer 改为 hook 原生 condense 事件，不做自研 token 判断）
 - **Date**: 2026-06-28
 - **Deciders**: 项目所有者
 - **Supersedes**: ADR-001 中关于 compact 双产物的部分（A 方案的实现方式）
