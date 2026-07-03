@@ -11,6 +11,7 @@
 | `handoff-statement-simplify` | handoff.md 末尾两处交接语句精简：去赘述（决策/净变化/状态已在结构化部分），仅保留读文档指引 | Verified | — |
 | `dev-rules-unfreeze` | dev-rules 🔴 冻结 → 🟢 解冻（第一阶段验收通过 + V2 文档层改进完成，解冻条件命中）| Verified | `v2-doc-completed` |
 | `mapping-test-rerun` | V2 schema 落地后无损映射测试重跑 11/11 通过（拆分后条目 9→11，六字段全覆盖，前缀规则无违反）| Verified | `v2-doc-completed` |
+| `snapshot-v2-decouple` | 解耦 `schema-v2-snapshot` → `schema-v2-snapshot-align`（不依赖 PR，字段对齐+短对话实测）+ `schema-v2-snapshot-e2e`（依赖 PR，长对话实测+frontmatter+confidence 固化）；纠正原"snapshot schema 化整体阻塞"过度打包 | Verified | `v2-doc-completed` |
 
 ## 本会话净变化
 
@@ -67,7 +68,8 @@
 |----|------|------|--------|-----------|------------|-------------|
 | `handoff-schema-v2-doc` | schema V2 文档层改进 | 补 `depends_on` 字段 + 明确 `blocker_ref` vs `depends_on` 区分规则（`B-` 前缀 = Blocker）；不依赖 PR，本会话推进 | 🟡 中 | Hypothesis | — | — |
 | `handoff-schema-v2-kind-exit` | kind/exit_when 显式化 | 在 handoff.md 未完成项表中显式标注 `[kind] exit_when`（V2 延伸项，可选）| 🟢 低 | Hypothesis | — | — |
-| `schema-v2-snapshot` | snapshot schema 化（第二阶段）| context-snapshot plugin 产出的 snapshot 应用同一套语义对象模型 + frontmatter 显式化 | 🟡 中 | Hypothesis | `pr-12032` | — |
+| `schema-v2-snapshot-align` | snapshot 数据模型对齐 schema V2 | types.ts 字段对齐（id/枚举/HandoffRecord 替代 TodoRecord）+ extractors 调整 + 短对话实测（workaround 路径）；不依赖 PR | 🟡 中 | Hypothesis | — | — |
+| `schema-v2-snapshot-e2e` | snapshot 真实长对话实测 | 真实 90K+ token 长对话路径实测 + frontmatter 显式化 + confidence 计算固化进 plugin | 🟡 中 | Hypothesis | `pr-12032` | `B-cli-codec-bug` |
 | `issue-11944` | GitHub #11944 跟进 | SDK 迁移时间线（影响 VS Code 扩展 plugin 系统恢复） | 🟡 中 | Verified | — | — |
 | `pr-12032` | PR #12032 合并监控 | CLI codec bug 修复 PR（Open），合并 + CLI 发版后触发 §1.15 解除流程 7 步 | 🟡 中 | Verified | — | — |
 | `vscode-monitor` | 监控 VS Code release | 关键词 Plugins / registerMessageBuilder | 🟢 低 | Verified | `issue-11944` | — |
@@ -92,10 +94,11 @@
 ```
 
 **后续动作**（无紧急项）：
-1. **🟢 低：kind/exit_when 显式化** — `handoff-schema-v2-kind-exit` 延伸项（可选）
-2. **🟡 中：跟进 GitHub #11944** — SDK 迁移时间线（影响 VS Code 扩展 plugin 系统恢复）
-3. **🟡 中：监控 PR #12032** — CLI codec bug 修复 PR，合并 + 发版后触发 §1.15 解除流程 + 第二阶段 snapshot schema 化
-4. **🟢 低：2026-08-01 到期** — mechanism-candidates #17/#19/#24 移入归档
-5. **🟢 低：2026-08-02 下次审查** — 按 dev-rules §6.5 触发条件执行
-6. **🟢 低：stale 扫描** — mechanism-candidates #1/#2/#3 长期候选评估
-7. **🟢 低：第四档暂缓项** — D1/D3/D4/D6/D7 + G4-G5 + H3/H6 + I1-I3
+1. **🟡 中：snapshot 数据模型对齐 schema V2** — `schema-v2-snapshot-align`（不依赖 PR，可立即推进）
+2. **🟢 低：kind/exit_when 显式化** — `handoff-schema-v2-kind-exit` 延伸项（可选）
+3. **🟡 中：跟进 GitHub #11944** — SDK 迁移时间线（影响 VS Code 扩展 plugin 系统恢复）
+4. **🟡 中：监控 PR #12032** — CLI codec bug 修复 PR，合并 + 发版后触发 §1.15 解除流程 + `schema-v2-snapshot-e2e`
+5. **🟢 低：2026-08-01 到期** — mechanism-candidates #17/#19/#24 移入归档
+6. **🟢 低：2026-08-02 下次审查** — 按 dev-rules §6.5 触发条件执行
+7. **🟢 低：stale 扫描** — mechanism-candidates #1/#2/#3 长期候选评估
+8. **🟢 低：第四档暂缓项** — D1/D3/D4/D6/D7 + G4-G5 + H3/H6 + I1-I3
