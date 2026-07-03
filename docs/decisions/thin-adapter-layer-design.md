@@ -233,8 +233,14 @@ messageBuilder 在原生 condense **之前**执行（§3.2），无法直接检�
 | beforeModel 时序假设错误（compaction 后不触发）| 中 | 高 | 退回方案 B+A；需实测验证 |
 | metadata.kind 字段不存在（A/B/C 源码分析有误）| 中 | 中 | 方案 A 长度突变 fallback |
 | codec bug 在 beforeModel 路径复发 | 低 | 高 | ContentBlock[] 格式规避（已验证模式）|
-| handoff.md 被频繁覆写导致丢失 | 中 | 高 | 每次覆写前 git commit；或改为追加模式 |
+| snapshot 文件被频繁覆写导致历史丢失 | 中 | 中 | 当前实现每次 condense 覆写（与原 compact-observer 行为一致）；历史归档可作为延伸项 |
 | Verification/Blocker/Handoff 三类 extractor 缺失 | 高 | 中 | 阶段 2 可先复用现有 4 类，三类新增作为延伸项 |
+
+> **概念澄清**：本项目中"snapshot 文件"与"`docs/handoff.md`"是两个不同概念——
+> - **snapshot 文件**：cline 产物（plugin 自动生成），存储于 `getSnapshotDir()` 下，5 段式 Markdown，4 类对象，机器生成机器消费
+> - **`docs/handoff.md`**：本项目交接文档（人 + AI 协作维护），schema V2 五类对象，会话级覆写，人可读可改
+>
+> 薄适配层审批结果（§10）只写 snapshot 文件，**不写** `docs/handoff.md`——后者由人 + AI 协作维护，plugin 自动覆写会破坏人工内容。
 
 ---
 
@@ -244,7 +250,7 @@ messageBuilder 在原生 condense **之前**执行（§3.2），无法直接检�
 2. **形态选择**：修改 context-snapshot / 新建独立 plugin / 重构 context-snapshot 为两阶段？
 3. **门控范围**：thin-adapter-layer 不属于 handoff-schema 子项目，门控不适用——确认？
 4. **阶段化推进**：阶段 1 清理先做 / 阶段 1+2 合并 / 其他？
-5. **输出目标**：写 handoff.md（覆写）/ 写 handoff.md（追加）/ 仍写 snapshot 文件 + 链接到 handoff.md？
+5. **输出目标**：写 `docs/handoff.md`（本项目交接文档，覆写）/ 写 `docs/handoff.md`（追加）/ 仍写 snapshot 文件（cline 产物）+ 链接到 handoff.md？
 6. **五类对象**：阶段 2 先复用现有 4 类 / 必须补齐 5 类？
 
 ---
@@ -256,7 +262,7 @@ messageBuilder 在原生 condense **之前**执行（§3.2），无法直接检�
 | **触发机制** | ✅ 方案 E（beforeModel hook）| 首选方案确定；需实测验证 beforeModel 在 compaction 后触发的时序；codec bug 用 ContentBlock[] 规避 |
 | **形态选择** | ✅ 重构 context-snapshot 两阶段 | 阶段 1 清理 + 阶段 2 薄适配层；复用现有 extractors + snapshot-writer |
 | **门控范围** | ⚠️ **门控适用**（与设计文档 §5.2 "不适用"解读相反）| **thin-adapter-layer 被 [handoff-schema/project-rules.md §5](../handoff-schema/project-rules.md) "不做 plugin 代码推进"门控阻塞**——需先解除 handoff-schema 子项目或等其收口 |
-| **输出目标** | ✅ 仍写 snapshot 文件 | 薄适配层**不写 handoff.md**；只改触发机制（自研 shouldCompact → beforeModel 检测原生 condense）；产物仍是 `getSnapshotDir()` 下 snapshot 文件 |
+| **输出目标** | ✅ 仍写 snapshot 文件（cline 产物） | 薄适配层**不写 `docs/handoff.md`（本项目交接文档）**；只改触发机制（自研 shouldCompact → beforeModel 检测原生 condense）；产物仍是 `getSnapshotDir()` 下 snapshot 文件（5 段式 Markdown，4 类对象，机器生成）；`docs/handoff.md` 继续由人 + AI 协作维护 |
 
 ### 10.1 范围收窄
 
