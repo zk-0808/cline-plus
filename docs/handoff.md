@@ -27,7 +27,7 @@
 
 - **阶段 1 清理**（上会话，commit `8671de0`）：删 `buildCompactionSummary` 死代码 + `shouldCompact` + `estimateTokens` + 自研常量（compaction.ts 从 166 行减到 38 行）
 - **阶段 2 实现**（上会话，commit `8671de0`）：messageBuilder `snapshot-source-saver`（compaction 前保存完整 messages）+ `beforeModel` hook（长度突变检测 + 用完整 messages 写 snapshot）
-- **本会话：调试日志 + bug 修复**：index.ts 添加 `debugLog()` 时序验证日志（写入 `~/.cline/data/snapshot/timing-verify.log`）；修复 pre-existing `ToolRecorder` → `ToolCallRecorder` 命名 bug；tsc --noEmit 通过；已部署到 `~/.cline/plugins/installed/local/context-snapshot/src/`（**调试代码待清理**——验证完成后需删除 `debugLog` 相关代码）
+- **本会话：时序实测验证**（commit `3358a7b`）：index.ts 临时添加 `debugLog()` 验证 messageBuilder→beforeModel 时序（101ms gap 确认），验证完成后删除（submodule 净变化为零）；investigation-note 文档记录 H1/H2/H3 三假设验证结果
 
 ### CLI 3.0.34 bundle 源码探查（本会话新发现）
 
@@ -51,12 +51,14 @@
 | `8671de0` | context-snapshot (submodule) | feat(thin-adapter): 阶段1清理+阶段2实现 - 删自研shouldCompact+beforeModel协作方案 |
 | `88c5b5a` | cline-plus (父仓库) | feat(thin-adapter): 薄适配层阶段1+2 - project-rules + context-snapshot submodule 更新 |
 | `ea9b215` | cline-plus (父仓库) | docs(thin-adapter): 概念澄清 - 区分 cline 产物(snapshot文件) 与 本项目交接文档(docs/handoff.md) |
+| `3358a7b` | cline-plus (父仓库) | docs(timing-verify): beforeModel 时序实测验证 - H1/H2 Verified + H3 Likely |
+| `3703b53` | cline-plus (父仓库) | feat(hook-injection): #6 Continue Previous Project + #25 commit 守卫 → hook 自动注入架构设计 |
 
 ## 未完成项
 
 | id | 方向 | 说明 | 优先级 | confidence | depends_on | blocker_ref |
 |----|------|------|--------|-----------|------------|-------------|
-| `thin-adapter-bm-timing-verify` | beforeModel 时序实测验证 | **已完成** — H1 hook 顺序 Verified（源码 + 短对话实测双源）；H2 codec bug 规避 Verified（V6 + 本次）；H3 metadata.kind 源码 Verified 实测 pending（180K 阈值阻塞，等 PR #12032 长对话补测）；调试代码待清理（index.ts debugLog + timing-verify.log）| 🟢 低 | Verified | `thin-adapter-mb-bm-collaboration` | — |
+| `thin-adapter-bm-timing-verify` | beforeModel 时序实测验证 | **已完成** — H1 hook 顺序 Verified（源码 + 短对话实测双源）；H2 codec bug 规避 Verified（V6 + 本次）；H3 metadata.kind 源码 Verified 实测 pending（180K 阈值阻塞，等 PR #12032 长对话补测）；调试代码已清理（submodule 净变化为零）| 🟢 低 | Verified | `thin-adapter-mb-bm-collaboration` | — |
 | `native-condense-semantic-audit` | cline 原生 condense 语义丢失点探查 | **已完成** — 判定做 §3.3 薄适配层；薄适配层已实现（阶段 1+2），待实测验证 | 🟡 中 | Verified | — | — |
 | `handoff-schema-v2-kind-exit` | kind/exit_when 显式化 | handoff-schema 已收口，此延伸项转为独立可选项 | 🟢 低 | Hypothesis | — | — |
 | `assertion-semantic-model` | Assertion 语义模型 | 第 1-5 步已完成；第 6 步 V2 字段表达重写按材料 §9.3 暂缓保持缓冲；handoff-schema 已收口，后续推进作为独立项 | 🟡 中 | Verified | — | — |
@@ -68,11 +70,11 @@
 | `h2-h3-evidence` | 补证 H2/H3 | image 分支 undefined 丢弃（受 §1.15 阻塞，等 PR #12032）| 🟢 低 | Hypothesis | `pr-12032` | `B-cli-codec-bug` |
 | `next-audit` | 下次文档健康度审查 | 2026-08-02（30 天后），按 §6.5 触发条件执行 | 🟢 低 | Verified | — | — |
 | `tier4-deferred` | 第四档暂缓项 | D1/D3/D4/D6/D7 + G4-G5 + H3/H6 + I1-I3 + 根因4 | 🟢 低 | Hypothesis | — | — |
-| `mech-stale-scan` | mechanism-candidates stale 扫描 | #1/#2/#3 长期候选无进展（>90 天），评估保留/降级/删除 | 🟢 低 | Verified | — | — |
+| `mech-stale-scan` | mechanism-candidates stale 扫描 | **已完成** — #1/#2/#3 评估为"不跟进"（stale >90 天，等 VS Code 插件恢复）| 🟢 低 | Verified | — | — |
 
 ## 权威源
 
-[dev-rules.md](dev-rules.md)（🟢 解冻）· [evidence-governance.md](evidence-governance.md) · [governance-procedure.md](governance-procedure.md) · [reviewer-personas.md](reviewer-personas.md) · [mechanism-candidates.md](mechanism-candidates.md) · [project-rules-thin-adapter.md](project-rules-thin-adapter.md)（功能专属，活跃执行）· [decisions/schema-semantic-object-model.md](decisions/schema-semantic-object-model.md) · [decisions/adr/ADR-006-native-mechanism-first-principle.md](decisions/adr/ADR-006-native-mechanism-first-principle.md) · [decisions/thin-adapter-layer-design.md](decisions/thin-adapter-layer-design.md) · [archive/handoff-schema-project-rules.md](archive/handoff-schema-project-rules.md)（已归档）· [decisions/investigation/investigation-note-native-condense-synthesis.md](decisions/investigation/investigation-note-native-condense-synthesis.md)（A/B/C 综合报告）· [decisions/investigation/investigation-note-native-condense-c-hooks.md](decisions/investigation/investigation-note-native-condense-c-hooks.md)（hook 暴露面，beforeModel 时序证据）· [decisions/investigation/investigation-note-beforemodel-timing-verify.md](decisions/investigation/investigation-note-beforemodel-timing-verify.md)（**本会话** beforeModel 实测验证报告）
+[dev-rules.md](dev-rules.md)（🟢 解冻）· [evidence-governance.md](evidence-governance.md) · [governance-procedure.md](governance-procedure.md) · [reviewer-personas.md](reviewer-personas.md) · [mechanism-candidates.md](mechanism-candidates.md) · [project-rules-thin-adapter.md](project-rules-thin-adapter.md)（功能专属，活跃执行）· [decisions/schema-semantic-object-model.md](decisions/schema-semantic-object-model.md) · [decisions/adr/ADR-006-native-mechanism-first-principle.md](decisions/adr/ADR-006-native-mechanism-first-principle.md) · [decisions/thin-adapter-layer-design.md](decisions/thin-adapter-layer-design.md) · [decisions/hook-auto-injection-design.md](decisions/hook-auto-injection-design.md)（**本会话** hook 自动注入架构设计）· [archive/handoff-schema-project-rules.md](archive/handoff-schema-project-rules.md)（已归档）· [decisions/investigation/investigation-note-native-condense-synthesis.md](decisions/investigation/investigation-note-native-condense-synthesis.md)（A/B/C 综合报告）· [decisions/investigation/investigation-note-native-condense-c-hooks.md](decisions/investigation/investigation-note-native-condense-c-hooks.md)（hook 暴露面，beforeModel 时序证据）· [decisions/investigation/investigation-note-beforemodel-timing-verify.md](decisions/investigation/investigation-note-beforemodel-timing-verify.md)（**本会话** beforeModel 实测验证报告）
 
 > **新会话首动作**：读 [handoff.md](handoff.md) + [dev-rules.md](dev-rules.md) + [project-rules-thin-adapter.md](project-rules-thin-adapter.md)。其余状态以这三份文档自述为准。
 
@@ -93,5 +95,5 @@
 6. **🟢 低：kind/exit_when 显式化** — `handoff-schema-v2-kind-exit` 延伸项（可选）
 7. **🟢 低：2026-08-01 到期** — mechanism-candidates #17/#19/#24 移入归档
 8. **🟢 低：2026-08-02 下次审查** — 按 dev-rules §6.5 触发条件执行
-9. **🟢 低：stale 扫描** — mechanism-candidates 已评估 #1/#2/#3（降级为不跟进）
+9. **✅ 已完成：stale 扫描** — mechanism-candidates #1/#2/#3 已评估为不跟进
 10. **🟢 低：第四档暂缓项** — D1/D3/D4/D6/D7 + G4-G5 + H3/H6 + I1-I3
