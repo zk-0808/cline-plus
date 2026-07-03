@@ -61,21 +61,23 @@
 
 每当 schema 字段变更或 handoff.md 结构变更时，必须执行一次无损映射测试：
 - 当前 `docs/handoff.md` 未完成项表所有条目全部映射为结构化 Handoff 对象
-- 字段无遗漏（id / kind / exit_when / confidence / blocker_ref 五字段全覆盖）
-- 依赖链完整（depends_on / blocker_ref 指向的 ID 在 schema 中存在）
+- 字段无遗漏（id / kind / exit_when / confidence / depends_on / blocker_ref 六字段全覆盖，V2 起）
+- 依赖链完整（`depends_on` 指向其他 Handoff ID；`blocker_ref` 指向 Blocker ID，必须以 `B-` 前缀标识）
+- 前缀规则无违反（`depends_on` 列中不应出现 `B-` 前缀；`blocker_ref` 列中不应出现非 `B-` 前缀）
 
 ### 4. 验收查询（成功标准之一）
 
 给全新 agent 只喂 schema 产物（不喂 handoff.md 原文），让它回答"如果 codec bug 修复，哪些阻塞项会自动解锁？"——答得出依赖链才算到位。
 - 查询方式：遍历未完成项中所有 `blocker_ref == B-cli-codec-bug` 的 Handoff 对象
-- 当前预期答案：`h2-h3-evidence`（`blocker_ref = B-cli-codec-bug`），其余 8 项无此 blocker
+- 当前预期答案：`h2-h3-evidence`（V2 后显式标注 `blocker_ref = B-cli-codec-bug`），其余 9 项无此 blocker
 
 ### 5. 不做的事
 
 - **不做** snapshot schema 化（第二阶段，等 PR #12032 合并 + CLI 发版后跟进）
 - **不做** plugin 代码推进（mechanism-candidates #5/#6 仍候选）
-- **不修改** `docs/handoff.md` 现有未完成项内容（仅扩展结构，不改变语义）
+- **不修改** `docs/handoff.md` 现有未完成项的语义内容（V2 仅扩展结构——新增 `blocker_ref` 列承载已识别的 Blocker 关系，不改变现有条目的方向/说明语义）
 - **不预写**未来阶段的字段（如 snapshot 专属字段，等第二阶段再加）
+- **不做** `kind` / `exit_when` 在 handoff.md 中的显式标注（延伸项 `handoff-schema-v2-kind-exit`，可选推进）
 
 ---
 
