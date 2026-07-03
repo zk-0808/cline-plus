@@ -1,6 +1,8 @@
-# Project Rules — handoff-schema（功能专属开发期约束）
+# Project Rules — handoff-schema（功能专属开发期约束）⚠️ 已归档
 
-> **生命周期**：功能绑定 — handoff.md 语义对象模型第一阶段，验收通过后归档（跨功能通用规则迁入 dev-rules.md）。
+> **状态**：⚠️ 已归档（2026-07-03 handoff-schema 收口）— 成功标准已满足（schema V2 §1.5 + Assertion 模型第 1-5 步 + 无损映射 9/9 + 验收查询可回答），剩余项（assertion-semantic-model 第 6 步暂缓 + handoff-schema-v2-kind-exit 可选）不阻塞收口。预期迁入项为空，无规则迁入 dev-rules.md。thin-adapter-layer 作为新功能启动，门控解除。
+>
+> **生命周期**：功能绑定 — handoff.md 语义对象模型第一阶段，验收通过后归档（跨功能通用规则迁入 dev-rules.md）。✅ 已归档。
 >
 > **范围**：仅在 handoff-schema 功能开发期间生效。功能稳定后此文件可整体删除。
 >
