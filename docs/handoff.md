@@ -1,4 +1,4 @@
-# Handoff — schema V2 文档层改进 + 交接语句精简 + dev-rules 解冻
+# Handoff — schema V2 §1.5 snapshot 对齐完成 + 触发阈值评估
 
 > **生命周期**：每次覆写，无归档——会话交接文件。
 
@@ -6,10 +6,12 @@
 
 | id | 决策 | confidence | depends_on |
 |----|------|-----------|------------|
-| `v2-doc-completed` | schema V2 文档层改进完成（schema 1.5 补 `depends_on` 字段 + 明确 `blocker_ref` vs `depends_on` 区分规则 `B-` 前缀 + handoff.md 未完成项表新增 `blocker_ref` 列 + `h2-h3-evidence` 显式化双字段并存）| Verified | `handoff-schema-bootstrap` |
+| `schema-v2-snapshot-align-completed` | context-snapshot 对齐 schema V2 §1.5 六字段：types.ts TodoRecord 扩展（id/kind/exitWhen/dependsOn/blockerRef）+ Confidence 词汇表对齐 schema §1.0（high→Verified, medium→Likely, low→Hypothesis）+ todo-extractor 新增 parseHandoffTable() 双 Pass 架构 + ID 前缀自动迁移（depends_on 误写 B- 前缀→blocker_ref）+ formatter/snapshot-writer 六字段表格渲染；S1/S2/S3 回归 100% recall/precision + 短对话实测 4 条目全通过；submodule commit 74429de + 父仓库 commit 538eaa0 已 push | Verified | `snapshot-v2-decouple` |
+| `dev-rules-refreeze` | dev-rules L13 状态从 🟢 解冻回 🔴 冻结（2026-07-03 回冻）；上一会话 `dev-rules-unfreeze` 决策标 superseded；L518 解冻条件精确化为"子项目基本结束、进入交接期时"；project-rules §7 迁入时机同步为"handoff-schema 功能整体结束、进入交接期时" | Verified | — |
+| `snapshot-trigger-analysis` | 评估 snapshot 触发机制对 cache 命中率的防备——发现 COMPACT_AT_RATIO=0.75（compaction.ts:7）高于行业经验值 0.60-0.70；snapshot 为被动响应式（shouldCompact=true 时才写，index.ts:62-75），同 session cache miss 无专门防备；跨 session 恢复有防备（rules-injector.ts buildSnapshotRuleContent 注入 latest snapshot）；建议调低阈值或加预写机制（见未完成项 `snapshot-trigger-tuning`）| Likely | `schema-v2-snapshot-align-completed` |
 | `v2-decouple` | V2 解耦：拆 `handoff-schema-v2` → `handoff-schema-v2-doc`（已完成，不依赖 PR）+ `schema-v2-snapshot`（保留，依赖 PR #12032）+ `handoff-schema-v2-kind-exit`（延伸项，可选）| Verified | `v2-doc-completed` |
 | `handoff-statement-simplify` | handoff.md 末尾两处交接语句精简：去赘述（决策/净变化/状态已在结构化部分），仅保留读文档指引 | Verified | — |
-| `dev-rules-unfreeze` | dev-rules 🔴 冻结 → 🟢 解冻（第一阶段验收通过 + V2 文档层改进完成，解冻条件命中）| Verified | `v2-doc-completed` |
+| `dev-rules-unfreeze` | ~~dev-rules 🔴 冻结 → 🟢 解冻（第一阶段验收通过 + V2 文档层改进完成，解冻条件命中）~~ **[superseded by `dev-rules-refreeze` 2026-07-03]** | Verified | `v2-doc-completed` |
 | `mapping-test-rerun` | V2 schema 落地后无损映射测试重跑 11/11 通过（拆分后条目 9→11，六字段全覆盖，前缀规则无违反）| Verified | `v2-doc-completed` |
 | `snapshot-v2-decouple` | 解耦 `schema-v2-snapshot` → `schema-v2-snapshot-align`（不依赖 PR，字段对齐+短对话实测）+ `schema-v2-snapshot-e2e`（依赖 PR，长对话实测+frontmatter+confidence 固化）；纠正原"snapshot schema 化整体阻塞"过度打包 | Verified | `v2-doc-completed` |
 | `confidence-vocab-fix` | schema §1.0 新增 Confidence 词汇表；修正 §1.3/§1.5 字段描述错误（原写"取值与 §4 一致"但字面不一致，schema 用 Verified/Likely/Hypothesis，§4 用高/中/低，需查表对齐） | Verified | `snapshot-v2-decouple` |
@@ -18,6 +20,27 @@
 | `assertion-model-impl-step1-5` | Assertion 模型实施第 1-5 步完成：schema V2→V3（标题调整 + §0 原则 + §0.2 Assertion 模型定义 + §0.3 五类对象重定位）；project-rules §6 v0→v0.1（Hypothesis 推理链→Assertion Justification 过渡表达）+ §7 新增消费层规则（高风险字段默认核查，待迁入 dev-rules）；第 6 步 V2 字段重写按材料 §9.3 暂不推进保持缓冲 | Verified | `assertion-semantic-model-confirmed` |
 
 ## 本会话净变化
+
+### 治理层（父仓库 cline-plus，commit `538eaa0`）
+
+- `docs/dev-rules.md` L13：状态 🟢 解冻 → 🔴 冻结（2026-07-03 回冻）；L518 解冻条件表述精确化为"子项目基本结束、进入交接期时"
+- `docs/handoff-schema/project-rules.md` §7：迁入时机同步为"handoff-schema 功能整体结束、进入交接期时"；末段 L487 → L518 行号引用同步
+
+### 功能层（submodule context-snapshot，commit `74429de`，push 至 origin/main）
+
+- `src/types.ts`：TodoRecord 扩展六字段（id/kind/exitWhen/dependsOn/blockerRef）；Confidence 类型 `high|medium|low` → `Verified|Likely|Hypothesis`
+- `src/extractors/todo-extractor.ts`：新增 `parseHandoffTable()` 双 Pass 架构（Pass 1 表格解析 + Pass 2 关键词模式 fallback）；4 个辅助函数（normalizeConfidence / parseDependsOn / parseBlockerRef / parsePriority）；ID 前缀自动迁移规则（depends_on 误写 B- 前缀→blocker_ref）
+- `src/extractors/{decision,change,source}-extractor.ts`：Confidence 字面值同步（high→Verified, medium→Likely, low→Hypothesis）
+- `src/formatter.ts`：CONFIDENCE_LABELS 同步
+- `src/snapshot-writer.ts`：renderTodos 六字段表格渲染 + 无 id fallback 三字段格式
+
+### 触发机制评估发现（未修改代码，仅文档记录）
+
+- `COMPACT_AT_RATIO = 0.75`（[compaction.ts:7](file:///e:/cline++/context-snapshot/src/compaction.ts#L7)）高于行业经验 0.60-0.70
+- snapshot 为被动响应式（压缩触发才写），无同 session cache miss 防备机制
+- 详见决策 `snapshot-trigger-analysis` + 未完成项 `snapshot-trigger-tuning`
+
+## 历史净变化（上轮会话，已序列化于历史 commit）
 
 ### 1. schema V1 → V2（`docs/decisions/schema-semantic-object-model.md`）
 
@@ -120,7 +143,8 @@
 
 | Hash | Repo | Message |
 |------|------|---------|
-| （本会话）| cline-plus | feat(handoff-schema): V2 文档层改进 - depends_on 字段 + blocker_ref 显式化 + 解冻 |
+| `74429de` | context-snapshot (submodule) | feat(snapshot): schema V2 §1.5 六字段对齐 - types/extractors/formatter/snapshot-writer |
+| `538eaa0` | cline-plus (父仓库) | feat: schema V2 §1.5 对齐 - dev-rules 回冻 + context-snapshot submodule 升级 |
 
 ## 未完成项
 
@@ -128,8 +152,8 @@
 |----|------|------|--------|-----------|------------|-------------|
 | `handoff-schema-v2-kind-exit` | kind/exit_when 显式化 | 在 handoff.md 未完成项表中显式标注 `[kind] exit_when`（V2 延伸项，可选）| 🟢 低 | Hypothesis | — | — |
 | `assertion-semantic-model` | Assertion 语义模型决策（已落地，待实施） | 决策版材料见 [assertion-semantic-model.md](handoff-schema/assertion-semantic-model.md)；Q1-Q6 已定 + 元规则已加；下次会话进入实施阶段（按材料 §9.2 顺序推进 6 步）；不立即改 schema/规则 ← 上轮 §6 是局部补丁，需先定语义模型再统一重构，否则陷入"补字段循环"；元规则约束思考方式防复发 | 🟡 中 | Verified | — | — |
-| `schema-v2-snapshot-align` | snapshot 数据模型对齐 schema V2 | types.ts 字段对齐 + extractors 调整 + 短对话实测（workaround 路径 `MAX_INPUT_TOKENS=1000`）；字段对齐/单元测试不依赖 codec bug ← codec bug 只阻塞真实长对话路径（≥90K tokens），不阻塞代码层字段对齐 | 🟡 中 | Hypothesis | — | — |
 | `schema-v2-snapshot-e2e` | snapshot 真实长对话实测 | 真实 90K+ token 长对话路径实测 + frontmatter 显式化 + confidence 计算固化进 plugin；depends_on=pr-12032 ← 真实长对话路径触发 codec bug 必崩，需等修复 PR 合并 + CLI 发版 | 🟡 中 | Hypothesis | `pr-12032` | `B-cli-codec-bug` |
+| `snapshot-trigger-tuning` | snapshot 触发阈值调优 | 评估 COMPACT_AT_RATIO 从 0.75 调低到 0.65-0.70（对齐行业经验，减少单次压缩量→保留更多 cache prefix）；或增加"达到 60% 主动预写 snapshot"机制（独立于压缩事件）；分析依据见决策 `snapshot-trigger-analysis`；不依赖外部 PR，可独立推进 | 🟡 中 | Likely | — | — |
 | `issue-11944` | GitHub #11944 跟进 | SDK 迁移时间线（影响 VS Code 扩展 plugin 系统恢复） | 🟡 中 | Verified | — | — |
 | `pr-12032` | PR #12032 合并监控 | CLI codec bug 修复 PR（Open），合并 + CLI 发版后触发 §1.15 解除流程 7 步 | 🟡 中 | Verified | — | — |
 | `vscode-monitor` | 监控 VS Code release | 关键词 Plugins / registerMessageBuilder | 🟢 低 | Verified | `issue-11944` | — |
@@ -154,7 +178,7 @@
 ```
 
 **后续动作**（无紧急项）：
-1. **🟡 中：snapshot 数据模型对齐 schema V2** — `schema-v2-snapshot-align`（不依赖 PR，可立即推进）
+1. **🟡 中：snapshot 触发阈值调优** — `snapshot-trigger-tuning`（不依赖 PR，可立即推进；评估 COMPACT_AT_RATIO 0.75→0.65-0.70 或加预写机制）
 2. **🟢 低：kind/exit_when 显式化** — `handoff-schema-v2-kind-exit` 延伸项（可选）
 3. **🟡 中：跟进 GitHub #11944** — SDK 迁移时间线（影响 VS Code 扩展 plugin 系统恢复）
 4. **🟡 中：监控 PR #12032** — CLI codec bug 修复 PR，合并 + 发版后触发 §1.15 解除流程 + `schema-v2-snapshot-e2e`
