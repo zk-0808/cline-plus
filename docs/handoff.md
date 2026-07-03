@@ -15,6 +15,7 @@
 | `confidence-vocab-fix` | schema §1.0 新增 Confidence 词汇表；修正 §1.3/§1.5 字段描述错误（原写"取值与 §4 一致"但字面不一致，schema 用 Verified/Likely/Hypothesis，§4 用高/中/低，需查表对齐） | Verified | `snapshot-v2-decouple` |
 | `hypothesis-reasoning-rule` | 新增 project-rules §6：Hypothesis 条目强制推理链（`<字段判断> ← <依据>`）；解决"confidence 标整体证据弱但未定向指引哪个字段弱，下游无判断空间"机制缺口 | Verified | `snapshot-v2-decouple` |
 | `assertion-semantic-model-confirmed` | Assertion 语义模型决策落地——基本单位=Assertion（Claim/Evidence/Justification/Confidence 四属性）；Evidence.kind 5 档枚举（Code/Test/Discussion/Inference/None）+ Inference vs None 边界写死；Confidence 条件必填（仅 None 时必填）；原则写 schema §0；消费规则写 project-rules 标注待迁入；V2 五类对象调整为"Assertion 载体分类"；新增元规则"是否在打字段补丁"防复发 | Verified | `hypothesis-reasoning-rule` |
+| `assertion-model-impl-step1-5` | Assertion 模型实施第 1-5 步完成：schema V2→V3（标题调整 + §0 原则 + §0.2 Assertion 模型定义 + §0.3 五类对象重定位）；project-rules §6 v0→v0.1（Hypothesis 推理链→Assertion Justification 过渡表达）+ §7 新增消费层规则（高风险字段默认核查，待迁入 dev-rules）；第 6 步 V2 字段重写按材料 §9.3 暂不推进保持缓冲 | Verified | `assertion-semantic-model-confirmed` |
 
 ## 本会话净变化
 
@@ -88,6 +89,32 @@
 - **Q6 已定**：V2 五类对象定位调整为"Assertion 载体分类"（字段不变仅表述更新）
 - **新增 §10 元规则**：每个决策前自检"是不是又在打字段补丁"——约束思考方式防复发
 - **§9.2 实施顺序**：6 步（schema §0 原则 → 标题调整 → Assertion 模型定义 → 消费规则 → §6 处理 → V2 字段重写最后做）
+
+### 9. Assertion 模型实施第 1-5 步（`docs/decisions/schema-semantic-object-model.md` + `docs/handoff-schema/project-rules.md`）
+
+按材料 §9.2 顺序推进，每步用 §10 元规则自检（每步都不是加 V2 字段，是显式化 Assertion 属性 / 调整表述 / 落地原则推论）：
+
+**schema V2 → V3**（`docs/decisions/schema-semantic-object-model.md`）：
+- 标题调整：从"语义对象模型规范"→"Assertion 语义模型与载体分类规范"
+- 新增 §0.1 高层原则（任何可被继承的断言必须能被低成本重新评估）
+- 新增 §0.2 Assertion 语义模型（基本单位）：四属性 + Evidence.kind 5 档枚举 + Inference vs None 边界写死 + Confidence 条件必填规则
+- 新增 §0.3 五类对象 = Assertion 载体分类（V2 字段定义不变，仅表述更新）
+- §1 标题调整：从"核心五类对象模型"→"五类对象模型（Assertion 载体分类）"
+
+**project-rules §6 v0 → v0.1**（`docs/handoff-schema/project-rules.md`）：
+- §6 从"Hypothesis 条目推理链（机制改进）"→"Assertion Justification 属性过渡表达（v0.1 过渡版）"
+- 规则约束扩展：从仅 `Hypothesis` → `Evidence.kind = None 或 Hypothesis`
+- 增加与 schema §0.2 的关系说明（模型定义 vs 表达层过渡）
+- 标注 v0.1 状态——待 V2 字段重写（实施第 6 步）后内容被吸收删除
+
+**project-rules §7 新增**（`docs/handoff-schema/project-rules.md`）：
+- 消费层规则：高风险字段（`depends_on` / `blocker_ref`）默认核查
+- 三档核查动作（读 Justification / 核查 Evidence / 重跑 Assertion）
+- 核查判据（Justification 充分且 Evidence.kind ≠ None → 采信；缺失或 None → 不直接采信）
+- 与 §0.1 原则的关系说明
+- 标注"待第二阶段迁入 dev-rules"
+
+**第 6 步暂不推进**：V2 字段表达重写按材料 §9.3 保持缓冲——等第 1-5 步稳定后再由模型反推。
 
 ## Commits
 
