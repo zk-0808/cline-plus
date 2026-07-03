@@ -181,10 +181,12 @@ V2 schema 落地后重跑无损映射测试。原 `handoff-schema-v2` 未完成�
 - ✅ 无损映射测试重跑（11/11 通过——拆分 v2 后条目数 9→11）
 - 🔵 **延伸项**（可选，`handoff-schema-v2-kind-exit`）：`kind` / `exit_when` 在 handoff.md 中显式标注
 
-### 5.3 第二阶段（触发条件：PR #12032 合并 + CLI 发版）
+### 5.3 第二阶段（解耦：分两步推进）
 
-- snapshot schema 化：context-snapshot plugin 产出的 snapshot 应用同一套语义对象模型
-- handoff.md frontmatter 显式化（机器可读）
+原"第二阶段"过度打包了 snapshot schema 化与真实长对话实测。实际依赖结构：
+
+- **5.3.1 snapshot 数据模型对齐**（`schema-v2-snapshot-align`，不依赖 PR）：types.ts 字段对齐（id / 枚举 / HandoffRecord 替代 TodoRecord）+ extractors 调整 + 短对话实测（workaround 路径 `MAX_INPUT_TOKENS=1000`）。snapshot v0.7.0 已实现核心数据模型，对齐是字段重命名 + 枚举调整，非架构改动。
+- **5.3.2 snapshot 真实长对话实测**（`schema-v2-snapshot-e2e`，触发条件：PR #12032 合并 + CLI 发版）：真实 90K+ token 长对话路径实测 + frontmatter 显式化 + confidence 计算逻辑固化进 plugin
 
 ### 5.4 第三阶段（触发条件：plugin 机制化 #25 落地）
 
