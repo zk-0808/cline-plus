@@ -242,7 +242,7 @@ VS Code 扩展 4.0.0 的 esbuild 打包流程将 plugin loading 代码（`loadSa
 
 CLI 构建正确输出了 bootstrap（`@cline/core/dist/extensions/` + `@cline/cli-windows-x64/extensions/`），因此 CLI 中 plugin 正常工作。
 
-详见 [ADR-002 Update 6](../decisions/ADR-002-project-shape.md) + [investigation-note-vscode-bootstrap-missing.md](../decisions/investigation-note-vscode-bootstrap-missing.md)。
+详见 [ADR-002 Update 6](../decisions/adr/ADR-002-project-shape.md) + [investigation-note-vscode-bootstrap-missing.md](../decisions/investigation/investigation-note-vscode-bootstrap-missing.md)。
 
 **Workaround 步骤**（已验证）：
 1. 复制 `plugin-sandbox-bootstrap.js`（从 CLI `@cline/core/dist/extensions/`）到扩展 `dist/extensions/`

@@ -351,4 +351,4 @@ Run #9c 评分 2/5 — 双盲条件下 Conflict ID Δ = -20%，触发降回 prop
 - [run-9b-p5-output-schema-v2.md](run-9b-p5-output-schema-v2.md)（前身，3/5 有条件）
 - [run-9b-external-review.md](run-9b-external-review.md)（外部评审，决策 C）
 - [run-9b-phase0-evidence.md](run-9b-phase0-evidence.md)（证据集来源）
-- [D-2026-06-24-search-evaluate-p5-output-schema.md](../../decisions/D-2026-06-24-search-evaluate-p5-output-schema.md)（P5 决策草案）
+- [D-2026-06-24-search-evaluate-p5-output-schema.md](../../decisions/search/D-2026-06-24-search-evaluate-p5-output-schema.md)（P5 决策草案）

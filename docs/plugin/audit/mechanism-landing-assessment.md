@@ -2,7 +2,7 @@
 
 > **日期**：2026-06-28
 > **生命周期**：任务绑定——mechanism-candidates 全部落地或退休后归档。
-> **关联**：[mechanism-candidates.md](../mechanism-candidates.md)、[ADR-005](../decisions/ADR-005-split-compact-from-handoff.md)
+> **关联**：[mechanism-candidates.md](../mechanism-candidates.md)、[ADR-005](../decisions/adr/ADR-005-split-compact-from-handoff.md)
 > **方法**：Cline 源码分析（7 份本地文档）+ 主流 Agent 调研（Claude Code / Cursor / Windsurf / Copilot / Devin / OpenClaw / AgentMemory-Pro）
 
 ---
@@ -11,7 +11,7 @@
 
 > ### ⚠️ 运行时约束声明（2026-06-29）
 >
-> 下方 API 能力表**仅适用于 Cline CLI 3.0.30+**。VS Code 扩展 4.0.x 全系列不支持 Plugin 系统：v4.0.0 因 esbuild 打包遗漏 `plugin-sandbox-bootstrap.js` 导致 `setup()` 永不执行（[investigation-note](../decisions/investigation-note-vscode-bootstrap-missing.md)），v4.0.1/v4.0.2 回滚到 3.89.2 pre-SDK 代码基、plugin 系统根本不存在（[rollback 记录](../decisions/D-2026-06-28-cline-v401-sdk-rollback.md)）。CLI 端 v0.5.0 三能力（messageBuilders + rules + hooks）全链路加载已实测确认。完整证据链见 [design.md 不可抗力声明](design.md#不可抗力声明)。
+> 下方 API 能力表**仅适用于 Cline CLI 3.0.30+**。VS Code 扩展 4.0.x 全系列不支持 Plugin 系统：v4.0.0 因 esbuild 打包遗漏 `plugin-sandbox-bootstrap.js` 导致 `setup()` 永不执行（[investigation-note](../decisions/investigation/investigation-note-vscode-bootstrap-missing.md)），v4.0.1/v4.0.2 回滚到 3.89.2 pre-SDK 代码基、plugin 系统根本不存在（[rollback 记录](../decisions/D-2026-06-28-cline-v401-sdk-rollback.md)）。CLI 端 v0.5.0 三能力（messageBuilders + rules + hooks）全链路加载已实测确认。完整证据链见 [design.md 不可抗力声明](design.md#不可抗力声明)。
 >
 > **影响**：本文档 §3 落地评估中所有标记"✅ 可落地"的候选，当前均只能在 CLI 环境验证和运行。VS Code 端可用性取决于 SDK 迁移何时重新合入稳定版（GitHub issue #11944 待跟进）。
 
@@ -60,7 +60,7 @@
 
 **对 #4 的结论**：Cline 原生依赖模型自身能力识别循环，没有专门的 loop-guard 机制。Plugin 层可通过 `beforeTool` + `afterTool` 记录工具调用序列，检测重复模式。但**处置手段有限**——plugin 只能注入提示词（通过 `beforeModel` hook 修改 messages），不能直接中断 agent 循环。建议 #4 实现为"检测 + 提示词注入"：检测到重复时在下一轮 messages 中注入警告提示词。
 
-**2026-07-01 更新（V6 替代路径）**：原方案的 beforeModel 注入路径受 [codec bug](../decisions/investigation-note-cli-codec-content-map-bug.md) §O8 阻塞——beforeModel 注入的 content 为 string 类型，codec `Nd` 函数调用 `n.content.map()` 必然崩溃（Verified 根因，与消息数量/token 总量无关）。**V6 最终方案**：afterTool 检测循环 → loopState → messageBuilder 注入 user-role 消息（content 为 ContentBlock[] 格式绕过 codec）。**registerRule 路径已废弃**——rule content 函数在 CLI 3.0.34 只在 session 启动时评估一次，运行时永不重新求值（死路径），详见 [handoff.md §4 V6 测试记录](../handoff.md)。
+**2026-07-01 更新（V6 替代路径）**：原方案的 beforeModel 注入路径受 [codec bug](../decisions/investigation/investigation-note-cli-codec-content-map-bug.md) §O8 阻塞——beforeModel 注入的 content 为 string 类型，codec `Nd` 函数调用 `n.content.map()` 必然崩溃（Verified 根因，与消息数量/token 总量无关）。**V6 最终方案**：afterTool 检测循环 → loopState → messageBuilder 注入 user-role 消息（content 为 ContentBlock[] 格式绕过 codec）。**registerRule 路径已废弃**——rule content 函数在 CLI 3.0.34 只在 session 启动时评估一次，运行时永不重新求值（死路径），详见 [handoff.md §4 V6 测试记录](../handoff.md)。
 
 ### Q3: Shell Wrapper（#2-3 编码/Profile/交互式）
 

@@ -90,8 +90,8 @@ VS Code 扩展（4.0.0）
 
 **原结论 5 处出处**：
 - `docs/plugin/refs/plugin-dev-quick-reference.md` §0（2026-06-23）+ 第 272 行
-- `docs/decisions/ADR-002-project-shape.md` Context §5（第 29 行）+ Update 1（第 392 行）
-- `docs/decisions/ADR-002-p5-experiment-exit-review.md` §2.4（第 77 行）
+- `docs/decisions/adr/ADR-002-project-shape.md` Context §5（第 29 行）+ Update 1（第 392 行）
+- `docs/decisions/adr/ADR-002-p5-experiment-exit-review.md` §2.4（第 77 行）
 
 **原证据**：单源——"搜过 SDK plugin 开发的中英文社区经验、博客、踩坑记录"，未记录 query 列表。
 

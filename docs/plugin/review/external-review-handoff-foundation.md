@@ -6,7 +6,7 @@
 > **评审日期**：2026-07-01
 > **归档日期**：2026-07-01
 > **触发使用条件**：mechanism-candidates #5 / #6 从「实验中（重构中）」推进到正式机制化落地阶段；或 §1.15 codec bug 解除后重启 snapshot 长对话实测路径时
-> **关联**：[design.md](design.md) · [ADR-005](../decisions/ADR-005-split-compact-from-handoff.md) · [mechanism-candidates.md](../mechanism-candidates.md) #5/#6 · [dev-rules.md §2](../dev-rules.md) · [snapshot-writer.ts](../../context-snapshot/src/snapshot-writer.ts)
+> **关联**：[design.md](design.md) · [ADR-005](../decisions/adr/ADR-005-split-compact-from-handoff.md) · [mechanism-candidates.md](../mechanism-candidates.md) #5/#6 · [dev-rules.md §2](../dev-rules.md) · [snapshot-writer.ts](../../context-snapshot/src/snapshot-writer.ts)
 
 ---
 
@@ -14,7 +14,7 @@
 
 本文件**不**是决策文档，**不**是调查笔记，而是**待激活的外部评审参考输入**。当前 handoff 机制化仍处于 v0.6.0 workaround 验证阶段（受 [§1.15 codec bug](../dev-rules.md) 阻塞），本评审提出的结构化升级方向暂不进入实施。
 
-当 handoff 正式开发启动时（触发条件见上方），本文件应作为 [design.md](design.md) 的并行参考，由开发者判断哪些评审建议纳入正式设计、哪些暂缓、哪些拒绝，并在 [ADR-005](../decisions/ADR-005-split-compact-from-handoff.md) 或后续 ADR 中记录处置结论。
+当 handoff 正式开发启动时（触发条件见上方），本文件应作为 [design.md](design.md) 的并行参考，由开发者判断哪些评审建议纳入正式设计、哪些暂缓、哪些拒绝，并在 [ADR-005](../decisions/adr/ADR-005-split-compact-from-handoff.md) 或后续 ADR 中记录处置结论。
 
 ---
 
@@ -42,7 +42,7 @@
 
 **为何值钱**：绝大多数 handoff 文档只记录「做了什么」，而当前 handoff 记录的是「我对这件事的确信程度以及凭什么确信」。对跨 agent 协作来说，这是最值钱的部分——下一个 agent 接手时不需要重新建立信任度，能直接读到「哪些是事实、哪些是推测、推测的单源还是交叉验证」。
 
-**对应现状**：见 [investigation-note-cli-codec-content-map-bug.md](../decisions/investigation-note-cli-codec-content-map-bug.md) 的 O1-O7 + H1-H3 证据链，[handoff.md](../handoff.md) §4 验证结果中的 H1-H4 排除声明。
+**对应现状**：见 [investigation-note-cli-codec-content-map-bug.md](../decisions/investigation/investigation-note-cli-codec-content-map-bug.md) 的 O1-O7 + H1-H3 证据链，[handoff.md](../handoff.md) §4 验证结果中的 H1-H4 排除声明。
 
 ### 3.2 出口判据用「答得上」而非「做了没」
 

@@ -4,7 +4,7 @@
 
 日期：2026-07-02
 范围：context-snapshot 插件全周期（v0.1.0 立项 → v0.7.x 阶段交付）
-关联：[handoff.md](../handoff.md) · [dev-rules.md §1.15](../dev-rules.md) · [investigation-note O9](../decisions/investigation-note-cli-codec-content-map-bug.md)
+关联：[handoff.md](../handoff.md) · [dev-rules.md §1.15](../dev-rules.md) · [investigation-note O9](../decisions/investigation/investigation-note-cli-codec-content-map-bug.md)
 
 ---
 
@@ -247,9 +247,9 @@ V6 后续修正：registerRule content 函数在 CLI 3.0.34 只评估一次（�
 - [plugin-dev-sop.md](plugin-dev-sop.md) — Plugin 开发规划框架
 - [snapshot-extractor-design.md](snapshot-extractor-design.md) — v0.7.0 提取器设计
 - [v2a-static-audit-report.md](v2a-static-audit-report.md) — A2 静态审计报告
-- [investigation-note-cli-codec-content-map-bug.md](../decisions/investigation-note-cli-codec-content-map-bug.md) — codec bug 调查
+- [investigation-note-cli-codec-content-map-bug.md](../decisions/investigation/investigation-note-cli-codec-content-map-bug.md) — codec bug 调查
 - [claude-external-review/review-closure-report.md](claude-external-review/review-closure-report.md) — 外部评审闭环
-- [ADR-001](../decisions/ADR-001-handoff-compact-memory.md) ~ [ADR-005](../decisions/ADR-005-split-compact-from-handoff.md) — 决策记录
+- [ADR-001](../decisions/adr/ADR-001-handoff-compact-memory.md) ~ [ADR-005](../decisions/adr/ADR-005-split-compact-from-handoff.md) — 决策记录
 
 ## 10. 证据时效性
 

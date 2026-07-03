@@ -65,5 +65,5 @@ Run #3（2026-06-24）按上述调参重跑，综合 2.6/5，三项指标倒退�
 详见：
 
 - [experiments/run-3-fanout-tuned.md](run-3-fanout-tuned.md)
-- [decisions/D-2026-06-24-search-rollback-diversity.md](../../decisions/D-2026-06-24-search-rollback-diversity.md)
-- [decisions/D-2026-06-24-search-defer-p2.md](../../decisions/D-2026-06-24-search-defer-p2.md)
+- [decisions/search/D-2026-06-24-search-rollback-diversity.md](../../decisions/search/D-2026-06-24-search-rollback-diversity.md)
+- [decisions/search/D-2026-06-24-search-defer-p2.md](../../decisions/search/D-2026-06-24-search-defer-p2.md)

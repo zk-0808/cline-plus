@@ -171,6 +171,6 @@ P5 Output Schema proposed → active（有条件）：多实体对比场景（�
 - 实验框架：[run-9b-p5-output-schema-v2.md](experiments/run-9b-p5-output-schema-v2.md)
 - P3 证据集：[run-9b-phase0-evidence.md](experiments/run-9b-phase0-evidence.md)
 - 前身实验：[run-9-p5-output-schema.md](experiments/run-9-p5-output-schema.md)（1/5 设计失败）
-- P5 决策草案：[D-2026-06-24-search-evaluate-p5-output-schema.md](decisions/D-2026-06-24-search-evaluate-p5-output-schema.md)
+- P5 决策草案：[D-2026-06-24-search-evaluate-p5-output-schema.md](decisions/search/D-2026-06-24-search-evaluate-p5-output-schema.md)
 - 机制候选：[mechanism-candidates.md](mechanism-candidates.md) #16
 - 调研总表：[survey.md](search-orchestrator/survey.md) §9.2

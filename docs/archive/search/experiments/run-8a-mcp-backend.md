@@ -3,7 +3,7 @@
 - **日期**: 2026-06-24（已执行，结论：否决 TLS 指纹假设）
 - **主题**: MCP 基础设施层验证
 - **改造项**: MCP 后端从 `npx duckduckgo-websearch`（Node.js）切换为 `uvx duckduckgo-mcp-server[browser] --fetch-backend auto`（Python + curl_cffi）
-- **背景决策**: [D-2026-06-24-search-infra-mcp-upgrade.md](../../decisions/D-2026-06-24-search-infra-mcp-upgrade.md)（已 rolled-back）
+- **背景决策**: [D-2026-06-24-search-infra-mcp-upgrade.md](../../decisions/search/D-2026-06-24-search-infra-mcp-upgrade.md)（已 rolled-back）
 - **触发条件**: Run #4（中文 query fetch 1/5）+ Run #6（中文 query fetch 1/10）共同确认中文 fetch 覆盖率低是基础设施瓶颈
 
 ---
@@ -183,6 +183,6 @@ H3 需要外部验证（如本地 `curl` 同样 URL，对比 HTTP 状态码）�
 
 ## 参考
 
-- [D-2026-06-24-search-infra-mcp-upgrade.md](../../decisions/D-2026-06-24-search-infra-mcp-upgrade.md)
+- [D-2026-06-24-search-infra-mcp-upgrade.md](../../decisions/search/D-2026-06-24-search-infra-mcp-upgrade.md)
 - [web-search-setup.md](../../references/web-search-setup.md)
 - upstream README: [nickclyde/duckduckgo-mcp-server](https://github.com/nickclyde/duckduckgo-mcp-server)

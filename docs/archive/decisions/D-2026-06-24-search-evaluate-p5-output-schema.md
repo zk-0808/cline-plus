@@ -17,7 +17,7 @@ evidence:
     section: "条目 17 Highlights / Relevance Compression"
   - file: search/search-orchestrator/experiments/run-8a-mcp-backend.md
     section: "Run #8a 结论：基础设施层边际收益急剧下降"
-  - file: decisions/D-2026-06-24-search-infra-mcp-upgrade.md
+  - file: decisions/search/D-2026-06-24-search-infra-mcp-upgrade.md
     section: "回滚动作 / 待 V2 路线决策"
 ---
 

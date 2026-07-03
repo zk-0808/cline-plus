@@ -266,7 +266,7 @@ Gap Ledger 最小机制作为 P5 的唯一落地候选进入 SKILL.md。
 
 ## 7. 参考
 
-- [D-2026-06-25-search-redesign-p5-evidence-map.md](../../decisions/D-2026-06-25-search-redesign-p5-evidence-map.md)
+- [D-2026-06-25-search-redesign-p5-evidence-map.md](../../decisions/search/D-2026-06-25-search-redesign-p5-evidence-map.md)
 - [run-13-p5-evidence-map.md](run-13-p5-evidence-map.md)（上一代完整 Evidence Map，2/5 双盲证伪）
 - [run-9c-p5-output-schema-v3.md](run-9c-p5-output-schema-v3.md)（字段对齐 schema，2/5 双盲证伪）
 - [mechanism-candidates.md #16](../../mechanism-candidates.md)

@@ -3,7 +3,7 @@
 **日期**：2026-06-26
 **designated_executor**：TRAE agent（代码编写 + 框架文档）→ 用户手动（CLI 安装 + 实跑验证）
 **时间窗口**：0.5–1 天工程量上限
-**状态**：deferred（2026-06-27，实验环境前提动摇）— #6 session_start hook 已实证触发（结论保留）；#5 compact 双产物实证因 CLI 载体不稳定 + 实验环境与生产环境错位暂停。详见 [ADR-004](../../docs/decisions/ADR-004-p5-spike-pause.md)
+**状态**：deferred（2026-06-27，实验环境前提动摇）— #6 session_start hook 已实证触发（结论保留）；#5 compact 双产物实证因 CLI 载体不稳定 + 实验环境与生产环境错位暂停。详见 [ADR-004](../../docs/decisions/adr/ADR-004-p5-spike-pause.md)
 
 ---
 
@@ -130,7 +130,7 @@
 
 ### 2026-06-27 事件：#5 实证暂停（实验环境前提动摇）
 
-执行 #5 实证准备时发现 ADR-002 Validation Plan 选择 CLI 作为实验环境的前提被动摇。详见 [ADR-004](../../docs/decisions/ADR-004-p5-spike-pause.md)。
+执行 #5 实证准备时发现 ADR-002 Validation Plan 选择 CLI 作为实验环境的前提被动摇。详见 [ADR-004](../../docs/decisions/adr/ADR-004-p5-spike-pause.md)。
 
 | 事实 | 证据 |
 |------|------|
@@ -153,7 +153,7 @@
 
 用户选择：#5 + #6，0.5-1 天，CLI 全局安装，cline++/experiments/p5-spike/
 
-详见 [ADR-002-p5-experiment-exit-review.md](../../docs/decisions/ADR-002-p5-experiment-exit-review.md) 第三轮评审记录。
+详见 [ADR-002-p5-experiment-exit-review.md](../../docs/decisions/adr/ADR-002-p5-experiment-exit-review.md) 第三轮评审记录。
 
 ---
 

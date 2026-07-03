@@ -3,7 +3,7 @@
 - **日期**：2026-06-25（实验框架落地，执行待启动）
 - **主题**：P5 Output Schema 结构化抽取 — 多实体对比型证据集
 - **前身**：[run-9-p5-output-schema.md](run-9-p5-output-schema.md)（1/5 设计失败，单源列表型证据集无法触发 P5 核心收益）
-- **背景决策**：[D-2026-06-24-search-evaluate-p5-output-schema.md](../../decisions/D-2026-06-24-search-evaluate-p5-output-schema.md)（proposed，维持）
+- **背景决策**：[D-2026-06-24-search-evaluate-p5-output-schema.md](../../decisions/search/D-2026-06-24-search-evaluate-p5-output-schema.md)（proposed，维持）
 - **改造项**：Phase 4 由「证据 → 自由文本答案」改为「证据 → 结构化中间表示（schema）→ 自由文本答案」
 
 ---
@@ -714,6 +714,6 @@ Conflict ID Δ < +15%，则降回 proposed。
 
 ## 参考
 
-- [D-2026-06-24-search-evaluate-p5-output-schema.md](../../decisions/D-2026-06-24-search-evaluate-p5-output-schema.md)（proposed 决策草案）
+- [D-2026-06-24-search-evaluate-p5-output-schema.md](../../decisions/search/D-2026-06-24-search-evaluate-p5-output-schema.md)（proposed 决策草案）
 - [run-9-p5-output-schema.md](run-9-p5-output-schema.md)（前身，1/5 设计失败）
 - [mechanism-candidates.md](../../mechanism-candidates.md) #16（Output Schema 候选条目）

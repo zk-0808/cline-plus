@@ -3,7 +3,7 @@
 > **状态**：proposed（起草中）
 > **生命周期**：版本绑定——随 context-snapshot 版本迭代，新版定稿后旧版归档。
 > **日期**：2026-06-27
-> **上游决策**：[ADR-001](../decisions/ADR-001-handoff-compact-memory.md)（Accepted，A+B'+D' 方向）、[ADR-004](../decisions/ADR-004-p5-spike-pause.md)（deferred，恢复条件 2 已满足）、**[ADR-005](../decisions/ADR-005-split-compact-from-handoff.md)**（Accepted，Compaction 与 Handoff 拆分）
+> **上游决策**：[ADR-001](../decisions/adr/ADR-001-handoff-compact-memory.md)（Accepted，A+B'+D' 方向）、[ADR-004](../decisions/adr/ADR-004-p5-spike-pause.md)（deferred，恢复条件 2 已满足）、**[ADR-005](../decisions/adr/ADR-005-split-compact-from-handoff.md)**（Accepted，Compaction 与 Handoff 拆分）
 > **前置验证**：Capability Probe 5（通过），custom-compaction.ts 源码确认，ARCHITECTURE.md §9 Design Seam 确认
 > **本设计不替代 ADR-001**——ADR-001 仍为方向性决策，本 Doc 落实 Implementation-level 细节。**ADR-005 修正了实现方式**：Compaction 与 Handoff 拆分为独立机制。
 
@@ -21,7 +21,7 @@
 >
 > | 日期 | 版本 | 事件 | 证据 |
 > |------|------|------|------|
-> | 2026-06-26 | v4.0.0 | esbuild 打包遗漏 `plugin-sandbox-bootstrap.js`，`setup()` 永不执行 | [investigation-note-vscode-bootstrap-missing.md](../decisions/investigation-note-vscode-bootstrap-missing.md)（8 条证据交叉验证，V2 高置信度） |
+> | 2026-06-26 | v4.0.0 | esbuild 打包遗漏 `plugin-sandbox-bootstrap.js`，`setup()` 永不执行 | [investigation-note-vscode-bootstrap-missing.md](../decisions/investigation/investigation-note-vscode-bootstrap-missing.md)（8 条证据交叉验证，V2 高置信度） |
 > | 2026-06-28 | v4.0.1 | 官方回滚到 3.89.2 pre-SDK 代码基，plugin 系统不存在 | [D-2026-06-28-cline-v401-sdk-rollback.md](../decisions/D-2026-06-28-cline-v401-sdk-rollback.md)；release notes: "Roll the stable VS Code extension back to the pre-SDK-migration codebase" |
 > | 2026-06-29 | v4.0.2 | 继承回滚，`extension.js` 无任何 plugin 代码 | 实测：`extension.js` 零命中 `plugin-sandbox` / `registerMessageBuilder` |
 > | 2026-06-29 | — | GitHub issue #11944 提交，Linear CLINE-2584 关联，作者未回复 SDK 迁移时间线 | handoff.md 本会话决策 |
@@ -58,7 +58,7 @@
 
 | Probe | 结果 | 关键证据 |
 |-------|------|---------|
-| Probe 5（plugin 自动发现）| ⚠️ **已推翻**（2026-06-28 v4.0.1 回滚）——原结论"VS Code 扩展 4.0.0 通过 Customize marketplace 加载，setup() 执行"已被证伪：UI 发现 ≠ sandbox 激活。详见头部不可抗力声明 + [investigation-note-vscode-bootstrap-missing.md](../decisions/investigation-note-vscode-bootstrap-missing.md) | ~~用户实测 Customize UI 显示已装 plugin~~ → 8 条证据交叉验证 sandbox 永不执行 |
+| Probe 5（plugin 自动发现）| ⚠️ **已推翻**（2026-06-28 v4.0.1 回滚）——原结论"VS Code 扩展 4.0.0 通过 Customize marketplace 加载，setup() 执行"已被证伪：UI 发现 ≠ sandbox 激活。详见头部不可抗力声明 + [investigation-note-vscode-bootstrap-missing.md](../decisions/investigation/investigation-note-vscode-bootstrap-missing.md) | ~~用户实测 Customize UI 显示已装 plugin~~ → 8 条证据交叉验证 sandbox 永不执行 |
 | Probe 5（workspace 级 `.cline/plugins/`）| ⏳ 优先级降低——全局 store 已是更优路径 | investigation-note-probe-5.md |
 | `registerMessageBuilder` 介入点 | ✅ 确认——custom-compaction.ts 6.3KB 源码，0 截断 | GitHub API WebFetch 确认 |
 | Cline 原生 compact 架构 | ✅ ARCHITECTURE.md §9 Design Seam：core 拥有 compaction policy，agents 拥有 turn-preparation seam | sdk/ARCHITECTURE.md |
@@ -163,7 +163,7 @@ SessionRuntimeOrchestrator.executeRunInternal()
 
 #### 3.3.2 index.jsonl（已废弃 — ADR-005）
 
-> **⚠️ DEPRECATED（2026-06-28，[ADR-005](../decisions/ADR-005-split-compact-from-handoff.md)）**
+> **⚠️ DEPRECATED（2026-06-28，[ADR-005](../decisions/adr/ADR-005-split-compact-from-handoff.md)）**
 >
 > index.jsonl 已被 ADR-005 废弃，不再维护。理由：
 > 1. Cline SQLite DB 已存储会话元数据，自建索引与原生存储职责重叠
@@ -364,10 +364,10 @@ snapshot 文件名格式：`{project_hash}-{timestamp}-{uuid}.md`
 
 | 文档 | 关系 |
 |------|------|
-| [ADR-001](../decisions/ADR-001-handoff-compact-memory.md) | 上游方向决策（Accepted），本设计落实其 Implementation-level 细节 |
-| [ADR-004](../decisions/ADR-004-p5-spike-pause.md) | 上游暂停决策（deferred），本设计的重启满足其恢复条件 2 |
+| [ADR-001](../decisions/adr/ADR-001-handoff-compact-memory.md) | 上游方向决策（Accepted），本设计落实其 Implementation-level 细节 |
+| [ADR-004](../decisions/adr/ADR-004-p5-spike-pause.md) | 上游暂停决策（deferred），本设计的重启满足其恢复条件 2 |
 | [mechanism-candidates.md](../mechanism-candidates.md) #5 | 本设计对应的机制候选，完成后标"已机制化" |
-| [investigation-note-probe-5.md](../archive/decisions/investigation-note-probe-5.md) | 前置验证证据 |
+| [investigation-note-probe-5.md](../archive/decisions/investigation/investigation-note-probe-5.md) | 前置验证证据 |
 | [sdk/ARCHITECTURE.md](https://github.com/cline/cline/blob/main/sdk/ARCHITECTURE.md) | 系统架构权威源，本设计与之对齐 |
 | [custom-compaction.ts](https://github.com/cline/cline/blob/main/sdk/examples/plugins/custom-compaction.ts) | 直接模板，设计模式母本 |
 

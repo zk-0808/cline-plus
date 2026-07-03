@@ -1,7 +1,7 @@
 # DEPRECATED — P5 Spike 已被 ADR-005 + context-snapshot 取代
 
 > **状态**: superseded（2026-06-28）
-> **取代者**: [ADR-005: Split Compaction from Handoff](../../docs/decisions/ADR-005-split-compact-from-handoff.md) + [context-snapshot 插件](../../context-snapshot/)
+> **取代者**: [ADR-005: Split Compaction from Handoff](../../docs/decisions/adr/ADR-005-split-compact-from-handoff.md) + [context-snapshot 插件](../../context-snapshot/)
 > **目录保留原因**: ADR-003 决定"保留目录和产物作为未来迁移入口"，作为历史参考。
 
 ## 为什么废弃

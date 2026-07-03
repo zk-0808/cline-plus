@@ -12,7 +12,7 @@ evidence:
     section: "fetch 成功率"
   - file: search/search-orchestrator/experiments/run-8a-mcp-backend.md
     section: "结果记录"
-  - file: decisions/D-2026-06-24-search-adopt-p3.md
+  - file: decisions/search/D-2026-06-24-search-adopt-p3.md
     section: "对路线图的隐含影响"
   - file: search/search-orchestrator/references/web-search-setup.md
     section: "推荐方案 / 备选方案"

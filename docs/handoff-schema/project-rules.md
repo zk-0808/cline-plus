@@ -23,7 +23,7 @@
 | **排除** | snapshot schema 化（等 PR #12032 合并 + CLI 发版后作为第二阶段跟进）、mechanism-candidates #5/#6 plugin 代码推进 |
 | **成功标准** | 语义对象模型草案产出 + 现有 handoff.md 完成一次无损映射测试 + 验收查询可回答 |
 
-**决策依据**：[external-review-round2-handoff.md](../plugin/external-review-round2-handoff.md)（评审 Round 2 核心结论——snapshot 与 handoff 是同一套语义对象模型的两种投影）。
+**决策依据**：[external-review-round2-handoff.md](../plugin/review/external-review-round2-handoff.md)（评审 Round 2 核心结论——snapshot 与 handoff 是同一套语义对象模型的两种投影）。
 
 ---
 

@@ -3,7 +3,7 @@
 > **提交日期**：2026-06-27
 > **评审范围**：2026-06-26 ~ 2026-06-27 两天内 ADR-002 Update 1→2→3→4 连续 4 次颠覆的工作流问题
 > **目的**：请外部评审者判断根因分析是否到位、建议的规则改进是否有效、是否有遗漏的结构性问题
-> **背景文档**：[ADR-002 Update 1-4](decisions/ADR-002-project-shape.md)、[ADR-001 Update 1](decisions/ADR-001-handoff-compact-memory.md)、[dev-rules.md §1.3/§1.4/§4](dev-rules.md)
+> **背景文档**：[ADR-002 Update 1-4](decisions/adr/ADR-002-project-shape.md)、[ADR-001 Update 1](decisions/adr/ADR-001-handoff-compact-memory.md)、[dev-rules.md §1.3/§1.4/§4](dev-rules.md)
 
 ---
 
@@ -254,7 +254,7 @@ function DGu(t){
 | §1.8 Evidence Collapse 门控（改为"证据类型一直没变"触发，非"次数"）| [dev-rules.md §1.8](dev-rules.md) |
 | §1.9 Direction Drift 门控（改为"用户重新定义问题"触发，非"质疑语气"）| [dev-rules.md §1.9](dev-rules.md) |
 | §1.10 Core Proposition Flip 门控（替代"连续两次颠覆"，用"核心命题翻转"）| [dev-rules.md §1.10](dev-rules.md) |
-| ADR-002 Methodology Note（Update 1-4 历史说明）| [ADR-002](decisions/ADR-002-project-shape.md) |
+| ADR-002 Methodology Note（Update 1-4 历史说明）| [ADR-002](decisions/adr/ADR-002-project-shape.md) |
 
 ### 未采纳的建议（记录备查）
 

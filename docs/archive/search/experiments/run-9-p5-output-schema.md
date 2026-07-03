@@ -3,7 +3,7 @@
 - **日期**：2026-06-24（实验框架已落地，执行待启动）
 - **主题**：P5 Output Schema 结构化抽取 — Phase 4 二阶段（4.1 抽 schema → 4.2 综合）
 - **改造项**：Phase 4 由「证据 → 自由文本答案」改为「证据 → 结构化中间表示（schema）→ 自由文本答案」
-- **背景决策**：[D-2026-06-24-search-evaluate-p5-output-schema.md](../../decisions/D-2026-06-24-search-evaluate-p5-output-schema.md)（proposed）
+- **背景决策**：[D-2026-06-24-search-evaluate-p5-output-schema.md](../../decisions/search/D-2026-06-24-search-evaluate-p5-output-schema.md)（proposed）
 - **触发条件**：Run #8a 否决 TLS 指纹假设后，基础设施层边际收益急剧下降；P5 是当前唯一既不依赖已失败假设、又对全部三档 Tier 同时受益、且实验成本低的候选
 
 ---
@@ -449,7 +449,7 @@ Run #9 评分 1/5 — 设计失败（非机制失败）。
 
 ## 参考
 
-- [D-2026-06-24-search-evaluate-p5-output-schema.md](../../decisions/D-2026-06-24-search-evaluate-p5-output-schema.md)（proposed 决策草案）
+- [D-2026-06-24-search-evaluate-p5-output-schema.md](../../decisions/search/D-2026-06-24-search-evaluate-p5-output-schema.md)（proposed 决策草案）
 - [run-6-p3-zh-retry.md](run-6-p3-zh-retry.md)（证据集来源）
 - [run-8a-mcp-backend.md](run-8a-mcp-backend.md)（基础设施层否决，催生 P5 优先级）
 - [mechanism-candidates.md](../../mechanism-candidates.md) #16（Output Schema 候选条目）

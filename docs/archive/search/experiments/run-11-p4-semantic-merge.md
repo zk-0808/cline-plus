@@ -501,8 +501,8 @@ SimHash/Jaccard 基于句法相似度，对跨语言对召回必然为 0，对�
 
 - [mechanism-candidates #19](../../mechanism-candidates.md)（P4 候选条目，已机制化）
 - [survey.md §10.2](../survey.md)（P4 现成结论裁决）
-- [D-2026-06-24-search-adopt-p4-same-source-merge](../../decisions/D-2026-06-24-search-adopt-p4-same-source-merge.md)（P4 决策文件）
-- [D-2026-06-24-search-revise-p4-metrics](../../decisions/D-2026-06-24-search-revise-p4-metrics.md)（P4 指标修订）
+- [D-2026-06-24-search-adopt-p4-same-source-merge](../../decisions/search/D-2026-06-24-search-adopt-p4-same-source-merge.md)（P4 决策文件）
+- [D-2026-06-24-search-revise-p4-metrics](../../decisions/search/D-2026-06-24-search-revise-p4-metrics.md)（P4 指标修订）
 - [run-7-p4-dedup.md](run-7-p4-dedup.md)（Run #7 逐字镜像验证）
 - [ab-test-template.md §2.6](../../../skills/search-orchestrator/examples/ab-test-template.md)（P4 专属指标体系）
 - [project-rules.md §约束 5](../../project-rules.md)（执行主体边界）

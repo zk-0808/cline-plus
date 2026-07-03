@@ -94,7 +94,7 @@ Verified → Decision:       需通过 Decision Readiness Checklist（§7）
 
 **成熟实践映射**：社区活动多源验证 ↔ **EBSE 多源证据三角验证（Triangulation）** + **Mixed Methods Research**（定量 npm/GitHub 数据 + 定性博客/Issue 分析）
 
-> *§16 社区活动证据职责已合并至本节表格末尾。源由：2026-06-23 调查把"无 how-to 博客"误等同为"无开发活动"（[investigation-note-marketplace-dev-mechanism.md](decisions/investigation-note-marketplace-dev-mechanism.md) C 号 RCA 一号根因：证据类型混淆）。*
+> *§16 社区活动证据职责已合并至本节表格末尾。源由：2026-06-23 调查把"无 how-to 博客"误等同为"无开发活动"（[investigation-note-marketplace-dev-mechanism.md](decisions/investigation/investigation-note-marketplace-dev-mechanism.md) C 号 RCA 一号根因：证据类型混淆）。*
 
 ---
 
@@ -364,7 +364,7 @@ ADR 之前应有 Investigation Note 记录证据链，**不直接从搜索跳到
 
 ## 15. 结论时效性模型
 
-> **源由**：2026-06-27 [Marketplace 开发机制并行调查](decisions/investigation-note-marketplace-dev-mechanism.md) C 号 Process Reviewer RCA——"无开发记录"结论 4 天后即过时（SDK 升 2 patch / Marketplace 上架 ~22 plugin），但无机制触发复查。
+> **源由**：2026-06-27 [Marketplace 开发机制并行调查](decisions/investigation/investigation-note-marketplace-dev-mechanism.md) C 号 Process Reviewer RCA——"无开发记录"结论 4 天后即过时（SDK 升 2 patch / Marketplace 上架 ~22 plugin），但无机制触发复查。
 
 涉及**外部生态**的结论（社区活跃度 / 包下载量 / 上架数 / GitHub 活动 / 官方文档版本）默认时效期 **14 天**。超期需复查或加 `stale` 标注。
 
@@ -497,9 +497,9 @@ Investigation Note 的 Hypothesis 段应采用以下格式：
 
 | Investigation Note | Hypothesis 项 | 来源 |
 |------------------|-------------|------|
-| [codec-content-map-bug](decisions/investigation-note-cli-codec-content-map-bug.md) | H2 / H3 | 审查 E1 |
-| [dual-setup](decisions/investigation-note-dual-setup.md) | 3 条 | 审查 E2 |
-| [vscode-settings-inventory](decisions/investigation-note-vscode-settings-inventory.md) | 多项 U 项 | 审查 E3 |
+| [codec-content-map-bug](decisions/investigation/investigation-note-cli-codec-content-map-bug.md) | H2 / H3 | 审查 E1 |
+| [dual-setup](decisions/investigation/investigation-note-dual-setup.md) | 3 条 | 审查 E2 |
+| [vscode-settings-inventory](decisions/investigation/investigation-note-vscode-settings-inventory.md) | 多项 U 项 | 审查 E3 |
 
 **成熟实践映射**：
 - Hypothesis 生命周期 ↔ **Lab Notebook 实验记录的"待验证假设"追踪** + **Scrum 任务的 Definition of Done**——假设必须有"完成"或"放弃"的判据，不可无限期待定
@@ -509,7 +509,7 @@ Investigation Note 的 Hypothesis 段应采用以下格式：
 
 ## 20. 子代理协作证据规则
 
-> **源由**：2026-06-30 PR #5246 幻觉事件——子代理 C 单源声明"PR #5246（2026-07-14 merge）"被主 agent 直接采信进入 Verified 清单，后审查发现日期异常（未来日期）+ 无独立佐证，排除为幻觉。事件记录见 [investigation-note-cli-codec-content-map-bug.md §Evidence Governance 复盘](decisions/investigation-note-cli-codec-content-map-bug.md)。
+> **源由**：2026-06-30 PR #5246 幻觉事件——子代理 C 单源声明"PR #5246（2026-07-14 merge）"被主 agent 直接采信进入 Verified 清单，后审查发现日期异常（未来日期）+ 无独立佐证，排除为幻觉。事件记录见 [investigation-note-cli-codec-content-map-bug.md §Evidence Governance 复盘](decisions/investigation/investigation-note-cli-codec-content-map-bug.md)。
 >
 > **设计意图**：多子代理协作时，"子代理 A 说 X" + "子代理 B 说 X" 不等于"双来源验证"——若 A 和 B 引用同一上游源（如同一搜索结果、同一文档），仍为单源。主 agent 综合子代理报告时，必须按本节规则重新分类证据等级，不可直接继承子代理声明的等级。
 
