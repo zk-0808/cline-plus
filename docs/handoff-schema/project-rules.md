@@ -79,6 +79,27 @@
 - **不预写**未来阶段的字段（如 snapshot 专属字段，等第二阶段再加）
 - **不做** `kind` / `exit_when` 在 handoff.md 中的显式标注（延伸项 `handoff-schema-v2-kind-exit`，可选推进）
 
+### 6. Hypothesis 条目推理链（机制改进）
+
+`confidence = Hypothesis` 的未完成项**必须**在"说明"列写简短推理链，说明关键字段判断（`depends_on` / `blocker_ref`）的依据。Verified / Likely 条目推理链可选。
+
+**格式**：`<字段判断> ← <依据>`（一句话，写在"说明"列内）
+
+**示例**：
+- ❌ `说明: snapshot schema 化 | depends_on=pr-12032 | Hypothesis`（下游无法核查，只能采信或全盘否定）
+- ✅ `说明: snapshot schema 化（字段对齐不依赖 PR / 长对话实测依赖 codec bug）| depends_on=pr-12032 | Hypothesis`（下游可定向判断）
+
+**设计意图**：
+- `confidence` 标注的是**条目整体**证据强度，但下游需要的是**哪个字段判断弱**的定向指引
+- 没有推理链时，下游读到 `depends_on=X` 是 State 级断言——要么采信（假设上游判断正确）要么全盘否定（无依据），没有"部分采信 + 核查"的中间地带
+- Hypothesis 是低置信度条目，最需要推理链支撑；推理链本质是 agent 撰写时**已经在做的判断的显式化**，不是新增认知负担
+
+**适用范围**：
+- 新增条目立即适用
+- 现有条目下次修改时补齐（不强制本次修改）
+
+**源由**：2026-07-03 会话——`schema-v2-snapshot` 标 `depends_on=pr-12032 + Hypothesis` 但未写推理链。下游模型（下一会话）读到时直接采信为"snapshot schema 化整体依赖 PR #12032"，直到用户提问才读源码发现过度打包（schema 化本可拆为 align 不依赖 PR + e2e 依赖 PR）。`confidence = Hypothesis` 标了整体证据弱，但未定向指引"哪个字段判断弱"，下游无判断空间。
+
 ---
 
 ## 状态值约定
