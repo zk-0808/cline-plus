@@ -10,7 +10,7 @@
 >
 > **与 `.clinerules` 的关系**：`.clinerules` 约束模型**执行行为**（遇不明确条件即停止询问）；本文件约束**执行主体边界与方法论**。两者互补，不重叠。
 >
-> **当前状态**：🟢 解冻（功能交界期）— context-snapshot 开发期已于 2026-07-02 冻结（P0/P1 完成，剩余项受 §1.15 阻塞），进入交界期。本文件可按 §6 维护节奏评估迁入新规则（迁入评估见 [handoff.md](handoff.md)）。下一功能开发启动后重新冻结。
+> **当前状态**：🔴 冻结中（正式进入 handoff 语义对象模型第一阶段开发）— 交界期已于 2026-07-03 结束，handoff.md 轻量 schema 化（语义对象模型 · 第一阶段）正式启动。按 [governance-procedure.md §5.2 步骤 7](governance-procedure.md) 硬约束重新冻结，本文件不新增规则。新规则沉淀至对应功能专属 `project-rules-<功能>.md`。解冻条件：handoff schema 第一阶段验收通过（语义对象模型草案产出 + 现有 handoff.md 无损映射测试 + 验收查询可回答）。
 
 ---
 
@@ -233,6 +233,12 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 - **触发器 a：用户口头要求**（无条件）
   用户在对话中明确说「写 handoff」「交接」「结束会话」等。立即执行，不需要任何前置判断。
   *元规则：不写进规则文件以外的判断逻辑，由用户在对话层触发即可。*
+
+- **触发器 b：未 commit 文件堆积阻断守卫**（强制，自动触发）
+  当 workspace 未 commit 的新建/修改文件数量 **≥ 5**（排除 gitignored 路径）时，**禁止**继续任何实质性代码修改或新探针测试，必须立即写 handoff + commit 序列化。
+  *检测方式*：`git status --porcelain | Where-Object { $_ -match '^\?\?|^\s*M|^A|^M|^D' } | Measure-Object | Select-Object -ExpandProperty Count`（PowerShell）或 `git status --porcelain | wc -l`（bash）。
+  *设计意图*：文件堆积到 5 个以上说明本会话已积累大量未序列化状态，继续推进会让回滚成本失控。阻断守卫的本质是**阻断继续推进**而非代替 agent 思考——agent 被迫停下来，才会产出有意义的 handoff（断言型 confidence，非机械快照）。
+  *机制化候选*：见 [mechanism-candidates.md #25](mechanism-candidates.md)（plugin beforeTool hook 自动检测，当前为手工规则）。
 
 - **触发器 c：对话过长 + 话题已跳 + 上下文吃紧**（建议，不自动）
   **同时**满足下列三条：
