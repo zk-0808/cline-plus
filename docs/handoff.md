@@ -1,4 +1,4 @@
-# Handoff — schema V2 §1.5 snapshot 对齐完成 + 触发阈值评估
+# Handoff — ADR-006 原生机制优先原则确立 + snapshot-trigger-tuning 砍掉
 
 > **生命周期**：每次覆写，无归档——会话交接文件。
 
@@ -6,9 +6,10 @@
 
 | id | 决策 | confidence | depends_on |
 |----|------|-----------|------------|
-| `schema-v2-snapshot-align-completed` | context-snapshot 对齐 schema V2 §1.5 六字段：types.ts TodoRecord 扩展（id/kind/exitWhen/dependsOn/blockerRef）+ Confidence 词汇表对齐 schema §1.0（high→Verified, medium→Likely, low→Hypothesis）+ todo-extractor 新增 parseHandoffTable() 双 Pass 架构 + ID 前缀自动迁移（depends_on 误写 B- 前缀→blocker_ref）+ formatter/snapshot-writer 六字段表格渲染；S1/S2/S3 回归 100% recall/precision + 短对话实测 4 条目全通过；submodule commit 74429de + 父仓库 commit 538eaa0 已 push | Verified | `snapshot-v2-decouple` |
+| `adr-006-native-first-principle` | "完美利用 cline 的原生机制"提升到最高级原则——优先于所有功能设计/字段决策/阈值调优；元规则自检"是不是又在造原生已有的轮子"；审计发现 `schema-v2-snapshot-align` 违反 ADR-005 拆分原则（snapshot 写入绑定 compact 触发 + buildCompactionSummary 死代码）；分支 A（schema/handoff.md 语义对象）保留符合元原则；分支 B（snapshot/compaction/trigger-tuning）砍/缩/转；`snapshot-trigger-tuning` 整条砍掉；详见 [ADR-006](decisions/adr/ADR-006-native-mechanism-first-principle.md) | Verified | `schema-v2-snapshot-align-completed` |
+| `schema-v2-snapshot-align-completed` | context-snapshot 对齐 schema V2 §1.5 六字段（数据模型层有效）；但**实现方式违反 ADR-005**——snapshot 写入与 compact 触发深度耦合 + buildCompactionSummary 死代码；ADR-006 区分数据模型（保留）与触发实现（违反，需重构为薄适配层）；submodule commit 74429de + 父仓库 commit 538eaa0 已 push | Verified | `snapshot-v2-decouple` |
 | `dev-rules-refreeze` | dev-rules L13 状态从 🟢 解冻回 🔴 冻结（2026-07-03 回冻）；上一会话 `dev-rules-unfreeze` 决策标 superseded；L518 解冻条件精确化为"子项目基本结束、进入交接期时"；project-rules §7 迁入时机同步为"handoff-schema 功能整体结束、进入交接期时" | Verified | — |
-| `snapshot-trigger-analysis` | 评估 snapshot 触发机制对 cache 命中率的防备——发现 COMPACT_AT_RATIO=0.75（compaction.ts:7）高于行业经验值 0.60-0.70；snapshot 为被动响应式（shouldCompact=true 时才写，index.ts:62-75），同 session cache miss 无专门防备；跨 session 恢复有防备（rules-injector.ts buildSnapshotRuleContent 注入 latest snapshot）；建议调低阈值或加预写机制（见未完成项 `snapshot-trigger-tuning`）| Likely | `schema-v2-snapshot-align-completed` |
+| `snapshot-trigger-analysis` | ~~评估 COMPACT_AT_RATIO 0.75 高于行业经验 0.60-0.70；建议调低阈值或加预写机制~~ **[部分失效：被 ADR-006 推翻]**——"调阈值"前提被推翻，原生 auto-condense 已覆盖触发；本决策的"snapshot 是被动响应式无 cache 防备"观察仍有效，但结论应改为"砍掉自研触发，改 hook 原生 condense" | Likely | `schema-v2-snapshot-align-completed` |
 | `v2-decouple` | V2 解耦：拆 `handoff-schema-v2` → `handoff-schema-v2-doc`（已完成，不依赖 PR）+ `schema-v2-snapshot`（保留，依赖 PR #12032）+ `handoff-schema-v2-kind-exit`（延伸项，可选）| Verified | `v2-doc-completed` |
 | `handoff-statement-simplify` | handoff.md 末尾两处交接语句精简：去赘述（决策/净变化/状态已在结构化部分），仅保留读文档指引 | Verified | — |
 | `dev-rules-unfreeze` | ~~dev-rules 🔴 冻结 → 🟢 解冻（第一阶段验收通过 + V2 文档层改进完成，解冻条件命中）~~ **[superseded by `dev-rules-refreeze` 2026-07-03]** | Verified | `v2-doc-completed` |
@@ -152,8 +153,9 @@
 |----|------|------|--------|-----------|------------|-------------|
 | `handoff-schema-v2-kind-exit` | kind/exit_when 显式化 | 在 handoff.md 未完成项表中显式标注 `[kind] exit_when`（V2 延伸项，可选）| 🟢 低 | Hypothesis | — | — |
 | `assertion-semantic-model` | Assertion 语义模型决策（已落地，待实施） | 决策版材料见 [assertion-semantic-model.md](handoff-schema/assertion-semantic-model.md)；Q1-Q6 已定 + 元规则已加；下次会话进入实施阶段（按材料 §9.2 顺序推进 6 步）；不立即改 schema/规则 ← 上轮 §6 是局部补丁，需先定语义模型再统一重构，否则陷入"补字段循环"；元规则约束思考方式防复发 | 🟡 中 | Verified | — | — |
-| `schema-v2-snapshot-e2e` | snapshot 真实长对话实测 | 真实 90K+ token 长对话路径实测 + frontmatter 显式化 + confidence 计算固化进 plugin；depends_on=pr-12032 ← 真实长对话路径触发 codec bug 必崩，需等修复 PR 合并 + CLI 发版 | 🟡 中 | Hypothesis | `pr-12032` | `B-cli-codec-bug` |
-| `snapshot-trigger-tuning` | snapshot 触发阈值调优 | 评估 COMPACT_AT_RATIO 从 0.75 调低到 0.65-0.70（对齐行业经验，减少单次压缩量→保留更多 cache prefix）；或增加"达到 60% 主动预写 snapshot"机制（独立于压缩事件）；分析依据见决策 `snapshot-trigger-analysis`；不依赖外部 PR，可独立推进 | 🟡 中 | Likely | — | — |
+| `native-condense-semantic-audit` | cline 原生 condense 语义丢失点实测 | ADR-006 §4 问题 1：实测 cline 原生 condense 产物形态，对比 schema V2 §1.5 六字段 + 五类对象，找具体丢失点；判定 B 分支最终砍/缩/转；不依赖 PR，可立即推进（MAX_INPUT_TOKENS=1000 短对话触发）；回答路径见 [ADR-006 §4.1](decisions/adr/ADR-006-native-mechanism-first-principle.md) | 🟡 中 | Likely | — | — |
+| `buildCompactionSummary-cleanup` | 死代码清理 | 删 [compaction.ts:109-143](../context-snapshot/src/compaction.ts#L109-L143) `buildCompactionSummary` 函数（计算了但 index.ts 未使用 `result.messages`）；可与 `native-condense-semantic-audit` 合并推进；属 ADR-006 §3.4 清理动作 | 🟢 低 | Verified | `native-condense-semantic-audit` | — |
+| `schema-v2-snapshot-e2e` | snapshot 真实长对话实测（重新定位） | 原目标"frontmatter 显式化 + confidence 计算固化进 plugin"保留；删去"长对话触发原生 compact"的实测依赖（codec bug 阻塞的只是原生 compact 路径，与 plugin 语义抽取无关）；ADR-006 §3.2 重新定位 | 🟡 中 | Hypothesis | `pr-12032` | `B-cli-codec-bug` |
 | `issue-11944` | GitHub #11944 跟进 | SDK 迁移时间线（影响 VS Code 扩展 plugin 系统恢复） | 🟡 中 | Verified | — | — |
 | `pr-12032` | PR #12032 合并监控 | CLI codec bug 修复 PR（Open），合并 + CLI 发版后触发 §1.15 解除流程 7 步 | 🟡 中 | Verified | — | — |
 | `vscode-monitor` | 监控 VS Code release | 关键词 Plugins / registerMessageBuilder | 🟢 低 | Verified | `issue-11944` | — |
@@ -178,11 +180,12 @@
 ```
 
 **后续动作**（无紧急项）：
-1. **🟡 中：snapshot 触发阈值调优** — `snapshot-trigger-tuning`（不依赖 PR，可立即推进；评估 COMPACT_AT_RATIO 0.75→0.65-0.70 或加预写机制）
+1. **🟡 中：cline 原生 condense 语义丢失点实测** — `native-condense-semantic-audit`（ADR-006 §4 问题 1，不依赖 PR 可立即推进；判定 B 分支最终砍/缩/转）
 2. **🟢 低：kind/exit_when 显式化** — `handoff-schema-v2-kind-exit` 延伸项（可选）
-3. **🟡 中：跟进 GitHub #11944** — SDK 迁移时间线（影响 VS Code 扩展 plugin 系统恢复）
-4. **🟡 中：监控 PR #12032** — CLI codec bug 修复 PR，合并 + 发版后触发 §1.15 解除流程 + `schema-v2-snapshot-e2e`
-5. **🟢 低：2026-08-01 到期** — mechanism-candidates #17/#19/#24 移入归档
-6. **🟢 低：2026-08-02 下次审查** — 按 dev-rules §6.5 触发条件执行
-7. **🟢 低：stale 扫描** — mechanism-candidates #1/#2/#3 长期候选评估
-8. **🟢 低：第四档暂缓项** — D1/D3/D4/D6/D7 + G4-G5 + H3/H6 + I1-I3
+3. **🟢 低：buildCompactionSummary 死代码清理** — `buildCompactionSummary-cleanup`（可与 #1 合并推进）
+4. **🟡 中：跟进 GitHub #11944** — SDK 迁移时间线（影响 VS Code 扩展 plugin 系统恢复）
+5. **🟡 中：监控 PR #12032** — CLI codec bug 修复 PR，合并 + 发版后触发 §1.15 解除流程 + `schema-v2-snapshot-e2e`
+6. **🟢 低：2026-08-01 到期** — mechanism-candidates #17/#19/#24 移入归档
+7. **🟢 低：2026-08-02 下次审查** — 按 dev-rules §6.5 触发条件执行
+8. **🟢 低：stale 扫描** — mechanism-candidates #1/#2/#3 长期候选评估
+9. **🟢 低：第四档暂缓项** — D1/D3/D4/D6/D7 + G4-G5 + H3/H6 + I1-I3
