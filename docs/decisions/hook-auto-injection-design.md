@@ -2,7 +2,7 @@
 
 > **生命周期**：版本绑定 — context-snapshot v0.8.0，实现完成后归档
 >
-> **状态**：Phase 0 已完成 — beforeRun/beforeTool 契约验证通过（2026-07-04），待进入 Phase 1 实现
+> **状态**：Phase 3 CLI 集成验证通过（2026-07-04）。静态注入走 registerRule（ADR-007，handoff/snapshot 双 id 拆分完成）；commit 守卫（§4）待实现。
 
 ---
 
@@ -32,6 +32,8 @@
 
 **与 §7 不做的事的关系**：§7 列的是"不做"的事项（隐藏式 Memory / TaskComplete → Retain / 跨 Agent 同步 / CLI 子命令），本节列的是"如何判断该不该 hook 化"的判据。两者互补——§7 防止功能蔓延，§0 防止机制化越界。
 
+**与 registerRule 注入的关系**：本节三层分类针对的是治理规则的**执行机制**（该不该 hook 化、怎么 hook 化）。registerRule 静态注入（ADR-007）是**内容交付**机制——session 启动时把 handoff/snapshot 内容送到模型上下文，不涉及"某条规则该不该阻断"的判断。两者正交：三层判据决定哪些规则走 hook / 提示词，registerRule 决定项目状态如何交付给模型。
+
 ---
 
 ## §1 设计目标
@@ -42,13 +44,13 @@
 会话启动                     会话过程中                    会话结束
    │                            │                            │
    ▼                            ▼                            ▼
- beforeRun hook             beforeTool hook              snapshot 写入
- (#6 状态加载)              (#25 commit 守卫)            (已有，compaction 触发)
+ registerRule 静态注入       beforeTool hook              snapshot 写入
+ (#6 handoff/snapshot)       (#25 commit 守卫)            (已有，compaction 触发)
    │                            │
    ▼                            ▼
- 检测 workspace              检测 git status
- 加载 handoff + snapshot     未 commit ≥ 5 → 阻断
- 注入 context                提示写 handoff + commit
+ session 启动求值一次          检测 git status
+ handoff + snapshot            未 commit ≥ 5 → 阻断
+ 注入系统提示词顶层            提示写 handoff + commit
 ```
 
 **核心哲学**（来自 GPT 设计建议）：消费（consume）handoff，而非隐藏（hide）handoff。handoff 是 Human + AI 共享的项目资产——用户可查看、修改、Git 管理；插件只负责自动消费，不替代人工维护。
@@ -57,19 +59,22 @@
 
 ## §2 Hook 选型
 
-| 能力 | Hook 名 | 类型 | 触发时机 | 已有实现 |
-|------|---------|------|---------|---------|
-| #6 状态加载 | `beforeRun` | plugin runtime hook | 会话/任务启动时 | ❌ 待实现 |
+| 能力 | 机制 | 类型 | 触发时机 | 状态 |
+|------|------|------|---------|------|
+| #6 状态加载（静态注入） | `registerRule`（ADR-007） | plugin rule | session 启动求值一次 | ✅ 已实现（handoff-context / snapshot-context 双 id） |
+| #6 状态加载（~~beforeRun~~） | ~~`beforeRun`~~ | ~~plugin runtime hook~~ | ~~会话/任务启动时~~ | 已废弃——见 §3.2 |
 | #25 commit 守卫 | `beforeTool` | plugin runtime hook | 每次工具调用前 | ✅ 已有（toolRecorder） |
 | snapshot 写入 | `beforeModel` | plugin runtime hook | 每次 model request 前 | ✅ 已有（compaction 检测） |
 
-**为什么用 `beforeRun` 而不是 `registerRule`**：CLI 3.0.34 的 `registerRule` content 函数只在 session 启动时求值一次（rule-eval.log 已验证），无法动态加载文件内容。`beforeRun` 是 runtime hook，每次任务启动触发，可以读取当前文件状态。
+**为什么 #6 走 `registerRule` 而不是 `beforeRun`**（推翻原设计）：Phase 0 验证了 beforeRun 契约（返回 `AgentStopControl`，无 contextModification），设计走 beforeRun 加载 + messageBuilder 注入（方式 B）。Phase 3 CLI 实测发现 messageBuilder 注入的 system 消息被 cline agent 训练偏好压过，模型忽略注入内容；而 registerRule 注入到系统提示词顶层后模型直接引用。加上 handoff/snapshot 都是 session-start 静态资产，registerRule "求值一次"契约恰好匹配——见 [ADR-007](adr/ADR-007-snapshot-registerRule-static-injection.md)。
 
-**为什么用 `beforeRun` 而不是文件 hook `TaskStart`**：文件 hook 需要在 `.clinerules/hooks/` 放置可执行脚本，与 plugin 是两套独立系统。plugin runtime hook 统一管理在 context-snapshot 插件内，部署和版本控制更简单。
+**为什么用 `registerRule` 而不是文件 hook `TaskStart`**：文件 hook 需要在 `.clinerules/hooks/` 放置可执行脚本，与 plugin 是两套独立系统。plugin 统一管理在 context-snapshot 内，部署和版本控制更简单。
 
 ---
 
 ## §3 #6 beforeRun：项目状态加载
+
+> ⚠️ **本节已被 ADR-007 部分取代**（2026-07-04）。§3.1/§3.2 的 beforeRun → messageBuilder 注入路径已被 registerRule 静态注入替代。保留本节作为设计历程参考——Phase 0 契约验证结论（beforeRun 无 contextModification/messages）仍然有效，但注入方式已从方式 B 切换为 registerRule。当前实现见 [ADR-007](adr/ADR-007-snapshot-registerRule-static-injection.md)。
 
 ### 3.1 流程
 
@@ -96,15 +101,18 @@ beforeRun(context)
 - `AgentRunLifecycleContext` 只有 `snapshot`，**无 workspacePath** → workspacePath 必须在 setup() 时从 `PluginSetupContext.workspaceInfo.rootPath` 闭包捕获
 - `beforeRun` 返回类型是 `AgentStopControl`（仅 `stop`/`reason`），**不能注入 messages 或 contextModification** → 必须通过 module state 传给 messageBuilder
 
-### 3.2 注入方式验证结果（Phase 0）
+### 3.2 注入方式验证结果（Phase 0 → Phase 3 修订）
 
 | 方式 | 验证结果 | 证据 |
 |------|---------|------|
 | A: contextModification | ❌ **不支持** | `agent.d.ts` L239 beforeRun 返回 `AgentStopControl \| undefined`，无 contextModification 字段 |
-| B: module state → messageBuilder | ✅ **唯一可行** | 已有模式（loop-guard-injector / snapshot-source-saver）；messageBuilder 在 beforeRun 之后执行 |
+| B: module state → messageBuilder | ⚠️ **已废弃**（Phase 3 实测推翻） | Phase 0 认为是唯一可行；Phase 3 CLI 实测发现 messageBuilder 注入的 system 消息被 cline agent 训练偏好压过，模型忽略注入内容 |
 | C: messages 注入 | ❌ **不支持** | beforeRun 返回类型无 messages 字段；只有 `beforeModel` 支持 messages（L192-198 `AgentBeforeModelResult.messages?`）|
+| **D: registerRule 静态注入** | ✅ **实际选定**（ADR-007） | registerRule 注入到系统提示词顶层，模型直接引用（不压过）；content() 只评估一次，匹配 handoff/snapshot 静态资产语义；handoff/snapshot 各注册独立 id，独立降级 |
 
-**结论**：方式 B 是唯一可行路径。beforeRun 负责"检测+加载+写入 module state"，messageBuilder 负责"读取 module state+注入 context"。与 thin-adapter 的 messageBuilder+beforeModel 协作模式架构一致。
+**结论修订**：Phase 0 判断"方式 B 是唯一可行路径"被 Phase 3 实测推翻。messageBuilder 注入服从度不足（cline agent 训练偏好压过 system 消息），registerRule 注入到系统提示词顶层后模型直接引用。加上 handoff/snapshot 都是 session-start 静态资产，registerRule "求值一次"契约恰好匹配。当前实现：setup() 预加载 I/O → module state → content() 纯函数读 state → registerRule 双 id（`handoff-context` / `snapshot-context`）注入。详见 [ADR-007](adr/ADR-007-snapshot-registerRule-static-injection.md)。
+
+> **教训**：Phase 0 只验证了契约能力（"beforeRun 能不能注入"），没验证注入后模型是否服从。"能注入"≠"模型会用"——必须走到 Phase 3 实测才能闭环。
 
 ### 3.3 Provider 架构
 
@@ -196,13 +204,13 @@ hooks: {
 
 ## §6 实现路线
 
-| 阶段 | 内容 | 依赖 |
+| 阶段 | 内容 | 状态 |
 |------|------|------|
-| **Phase 0: 契约验证** ✅ | beforeRun 返回 `AgentStopControl`（无 contextModification/messages）；beforeTool `skip` 字段确认；workspacePath 须 setup 闭包捕获 | CLI 3.0.34 `@cline/shared/dist/agent.d.ts` |
-| **Phase 1: handoff provider** | 实现 handoffProvider（检测 + 加载 + 摘要）+ beforeRun 写 module state + messageBuilder 注入 | Phase 0 ✅ |
-| **Phase 2: commit 守卫** | 实现 beforeTool git status 检查 + `return { skip: true, reason }` 阻断 | Phase 0 ✅ |
-| **Phase 3: 实测验证** | CLI 短对话测试：新会话自动加载 handoff + commit 守卫触发 | Phase 1 + 2 |
-| **Phase 4: Provider 扩展** | 加 snapshotProvider（最新快照）| Phase 1 |
+| **Phase 0: 契约验证** | beforeRun 返回 `AgentStopControl`（无 contextModification/messages）；beforeTool `skip` 字段确认；workspacePath 须 setup 闭包捕获 | ✅ 已完成 |
+| ~~Phase 1: handoff provider~~ | ~~beforeRun 加载 + messageBuilder 注入~~ | ⚠️ **被 ADR-007 取代**——改走 registerRule 静态注入 |
+| **Phase 2: commit 守卫** | 实现 beforeTool git status 检查 + `return { skip: true, reason }` 阻断 | ⏳ 待实现 |
+| **Phase 3: 实测验证** | CLI 集成测试：registerRule 注入 handoff/snapshot 成功，3 tests PASS | ✅ 已通过（commit `e86f925`） |
+| ~~Phase 4: Provider 扩展~~ | ~~加 snapshotProvider~~ | ⚠️ **被 ADR-007 取代**——snapshot-context rule 已实现 |
 
 ---
 
