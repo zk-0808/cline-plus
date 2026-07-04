@@ -102,6 +102,21 @@
 | rules | `@cline/shared/dist/extensions/contribution-registry.d.ts` `AgentExtensionRule` | `api.registerRule()` — 字段是 `id` 不是 `name` |
 | messageBuilders | 同上 `AgentExtensionMessageBuilder` | `api.registerMessageBuilder()` |
 | setup ctx | 同上 `PluginSetupContext` | `ctx.workspaceInfo.rootPath`（不是 `workspacePath`）|
+| **工具名** | `@cline/shared/dist/hub.d.ts` `HubToolExecutorName` | CLI 3.0.37+: `editor` / `run_commands` / `bash` / `readFile` / `applyPatch` / `search` / `webFetch`（**不是**旧名 `write_to_file` / `execute_command`）|
+
+**⚠️ 工具名版本变化**（CLI 3.0.37 实测确认）：
+
+| 旧名（≤3.0.34） | 新名（3.0.37+） | 类型 |
+|----------------|----------------|------|
+| `write_to_file` | `editor` | 文件创建/编辑 |
+| `replace_in_file` | `editor` | 文件编辑 |
+| `execute_command` | `run_commands` | 命令执行 |
+| `read_file` | `readFile` | 文件读取 |
+| `insert_content` | `editor` | 文件插入 |
+| — | `applyPatch` | diff patch |
+| — | `bash` | shell 命令 |
+
+**跳过代价**：commit 守卫 WRITE_TOOL_NAMES 用旧名 → `editor` 工具调用不触发 guard → E2E 实测才发现。
 
 **出口判据**：*我能说出这次改动触达的契约文件路径和入口形式，不用再翻文档。* 答不上来 → 回到契约速查表。
 

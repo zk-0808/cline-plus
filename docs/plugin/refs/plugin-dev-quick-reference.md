@@ -363,3 +363,49 @@ P5 实验直接参考的官方样例：
 5. **所有 hook 返回的 messages 必须用 `AgentMessage[]` + `AgentMessagePart[]` 格式**——content 不能是 string（与 §13.6 codec bug 一致）。
 
 **对设计的影响**：静态内容（handoff/snapshot）走 registerRule 双 id 注入（ADR-007）；方式 B（module state → messageBuilder）仅用于动态 per-turn 内容，且服从度不足（见 §13.2）。详见 [hook-auto-injection-design.md §3.2](../../decisions/hook-auto-injection-design.md)（已修订）。
+
+### 13.10 CLI 3.0.37 工具名变更（Verified，E2E）
+
+来源：CLI E2E 测试 2026-07-04 + `@cline/shared/dist/hub.d.ts` `HubToolExecutorName`
+
+**CLI 3.0.37 重命名了全部工具**：
+
+| 旧名（≤3.0.34） | 新名（3.0.37+） | 说明 |
+|----------------|----------------|------|
+| `write_to_file` | **`editor`** | 文件创建/编辑（合并） |
+| `replace_in_file` | **`editor`** | 文件编辑（合并入 editor） |
+| `insert_content` | **`editor`** | 文件插入（合并入 editor） |
+| `search_and_replace` | **`editor`** | 搜索替换（合并入 editor） |
+| `execute_command` | **`run_commands`** | 命令执行 |
+| `read_file` | **`readFile`** | 文件读取（camelCase） |
+| — | **`applyPatch`** | diff patch（新增） |
+| — | **`bash`** | shell 命令（新增，与 run_commands 并存） |
+
+**完整 HubToolExecutorName**（hub.d.ts L311）：
+```typescript
+"readFile" | "search" | "bash" | "webFetch" | "editor" | "applyPatch" | "skills" | "askQuestion" | "submit"
+```
+
+**E2E 验证**：commit 守卫 WRITE_TOOL_NAMES 使用旧名 `write_to_file` → CLI 实际调用 `editor` → guard 不触发 → 模型成功创建所有文件。**修复后**（加入 `editor`）→ 第 3 次 `editor` 调用被 skip，模型收到 reason。
+
+> ⚠️ **教训**：工具名是 CLI 版本相关的。plugin 代码里硬编码工具名时，必须同时覆盖新旧名（向后兼容），或在文档里标注"verified on CLI X.Y.Z"。写 beforeTool/afterTool 过滤逻辑时，先 `cline -i` 跑一次看实际 toolCall.toolName。
+
+### 13.11 plugin 同步路径陷阱（Verified）
+
+来源：CLI E2E 调试 2026-07-04
+
+**Copy-Item 的 src vs src\* 区别**：
+
+```powershell
+# ❌ 错误：把 src 目录本身复制到目标下，变成 src\src\*
+Copy-Item "E:\cline++\context-snapshot\src" -Destination "C:\...\context-snapshot\src" -Recurse -Force
+
+# ✅ 正确：复制 src 目录的*内容*到目标
+Copy-Item "E:\cline++\context-snapshot\src\*" -Destination "C:\...\context-snapshot\src\" -Recurse -Force
+```
+
+**双重安装目录**：CLI 扫描 `~/.cline/plugins/installed/` 和 `~/.cline/plugins/_installed/`（后者可能是 junction）。两个目录都必须同步，否则 CLI 可能加载旧代码。
+
+**验证方法**：同步后检查目标文件的 `LastWriteTime` 和内容（如 `Select-String` 搜索关键标记），不要只看 Copy-Item 无报错就认为成功。
+
+> ⚠️ **教训**：sync-and-test.ps1 用 `src\*`（正确），手动同步容易漏掉通配符。建议始终用脚本同步。
