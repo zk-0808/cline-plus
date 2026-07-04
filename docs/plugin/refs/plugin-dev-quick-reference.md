@@ -12,10 +12,10 @@
 > **内容来源**：Cline 官方文档/示例代码 + 本项目源码探查（investigation-note 系列）+ 实测验证。**不凭印象推断**。
 >
 > **当前版本基准**：
-> - Cline CLI 3.0.34
+> - Cline CLI 3.0.37
 > - VS Code Extension 4.0.x（plugin 系统不可用，见 §6）
-> - SDK v0.0.51
-> - 最近更新：2026-07-04（补 §13 源码探查产出回流 + §13.9 hook 契约 Phase 0 验证）
+> - SDK v0.0.56
+> - 最近更新：2026-07-04（§13.2/§13.9 修订反映 ADR-007 registerRule 静态注入）
 
 ---
 
@@ -264,11 +264,12 @@ P5 实验直接参考的官方样例：
 
 来源：[investigation-note-cline-runtime-probe.md](../../decisions/investigation/investigation-note-cline-runtime-probe.md) §2.4 + [investigation-note-cli-plugin-verification.md](../../decisions/investigation/investigation-note-cli-plugin-verification.md)
 
-- **registerRule 的 content 函数只在 session 启动时求值一次**——运行时永不重新求值（死路径）
-- **不能用 registerRule 做动态内容注入**（如加载当前 handoff.md 内容）
-- **动态内容必须走 messageBuilder 或 beforeRun hook**
+- **registerRule 的 content 函数只在 session 启动时求值一次**——运行时永不重新求值
+- **不能用 registerRule 做动态 per-turn 内容注入**（如 per-turn 变化的 loop guard warning）
 
-**对设计的影响**：context-snapshot 的 rules 注入路径已废弃，改用 messageBuilder + beforeModel 协作。详见 [handoff.md `thin-adapter-mb-bm-collaboration`](../../handoff.md)。
+**对设计的影响**（ADR-007 修订）：handoff 和 snapshot 是 **session-start 静态资产**——启动时读一次正是它们要的语义。registerRule "求值一次"契约恰好匹配。当前实现：setup() 预加载 I/O → module state → content() 纯函数读 state → registerRule 双 id（`handoff-context` / `snapshot-context`）独立注入。**不能用 registerRule 的是动态 per-turn 内容**（那部分走 messageBuilder 或 beforeModel），但静态资产走 registerRule 是正确路径。详见 [ADR-007](../../decisions/adr/ADR-007-snapshot-registerRule-static-injection.md)。
+
+> ⚠️ **Phase 3 实测发现**：messageBuilder 注入的 system 消息被 cline agent 训练偏好压过，模型忽略注入内容；registerRule 注入到系统提示词顶层后模型直接引用。静态内容**必须走 registerRule**，不走 messageBuilder。
 
 ### 13.3 estimateTokensFromChars 不可用（Verified）
 
@@ -355,10 +356,10 @@ P5 实验直接参考的官方样例：
 
 **关键坑点**：
 
-1. **beforeRun 不能注入 messages**——返回类型 `AgentStopControl` 只有 `stop`/`reason`。要在会话启动时注入内容，必须用"beforeRun 写 module state + messageBuilder 读取注入"模式（方式 B）。
+1. **beforeRun 不能注入 messages**——返回类型 `AgentStopControl` 只有 `stop`/`reason`。静态内容（handoff/snapshot）走 **registerRule**（ADR-007）；动态 per-turn 内容走"beforeRun 写 module state + messageBuilder 读取注入"模式（方式 B，但注意 messageBuilder 服从度不足——见 §13.2 ⚠️）。
 2. **beforeRun context 无 workspacePath**——`AgentRunLifecycleContext` 只有 `snapshot`。workspacePath 必须在 `setup()` 时从 `PluginSetupContext.workspaceInfo.rootPath` 闭包捕获（CLI plugin 路径）。
 3. **beforeModel 是唯一能替换 messages 的 hook**——返回 `messages?` 字段会替换整个 in-memory transcript（`agent.d.ts` L302-307 注释："When it returns messages, the runtime replaces its in-memory transcript so compaction persists into the final run result"）。
 4. **beforeTool skip vs stop**——`skip` 跳过本次工具调用（run 继续）；`stop` 停止整个 run。commit 守卫用 `skip`。
 5. **所有 hook 返回的 messages 必须用 `AgentMessage[]` + `AgentMessagePart[]` 格式**——content 不能是 string（与 §13.6 codec bug 一致）。
 
-**对设计的影响**：hook-auto-injection-design §3.2 方式 A（contextModification）/方式 C（messages）废弃，方式 B（module state → messageBuilder）为唯一可行路径。详见 [hook-auto-injection-design.md §3.2](../../decisions/hook-auto-injection-design.md)。
+**对设计的影响**：静态内容（handoff/snapshot）走 registerRule 双 id 注入（ADR-007）；方式 B（module state → messageBuilder）仅用于动态 per-turn 内容，且服从度不足（见 §13.2）。详见 [hook-auto-injection-design.md §3.2](../../decisions/hook-auto-injection-design.md)（已修订）。
