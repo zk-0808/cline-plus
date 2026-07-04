@@ -2,7 +2,7 @@
 
 > **生命周期**：版本绑定 — context-snapshot v0.8.0，实现完成后归档
 >
-> **状态**：Phase 0-3 已完成（2026-07-04）。静态注入走 registerRule（ADR-007）；commit 守卫已实现（beforeTool skip，3 tests PASS）。CLI 端到端实测待跑（需用户跑 `cline -i`）。
+> **状态**：Phase 0-3 全部完成 + CLI E2E 验证通过（2026-07-04）。registerRule 静态注入（ADR-007）✅；commit 守卫 beforeTool skip ✅（CLI 3.0.37 `editor` tool #3 blocked, model 收到 reason）。
 
 ---
 
@@ -208,7 +208,7 @@ hooks: {
 |------|------|------|
 | **Phase 0: 契约验证** | beforeRun 返回 `AgentStopControl`（无 contextModification/messages）；beforeTool `skip` 字段确认；workspacePath 须 setup 闭包捕获 | ✅ 已完成 |
 | ~~Phase 1: handoff provider~~ | ~~beforeRun 加载 + messageBuilder 注入~~ | ⚠️ **被 ADR-007 取代**——改走 registerRule 静态注入 |
-| **Phase 2: commit 守卫** | beforeTool git status 检查 + `return { skip: true, reason }` 阻断 | ✅ 逻辑验证通过（10/10 tests PASS，含真实 git repo）；CLI 端到端待实测 |
+| **Phase 2: commit 守卫** | beforeTool git status 检查 + `return { skip: true, reason }` 阻断 | ✅ **CLI E2E 验证通过**（`editor` tool #3 被 skip，model 看到 reason 并自行 commit）|
 | **Phase 3: 实测验证** | CLI 集成测试：registerRule 注入 handoff/snapshot 成功，3 tests PASS | ✅ 已通过（commit `e86f925`） |
 | ~~Phase 4: Provider 扩展~~ | ~~加 snapshotProvider~~ | ⚠️ **被 ADR-007 取代**——snapshot-context rule 已实现 |
 
