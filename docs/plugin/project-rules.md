@@ -42,6 +42,18 @@
 - agent 不得在 `E:\cline++` 根目录创建 `.log` / `.tmp` / `.bak` 等临时文件
 - 若工具脚本需要输出中间结果，使用 `context-snapshot/dist/` 或 `~/.cline/data/snapshot/`
 
+### 1.6 PowerShell 脚本编码规范
+
+PowerShell 5.x（Windows 自带）默认用系统 codepage（中文 Windows 为 GBK）解析无 BOM 的 .ps1 文件。UTF-8 中文字符被 GBK 解码时变成长度不定的乱码字节，可能"吃掉"字符串闭合引号，导致后续所有字符串解析错位（报错位置远离根因）。
+
+**约束**：
+
+- .ps1 文件**必须**全 ASCII，或带 UTF-8 BOM
+- 不能用 `chcp 65001` 规避——chcp 只改控制台输出 codepage，不影响文件解析编码
+- 中文字符串（如 cline prompt）需用变量传递或从外部文件读
+
+**事故参考**：sync-and-test.ps1 含中文 prompt + em dash，PowerShell 5.x 报"字符串缺少终止符"在 line 34，实际根因在 line 26 的中文字符。
+
 ---
 
 ## 2. 扩展编写工作流约束
