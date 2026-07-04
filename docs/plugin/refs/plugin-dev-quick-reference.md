@@ -1,29 +1,27 @@
 # Cline Plugin 开发 Quick Reference
 
-> **生命周期**：永久保留——开发参考文档，SDK 大版本变更时更新。
-> P5 实验启动前的参考资料。**所有内容来自 Cline 官方文档/示例代码**，无凭印象推断。
-> 调研日期：2026-06-23
-> SDK 当前版本：v0.0.51
+> **生命周期**：永久保留——plugin 开发知识库，随源码探查持续更新。
+>
+> **定位**：plugin 开发的**知识层**——骨架/hook/capability/契约/源码定位/坑点。与 [plugin-dev-sop.md](../plugin-dev-sop.md)（思考层）/ [cline-plugin-architecture-atlas.md](cline-plugin-architecture-atlas.md)（源码层）/ [development-summary.md](../development-summary.md)（经验层）互补。
+>
+> **触发时机**（宽松版）：
+> - **强信号**：任何 plugin 相关对话开始时，与 SOP 一起读
+> - **弱信号**：提到 messageBuilder / hook / rule / provider / capability 时查对应章节
+> - **更新信号**：完成源码探查 / 实测验证 / bug 修复后，相关发现回流到本文件对应章节
+>
+> **内容来源**：Cline 官方文档/示例代码 + 本项目源码探查（investigation-note 系列）+ 实测验证。**不凭印象推断**。
+>
+> **当前版本基准**：
+> - Cline CLI 3.0.34
+> - VS Code Extension 4.0.x（plugin 系统不可用，见 §6）
+> - SDK v0.0.51
+> - 最近更新：2026-07-04（补 §13 源码探查产出回流 + §13.9 hook 契约 Phase 0 验证）
 
 ---
 
-## 0. ~~重要前提：社区经验为空~~（⚠️ Stale，2026-06-27 作废）
+## 0. ~~重要前提：社区经验为空~~（⚠️ Stale，2026-06-27 作废，已删）
 
-> **⚠️ Stale 标注（2026-06-27，[ADR-002 Update 5](../../decisions/adr/ADR-002-project-shape.md)）**：本节"社区经验为空"结论**作废**——经 [Marketplace 开发机制并行调查](../../decisions/investigation/investigation-note-marketplace-dev-mechanism.md) 4-subagent 并行核查证伪：
->
-> - npm `@cline/sdk` 周下载 **234,966**（2026-06-27 fetch）
-> - GitHub 外部贡献者 abeatrix **7 个 plugin development PR**（2026-05-19~06-23 合并）
-> - 官方 plugin examples **11 个**（含 weather-metrics/custom-compaction/agents-squad）
-> - 独立官方 plugin 仓库 `cline/typescript-lsp-plugin`
-> - Marketplace 上架 **~22 Plugins / ~50 Skills / ~200 MCP**
->
-> **RCA 根因**：原调查方法缺陷——把"无 how-to 博客"误等同为"无开发活动"（证据类型混淆 + 单源裁决）。详见调查报告 §C 号 Process Reviewer 5 Whys 分析。
->
-> 本节原文保留用于追溯，但不应再作为决策依据。下方"后果"段已不适用——P5 实验不再是"为社区探路"，而是验证 #5 自有命题（messageBuilder + compact 双产物 + 检索索引）。
-
-~~搜过 SDK plugin 开发的中英文社区经验、博客、踩坑记录 → **未发现任何有价值的二手沉淀**~~（已作废）
-~~原因：`@cline/sdk` 仍是 0.x，文档刚推出不久，社区尚未形成实战经验沉淀~~（已作废）
-~~**后果**：我们做 P5 实验时本质上就在为社区**探路**，每一处不顺手都值得记录回 `mechanism-candidates.md` 或新建 `plugin-dev-notes.md`~~（已作废）
+> 本节原结论"社区经验为空"经 [Marketplace 开发机制并行调查](../../decisions/investigation/investigation-note-marketplace-dev-mechanism.md) 证伪——npm `@cline/sdk` 周下载 234,966，官方 examples 11 个，Marketplace 上架 ~22 Plugins。原节已删除，不再占用篇幅。RCA 详见调查报告。
 
 ---
 
@@ -230,59 +228,137 @@ P5 实验直接参考的官方样例：
 
 ---
 
-## 10. 对 ADR-002 P5 计划的调整建议
+## 10. ~~对 ADR-002 P5 计划的调整建议~~（⚠️ Stale，2026-07-04 删除）
 
-基于本调研，**Validation Plan 的"最小可行 Plugin 范围"需要补充两点**：
-
-1. **实验环境必须切到 CLI 或 SDK 自建**（VS Code Cline 当前不支持 plugin）。这要么改变工作流，要么 P5 必须走"开两个 Cline——VS Code 主用 + CLI 跑实验"双轨
-2. **首个实验文件直接 fork `custom-compaction.ts`**，最小改造：
-   - 在压缩同时写出 `handoff/auto-{ts}-{slug}.md`
-   - 追加 `.cline/index.jsonl` 一行
-   - 5KB 以内，单文件，本地路径安装
-
-**这两个调整应该作为 ADR-002 的勘误反映回去**——否则按原 Validation Plan 跑会卡在"实验装不进 VS Code"这个起手关。
+> 原节内容（P5 实验环境要求 + fork custom-compaction.ts）已 stale——P5 实验已暂停（[ADR-004](../../decisions/adr/)），context-snapshot 插件已独立开发至 v0.7.x。原节已删除。
 
 ---
 
-## 11. 一键启动 P5 实验的最小步骤（基于上述资料）
+## 11. ~~一键启动 P5 实验的最小步骤~~（⚠️ Stale，2026-07-04 删除）
 
-```bash
-# 1. 安装 Cline CLI
-npm i -g cline
-
-# 2. 创建实验目录
-mkdir -p experiments/handoff-probe-plugin
-cd experiments/handoff-probe-plugin
-
-# 3. fork custom-compaction.ts 作为起点
-curl -O https://raw.githubusercontent.com/cline/cline/main/sdk/examples/plugins/custom-compaction.ts
-mv custom-compaction.ts handoff-probe.ts
-
-# 4. 改造（加 handoff 写出 + index.jsonl 追加）
-
-# 5. 本地安装
-cline plugin install ./handoff-probe.ts --cwd .
-
-# 6. 验证装载
-cline config  # 查看 plugin tab
-
-# 7. 实跑
-cline -i "做一个长任务，触发 compact"
-```
-
-**未验证项**（待实跑时确认）：
-- `cline plugin install` 在 Windows 是否可用
-- `pluginPaths` 配置在 VS Code Cline 中是否完全无效
-- `session_start` 等更底层 hook stage 在 plugin 里如何注册
+> 原节内容（P5 实验一键启动步骤）已 stale。当前 plugin 本地安装步骤见 [SOP §0.5 一轮跑完清单](../plugin-dev-sop.md)。原节已删除。
 
 ---
 
-## 12. 给本项目的 5 条结论
+## 12. ~~给本项目的 5 条结论~~（⚠️ Stale，2026-07-04 删除）
 
-| # | 结论 | 行动项 |
-|---|------|--------|
-| 1 | Plugin 在 VS Code Cline **当前不支持** | 修订 ADR-002 P5 实验环境要求 |
-| 2 | 社区无 plugin 实战经验 | P5 实验本身就是社区探路价值 |
-| 3 | messageBuilder 是 compact 的官方推荐入口 | `custom-compaction.ts` fork 后改造 |
-| 4 | 文件 Hook 和 Plugin Hook 是两套并存机制 | OUTLINE §6.1 "Windows Hook 替代"需重新评估（可能两条都能用） |
-| 5 | Package Plugin 可绑定 Skills | 未来 V1 可以是"Plugin + Skills + WebSearch MCP"打包发布 |
+> 原节 5 条结论已 stale——P5 已暂停、社区经验判定已作废（§0）。当前结论见 [development-summary.md](../development-summary.md) 能力矩阵。原节已删除。
+
+---
+
+## 13. 源码探查产出回流（2026-07-04 新增）
+
+> 本节收纳后续源码探查的产出，作为 §1-§9 官方资料的补充。每条标注来源 investigation-note + Verified 状态。
+
+### 13.1 messageBuilder 调用时机（Verified）
+
+来源：[investigation-note-cline-runtime-probe.md](../../decisions/investigation/investigation-note-cline-runtime-probe.md) + [investigation-note-cli-plugin-verification.md](../../decisions/investigation/investigation-note-cli-plugin-verification.md)
+
+- **build() 在每次 turn 准备时被调用**（非仅 compact 时）——4 消息会话 = 4 次 build() 调用
+- **messageBuilder 在原生 compact 判定之前执行**（非之后）——这意味着 messageBuilder 拿到的是 compact **前**的完整 messages，无法观察 compact 后产物
+- **多个 messageBuilder 按注册顺序串行执行**
+
+**对设计的影响**：要做"compact 后抽 semantic object"必须用 beforeModel hook（方案 E），不能用 messageBuilder。详见 [thin-adapter-layer-design.md](../../decisions/thin-adapter-layer-design.md)。
+
+### 13.2 rules 注入频率（Verified）
+
+来源：[investigation-note-cline-runtime-probe.md](../../decisions/investigation/investigation-note-cline-runtime-probe.md) §2.4 + [investigation-note-cli-plugin-verification.md](../../decisions/investigation/investigation-note-cli-plugin-verification.md)
+
+- **registerRule 的 content 函数只在 session 启动时求值一次**——运行时永不重新求值（死路径）
+- **不能用 registerRule 做动态内容注入**（如加载当前 handoff.md 内容）
+- **动态内容必须走 messageBuilder 或 beforeRun hook**
+
+**对设计的影响**：context-snapshot 的 rules 注入路径已废弃，改用 messageBuilder + beforeModel 协作。详见 [handoff.md `thin-adapter-mb-bm-collaboration`](../../handoff.md)。
+
+### 13.3 estimateTokensFromChars 不可用（Verified）
+
+来源：[investigation-note-cli-plugin-verification.md](../../decisions/investigation/investigation-note-cli-plugin-verification.md) V2
+
+- **`@cline/shared` 的 `estimateTokensFromChars` 返回值异常低**——16K 字符 → 297 tokens（预期 ~4,000）
+- **不可用于 token 估算**，差 ~13 倍
+- **替代方案**：`Math.ceil(text.length / 4)` 标准英文近似
+
+**对设计的影响**：context-snapshot 已删除自研 `shouldCompact` + `estimateTokens`（阶段 1 清理），改用 beforeModel 长度突变检测原生 condense。详见 [project-rules-thin-adapter.md §1](../project-rules-thin-adapter.md)。
+
+### 13.4 serializeMessage block type 不匹配（Verified）
+
+来源：[investigation-note-cli-plugin-verification.md](../../decisions/investigation/investigation-note-cli-plugin-verification.md) V3 + Bug 2
+
+- **Cline 实际消息的 block type 不在 `text / thinking / tool_use / tool_result / file` 枚举中**
+- 所有 block 落入 `default` 分支，只输出 `[role type block]` 标签（不含内容）
+- **修复**：`default` 分支改为 `JSON.stringify(block).slice(0, 2000)`
+
+**坑点**：写 extractor 时不要硬编码 block type 枚举，用 `JSON.stringify` 兜底。
+
+### 13.5 双重 setup() 现象（Verified）
+
+来源：[investigation-note-dual-setup.md](../../decisions/investigation/investigation-note-dual-setup.md)
+
+- **CLI 3.0.34 每次 `cline -i` 启动时 setup() 被调用两次**，间隔 300-500ms
+- 第一条 workspace=unknown，第二条 workspace=实际路径
+- messageBuilder.build() 也成对出现（每 turn 两次）
+- **3.0.33 为单 setup，3.0.34 升级引入**
+
+**坑点**：setup() 里不要做幂等性假设——注册逻辑必须能承受双调用。context-snapshot 的 `api.registerMessageBuilder()` / `api.registerTool()` 已验证可承受双调用。
+
+### 13.6 codec bug 路径 A/B（Verified）
+
+来源：[investigation-note-cli-codec-content-map-bug.md](../../decisions/investigation/investigation-note-cli-codec-content-map-bug.md) O8
+
+- **路径 A（MCP tool_result）**：content 经 JSON.stringify 有损转换变非数组
+- **路径 B（beforeModel 注入）**：beforeModel 返回 content 为 string 类型，codec `Nd` 函数调 `n.content.map()` 必崩——**与消息数量/token 总量无关**，任何步骤下 beforeModel 返回 string content 都会崩溃
+
+**坑点**：所有 hook / messageBuilder 返回的 messages 必须用 `ContentBlock[]` 格式，禁止 string content。详见 [project-rules-thin-adapter.md §5](../project-rules-thin-adapter.md)。
+
+### 13.7 原生 compaction 阈值与产物（Verified）
+
+来源：[investigation-note-native-condense-c-hooks.md](../../decisions/investigation/investigation-note-native-condense-c-hooks.md) + [investigation-note-beforemodel-timing-verify.md](../../decisions/investigation/investigation-note-beforemodel-timing-verify.md)
+
+- **CLI 3.0.34 原生 compaction 阈值**：`maxInputTokens=200K, thresholdRatio=0.9, reserveTokens=16384` → 触发点 ~180K tokens
+- **无 CLI flag/env var 可调**——不能用配置降低阈值做测试
+- **agentic compaction 产物含 `metadata.kind="compaction_summary"`**——可用于检测 compaction 发生
+- **beforeModel 在原生 compaction 之后执行**（源码 `agents/dist/index.js` L65 `prepareTurnForModelRequest → beforeModel`）
+
+**对设计的影响**：短对话无法触发 compaction（需 180K tokens），实测需等 PR #12032 修复 codec bug 后才能跑长对话。详见 [dev-rules.md §1.15](../../dev-rules.md)。
+
+### 13.8 源码文件定位速查（Verified）
+
+来源：[investigation-note-cline-runtime-probe.md](../../decisions/investigation/investigation-note-cline-runtime-probe.md) §2
+
+| 主题 | 关键文件 |
+|------|---------|
+| compact 执行链 | `sdk/packages/core/src/extensions/context/compaction.ts` + `basic-compaction.ts` + `agentic-compaction.ts` |
+| compact 设计意图 | `sdk/ARCHITECTURE.md` §9 |
+| messageBuilder 服务 | `sdk/packages/core/src/session/services/message-builder.ts` |
+| turn-preparation 调用点 | `sdk/packages/agents/src/agent-runtime.ts`（`prepareTurnForModelRequest`）|
+| rules 注入 | `sdk/packages/core/src/extensions/config/user-instruction-plugin.ts` |
+| contribution 注册表 | `sdk/packages/shared/src/extensions/contribution-registry.d.ts` |
+| checkpoint 机制 | `sdk/packages/core/src/session/checkpoint-restore.ts` + `checkpoint-diff.ts` + `session-snapshot.ts` |
+
+**与 atlas 的关系**：atlas 覆盖 plugin 子系统 7 文件（discovery/install/load/sandbox/runtime），本表覆盖 core/agents 层的运行时文件。两者互补。
+
+### 13.9 beforeRun / beforeTool / beforeModel hook 契约（Verified，Phase 0）
+
+来源：CLI 3.0.34 `@cline/shared/dist/agent.d.ts` L184-248（[hook-auto-injection-design.md Phase 0](../../decisions/hook-auto-injection-design.md)）
+
+**AgentRuntimeHooks 7 回调签名**（L238-248）：
+
+| Hook | Context 类型 | 返回类型 | 能否注入 messages |
+|------|-------------|---------|------------------|
+| `beforeRun` | `AgentRunLifecycleContext` = `{ snapshot }` | `AgentStopControl` = `{ stop?, reason? }` | ❌ **不能** |
+| `afterRun` | `AgentRunLifecycleContext & { result }` | `void` | ❌ |
+| `beforeModel` | `AgentBeforeModelContext` = `{ snapshot, request }` | `AgentBeforeModelResult` = `{ stop?, reason?, messages?, tools?, options? }` | ✅ **能**（替换整个 messages）|
+| `afterModel` | `AgentAfterModelContext` = `{ snapshot, assistantMessage, finishReason }` | `AgentStopControl` | ❌ |
+| `beforeTool` | `AgentBeforeToolContext` = `{ snapshot, tool, toolCall, input }` | `AgentBeforeToolResult` = `{ skip?, stop?, reason?, input?, policy? }` | N/A（控制工具执行）|
+| `afterTool` | `AgentAfterToolContext` = `{ snapshot, tool, toolCall, input, result, startedAt, endedAt, durationMs }` | `AgentAfterToolResult` = `{ stop?, reason?, result? }` | N/A |
+| `onEvent` | `AgentRuntimeEvent` | `void` | ❌ |
+
+**关键坑点**：
+
+1. **beforeRun 不能注入 messages**——返回类型 `AgentStopControl` 只有 `stop`/`reason`。要在会话启动时注入内容，必须用"beforeRun 写 module state + messageBuilder 读取注入"模式（方式 B）。
+2. **beforeRun context 无 workspacePath**——`AgentRunLifecycleContext` 只有 `snapshot`。workspacePath 必须在 `setup()` 时从 `PluginSetupContext.workspaceInfo.rootPath` 闭包捕获（CLI plugin 路径）。
+3. **beforeModel 是唯一能替换 messages 的 hook**——返回 `messages?` 字段会替换整个 in-memory transcript（`agent.d.ts` L302-307 注释："When it returns messages, the runtime replaces its in-memory transcript so compaction persists into the final run result"）。
+4. **beforeTool skip vs stop**——`skip` 跳过本次工具调用（run 继续）；`stop` 停止整个 run。commit 守卫用 `skip`。
+5. **所有 hook 返回的 messages 必须用 `AgentMessage[]` + `AgentMessagePart[]` 格式**——content 不能是 string（与 §13.6 codec bug 一致）。
+
+**对设计的影响**：hook-auto-injection-design §3.2 方式 A（contextModification）/方式 C（messages）废弃，方式 B（module state → messageBuilder）为唯一可行路径。详见 [hook-auto-injection-design.md §3.2](../../decisions/hook-auto-injection-design.md)。

@@ -28,17 +28,17 @@ Cline 执行提示词必须在开头声明输出文件的建议存放位置，�
 
 ### 1.2 子条款：cline 交互式会话需真实终端（TTY）
 
-凡需实际发起 cline 会话的命令（`cline -i` / `cline -v "..."` / 任何进入 agent loop 的调用），必须交由用户在真实终端执行，主 agent 不得在非交互终端代跑——否则报 `EBADF: bad file descriptor, write` 并挂起。主 agent 只负责非交互命令（install / config / 目录与文件检查）与结果判读。源由：P5 Spike 实跑（2026-06-26，`experiments/p5-spike/run-p5-capability-spike.md §7 教训 2`）。
+凡需实际发起 cline 会话的命令（`cline -i` / `cline -v "..."` / 任何进入 agent loop 的调用），必须交由用户在真实终端执行，主 agent 不得在非交互终端代跑——否则报 `EBADF: bad file descriptor, write` 并挂起。主 agent 只负责非交互命令（install / config / 目录与文件检查）与结果判读。源由：见 [observation-dev-rules-source-provenance.md §1.2](decisions/observation-dev-rules-source-provenance.md)。
 
 ### 1.3 子条款：阴性结论须先排除验证方法错误
 
-以"失败/不存在/不可用"为依据下退出或否决类结论前，必须先用一个已知应成功的对照确认验证方法本身有效；共享同一前提的多条证据不算独立交叉验证。源由：P5 Spike No-Go 误判（2026-06-26，`run-p5-capability-spike.md §7 教训 1`——`config plugins` 的 `-c` 参数语义误解导致假阴性，连带"官方样例也失败"的伪交叉验证）。
+以"失败/不存在/不可用"为依据下退出或否决类结论前，必须先用一个已知应成功的对照确认验证方法本身有效；共享同一前提的多条证据不算独立交叉验证。源由：见 [observation-dev-rules-source-provenance.md §1.3](decisions/observation-dev-rules-source-provenance.md)。
 
 > *设计意图*：与"不在 SKILL 层做基础设施层的事"（handoff.md）、"绝不用规则解决运行时问题"（README.md）构成同构治理原则——不在错误的层做错误的事，不在错误的执行环境做错误的事。
 
 ### 1.4 子条款：Windows 文件核查必须用 PowerShell `Get-ChildItem -Recurse`
 
-在 Windows 环境下做文件/目录存在性核查时，**禁止**依赖 Glob / LS 工具，**必须**用 PowerShell `Get-ChildItem -Recurse` 或 `Test-Path`。源由：ADR-002 Update 2 核查事故（2026-06-27）——Glob `saoudrizwan.claude-dev-*\package.json` 零命中，LS `.vscode\extensions` 因 40000 字符截断只显示部分目录，`extensions.json` 注册表未同步，三个工具同时失效导致假阴性结论"VS Code 扩展未安装"，实际已安装 3.89.2 + 4.0.0 两个版本。
+在 Windows 环境下做文件/目录存在性核查时，**禁止**依赖 Glob / LS 工具，**必须**用 PowerShell `Get-ChildItem -Recurse` 或 `Test-Path`。源由：见 [observation-dev-rules-source-provenance.md §1.4](decisions/observation-dev-rules-source-provenance.md)。
 
 **对照成功证据**：同一查询用 `Get-ChildItem -Path C:\,D:\,E:\ -Filter "*saoudrizwan*" -Recurse -Directory -Depth 6` 立刻命中两个扩展目录。
 
@@ -50,7 +50,7 @@ Cline 执行提示词必须在开头声明输出文件的建议存放位置，�
 
 **执行门控**：冲突时记录 Conflict Registry（[evidence-governance.md §6](evidence-governance.md)），**不裁决**——理由见 §6.4。
 
-源由：ADR-002 Update 1 用 CHANGELOG 回答"是否支持"（错误——CHANGELOG 回答"何时引入"）；Update 4 用官方文档直接裁决源码冲突（碰巧正确，但下次官方文档错误时会再颠覆）。
+源由：见 [observation-dev-rules-source-provenance.md §1.5](decisions/observation-dev-rules-source-provenance.md)。
 
 ### 1.6 子条款：关键结论双来源验证
 
@@ -58,7 +58,7 @@ Confidence 模型与进入 Verified / Decision 的阈值（独立证据类型数
 
 **执行门控**：Verified 是 Decision 的前置（见 evidence-governance §2.2 状态转换条件），未达 Verified 不可写入 ADR。
 
-源由：ADR-002 Update 1/2/3 都基于单一来源下结论（CHANGELOG / minified 代码 Grep），导致连续颠覆。
+源由：见 [observation-dev-rules-source-provenance.md §1.6](decisions/observation-dev-rules-source-provenance.md)。
 
 ### 1.7 子条款：Minified Code 使用边界
 
@@ -69,7 +69,7 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 **允许**：`Grep minified 确认字符串存在` → `对照官方文档确认语义`
 **禁止**：`Grep minified` → `推断设计意图` → `写入 ADR`
 
-源由：ADR-002 Update 2 把 minified 第 543 行 `registerMessageBuilder` 误判为 zod schema 解析（实际是真实实现）；Update 3 把 DGu 函数的 `pluginName` 误判为安装路径（实际是运行时路径解析）。
+源由：见 [observation-dev-rules-source-provenance.md §1.7](decisions/observation-dev-rules-source-provenance.md)。
 
 ### 1.8 子条款：Evidence Collapse 门控（证据冲突停机）
 
@@ -80,7 +80,7 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 2. 登记 Conflict Registry（[evidence-governance.md §6](evidence-governance.md)）
 3. 按 §8 升级到下一证据类型
 
-源由：ADR-002 Update 2/3 都在 minified 代码 Grep 里打转，未升级到官方文档或实测，导致连续颠覆。
+源由：见 [observation-dev-rules-source-provenance.md §1.8](decisions/observation-dev-rules-source-provenance.md)。
 
 ### 1.9 子条款：Direction Drift 门控（方向偏离运行时检测）
 
@@ -92,7 +92,7 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 
 **检测信号**：用户重新定义问题（如"我讨论的是 VSCode" / "不是 CLI" / "还是 VSCode"），**而非**用户语气（如"我一直在质疑"）。关注的是问题定义是否发生变化，不是用户情绪。
 
-源由：ADR-002 Update 1/2 期间用户察觉方向偏离但未能掰回——用户在质疑能否复用到插件，调研却持续在 CLI 载体上推进。
+源由：见 [observation-dev-rules-source-provenance.md §1.9](decisions/observation-dev-rules-source-provenance.md)。
 
 ### 1.10 子条款：Core Proposition Flip 门控（核心命题翻转停机）
 
@@ -107,13 +107,13 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 4. 检查是否跳级（违反 [evidence-governance.md §2.3](evidence-governance.md) 禁止跳级）
 5. 必要时冻结当前 ADR（标 [evidence-governance.md §5](evidence-governance.md) Unknown 状态），重新调查后写新 Update，而非连续覆盖
 
-源由：ADR-002 Update 1→2→3→4 连续 4 次颠覆，核心命题"VS Code 扩展是否支持 plugin"翻转 3 次（不支持→支持→不支持→支持），未触发工作流审查。
+源由：见 [observation-dev-rules-source-provenance.md §1.10](decisions/observation-dev-rules-source-provenance.md)。
 
 ### 1.11 子条款：评审角色调用门控
 
 评审角色触发条件表、核心约束、输出三分类（成熟实践/本地扩展/创新）统一按 [reviewer-personas.md §1 与 §4.1](reviewer-personas.md) 执行——该处为单点真理（§4.1 含 Senior Agent Developer Reviewer 行，本节本地表已脱节删除）。
 
-源由：2026-06-27 外部评审反馈——AI agent 设计工作流时容易"重新发明轮子"。本次自创"证据治理"概念，实际 EBSE（Evidence-Based Software Engineering）、RCA、ADR 等已有成熟方法可直接借鉴。
+源由：见 [observation-dev-rules-source-provenance.md §1.11](decisions/observation-dev-rules-source-provenance.md)。
 
 ### 1.12 子条款：子代理调用必须注入评审角色提示词
 
@@ -123,7 +123,7 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 
 注入步骤（角色识别 / 注入格式 / 多角色并行）按 [reviewer-personas.md §4.2](reviewer-personas.md) 执行——该处为单点真理。
 
-源由：用户 2026-06-27 指示"用户要求 loop 时把自行把提示词注入给子代理"——避免每次都要用户提醒，主 agent 应自动按 §1.11 触发条件识别角色并注入。
+源由：见 [observation-dev-rules-source-provenance.md §1.12](decisions/observation-dev-rules-source-provenance.md)。
 
 ### 1.13 子条款：结论时效性门控
 
@@ -143,7 +143,7 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 **成熟实践映射**：
 - 结论时效性门控 ↔ **Refresh Token 验证**（使用前必须检查是否过期）+ **SLR 检索时间范围限定**（系统综述要求声明检索时间窗）
 
-源由：2026-06-27 [ADR-002-p5-experiment-exit-review §2.4](archive/decisions/adr/ADR-002-p5-experiment-exit-review.md) 引用"社区无 Plugin 实战沉淀"（2026-06-23 形成于 ADR-002 Context §5）作为舍弃 P5 论据，未复查——4 天后该结论已被 5 类反证证伪。
+源由：见 [observation-dev-rules-source-provenance.md §1.13](decisions/observation-dev-rules-source-provenance.md)。
 
 ### 1.14 子条款："无 X"类结论门控
 
@@ -162,7 +162,7 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 **成熟实践映射**：
 - "无 X"结论门控 ↔ **EBSE 三角验证（Triangulation）** + **科学方法的否定假设（Falsifiability）**——Karl Popper 强调可证伪性是科学结论的必要条件，"无 X"结论必须主动寻找反证
 
-源由：2026-06-23 [plugin-dev-quick-reference.md §0](plugin/refs/plugin-dev-quick-reference.md) 仅基于"搜博客"单一证据类型下"社区无 plugin 实战经验"结论，未查 npm/GitHub/官方 examples/Marketplace 任一独立证据源。
+源由：见 [observation-dev-rules-source-provenance.md §1.14](decisions/observation-dev-rules-source-provenance.md)。
 
 ### 1.15 子条款：执行环境可用性门控（不可抗力声明）
 
@@ -201,9 +201,9 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 
 **workaround 不等同环境可用**（§1.15 禁止条款）：workaround 期间实测结果仅证明"避开 bug 的路径可用"，不证明"环境完整可用"。
 
-源由 1：2026-06-28 VS Code 扩展 v4.0.0 bootstrap 缺失 → v4.0.1 官方回滚到 pre-SDK 代码基 → v4.0.2 继承回滚，Plugin 系统在 VS Code 端完全不存在。CLI 端为唯一可用运行环境。完整证据链见 [investigation-note-vscode-bootstrap-missing.md](decisions/investigation/investigation-note-vscode-bootstrap-missing.md) + [D-2026-06-28-cline-v401-sdk-rollback.md](decisions/D-2026-06-28-cline-v401-sdk-rollback.md) + [design.md 不可抗力声明](plugin/design.md)。
+源由 1：见 [observation-dev-rules-source-provenance.md §1.15 源由 1](decisions/observation-dev-rules-source-provenance.md)。
 
-源由 2：2026-06-30 用户报 `Error: n.content.map is not a function. (In 'n.content.map(eK)', 'n.content.map' is undefined)` 三次（duckduckgo 超时 / run_commands 843+ 行 / read E:\cline++\docs 后）。源码定位见 [investigation-note-cli-codec-content-map-bug.md](decisions/investigation/investigation-note-cli-codec-content-map-bug.md)。
+源由 2：见 [observation-dev-rules-source-provenance.md §1.15 源由 2](decisions/observation-dev-rules-source-provenance.md)。
 
 **解除流程**（恢复条件命中后必须按序执行）：
 
@@ -296,7 +296,7 @@ handoff.md 的「未完成项 / 后续动作」表**必须**包含以下三列�
 
 **违反时**：若调查过程中发现范围漂移（如本应调研 VS Code 扩展却偏离到 CLI），必须立即停止并回到用户确认的对象范围，不可继续推进。
 
-源由：ADR-002 Update 1/2 调查方向偏离事故（2026-06-27）——用户要求"调查 cline 的原生能力，handoff 与 compact 结合等都是基于插件说的"，调研却偏离到 CLI 载体，中间用户察觉不对劲但未能掰回。用户明确要求："以后启动大方向时，把开发指向的对象明确出来让我确认。"
+源由：见 [observation-dev-rules-source-provenance.md §4](decisions/observation-dev-rules-source-provenance.md)。
 
 > *设计意图*：与 §1.3（阴性结论门控）、§1.4（核查方法门控）构成同构治理——在错误的层做错误的事、用错误的工具做核查、偏离到错误的对象做调研，三类错误都需前置门控。
 
@@ -362,7 +362,7 @@ experiments/              Spike 实验
 5. **禁止**在 `decisions/` 根目录散落 ADR / D 决策 / investigation-note / draft-issue（必须入对应子目录）
 6. **禁止**为单一文件创建子目录（如只有一个 cline 决策时不建 `decisions/cline/`，放根目录）
 
-源由：2026-07-03 项目整理——`docs/decisions/` 根目录曾散落 24 个文件，缺乏聚类导致每次查找需在全目录扫描。按类型聚类后根目录降至 5 个文件（README / ARCHIVE / schema / observation / 跨功能 D 决策）。
+源由：见 [observation-dev-rules-source-provenance.md §5.1](decisions/observation-dev-rules-source-provenance.md)。
 
 ---
 
@@ -395,7 +395,7 @@ experiments/              Spike 实验
 
 handoff 写入时，检查本会话新增/修改的文档是否均已标注生命周期。缺失则在 handoff 中记录待补。
 
-源由：2026-07-01 用户指示——约 20 个活跃文件中仅 4 个有明确归档条件，需系统性补标。
+源由：见 [observation-dev-rules-source-provenance.md §6.3](decisions/observation-dev-rules-source-provenance.md)。
 
 ### 6.4 规则退役流程
 
