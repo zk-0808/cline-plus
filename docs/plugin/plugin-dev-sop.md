@@ -9,7 +9,11 @@
 
 ---
 
-## 0. 触发时机
+## 0. 触发时机（宽松版）
+
+**默认触发**：任何涉及 `context-snapshot/` 插件代码、`docs/plugin/` 文档、或 Cline SDK/CLI plugin 系统的对话，**先读本框架 + [quick-reference](refs/plugin-dev-quick-reference.md)**，再开始动作。
+
+**强信号**（命中即必读）：
 
 | 信号 | 该思考什么 |
 |------|----------|
@@ -17,8 +21,56 @@
 | "验证 plugin 的 Y" | 走 §2 debug 前置 |
 | 用户报错（含 `Error:` / `undefined` / `not a function`）| **先走 §2 debug 前置**，再决定改不改代码 |
 | 写 instrument / 加 console.log | 指向 §2.3 边界——先读源码，读不懂再 instrument |
+| 调研 plugin 能力 / hook 契约 / SDK API | 走 §1.1 契约速查 → [atlas](refs/cline-plugin-architecture-atlas.md) → 源码 |
+| 设计新 hook / 新 provider / 新机制 | 走 §1.1 契约速查 + [hook-auto-injection-design.md §0](../decisions/hook-auto-injection-design.md) Hook 化分层判据 |
+
+**弱信号**（建议读）：
+
+| 信号 | 该思考什么 |
+|------|----------|
+| 提到 messageBuilder / hook / rule / provider 但不深究 | 至少扫一眼 §1.1 契约速查表 |
+| 改 `docs/plugin/` 下文档 | 确认不涉及契约描述变更；若涉及，回 §1.1 核对 |
 
 **不触发**：纯文档 / README / 注释 / 问答类任务 → 直接回答，不走本框架。
+
+**触发失败的兜底**：如果模型在 plugin 相关对话中没主动读本框架，用户可提示"读 SOP"——模型应立即读本框架 + quick-reference 再继续。
+
+---
+
+## 0.5 一轮跑完清单（接到 plugin 任务的执行流）
+
+> **定位**：把 §1/§2/§4 的思考点串成一条执行线，避免漏步。**不是新规则**，是现有步骤的顺序化。
+> **前提**：本清单假设任务已通过 §0 触发判定为 plugin 相关。
+
+```
+1. 读契约          → §1.1 契约速查表 + quick-reference §1 capability 对照
+                     出口：能说出改动的契约文件路径 + 入口形式
+
+2. 读源码          → atlas lifecycle 7 层 + 改动文件全文 + .d.ts 相关段落
+                     出口：能说出最可能出问题的 1-2 个点
+                     禁止：Grep minified 推断语义；只读片段
+
+3. 定档位          → §1 档位路由（A/B/C）
+                     出口：知道这次改动走哪档 + 对应验证档
+
+4. 写方案          → §1 Step 3（改什么/不改什么/回滚/影响）
+                     出口：对话里输出简短方案，tsc --noEmit 验证
+
+5. 实现            → 按方案改代码
+                     出口：tsc --noEmit 零错误
+
+6. 验证            → §4 验证档位（按档执行）
+                     🟢 A: 1-2 次工具调用
+                     🟡 B: 5-15 次工具调用 + instrument.log
+                     🔴 C: ≥90K tokens 长对话（受 §1.15 阻塞需 workaround）
+
+7. 清理            → 删 instrument 代码 + commit 前检查
+                     出口：git diff 无调试残留
+```
+
+**跳步代价**：跳 1（契约）→ v0.6.0  4 处违反；跳 2（源码）→ console.log 绕大圈；跳 4（方案）→ 过度改动；跳 6（验证）→ 类型错误进运行时；跳 7（清理）→ 调试代码污染 commit。
+
+**与 §1/§2 的关系**：§1 是思考层（写代码前规划），§2 是 debug 层（报错时反应），本清单是执行层（接到任务的顺序）。三者互补，不替代。
 
 ---
 
