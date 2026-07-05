@@ -410,6 +410,66 @@ Copy-Item "E:\cline++\context-snapshot\src\*" -Destination "C:\...\context-snaps
 
 > ⚠️ **教训**：sync-and-test.ps1 用 `src\*`（正确），手动同步容易漏掉通配符。建议始终用脚本同步。
 
+### 13.12 registerRule 注入点源码定位（Verified，2026-07-05 新增）
+
+来源：[investigation-note-cline-prompt-layering.md](../../decisions/investigation/investigation-note-cline-prompt-layering.md)（5 subagent 并行探查）
+
+**注入点源码位置**：`sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts:657-666`（`composeSystemPrompt()` 方法）
+
+**注入机制**：`mergeSystemPromptRules(base, rules)`（同文件 :95-106）纯字符串拼接：
+
+```typescript
+function mergeSystemPromptRules(systemPrompt: string, rules: ReadonlyArray<string>): string {
+    const base = systemPrompt.trim();
+    const additional = rules.map(r => r.trim()).filter(Boolean).join("\n\n");
+    if (base && additional) return `${base}\n\n${additional}`;
+    return base || additional;
+}
+```
+
+**最终 System Prompt 结构**：
+
+```
+┌─────────────────────────────────────────────┐
+│ Base System Prompt (模板 + 占位符替换)        │
+│  - {{CLINE_RULES}} → .clinerules 文件规则    │
+│  - {{CLINE_METADATA}} → 工作区元数据          │
+├─────────────────────────────────────────────┤
+│ registerRule 注册的规则 (mergeSystemPrompt   │
+│ Rules append 在 base 之后,独立段落)           │
+│  - 格式: ## rule-name → content              │
+└─────────────────────────────────────────────┘
+```
+
+**关键结论**：
+- ✅ registerRule 注入**不被内置 RULES 段落覆盖**（mergeSystemPromptRules 是纯 append,不替换）
+- ✅ **无长度截断**——cline 不主动截断 system prompt,由 API 层 context window 兜底
+- ✅ **content 支持 lazy function**——`() => string | Promise<string>`,每次 run 时调用 composeSystemPrompt 实时求值
+- ⚠️ **同名覆盖风险**——多目录同名 rule 后者静默替换前者（`records.set(id, ...)`），建议用 namespace 前缀避坑（如 `governance:constitution`）
+- ⚠️ **Rule 按 name 字母序排列**——无 priority/weight 字段,先注册后注册无影响
+
+### 13.13 Rule 失效 5 场景（Verified，2026-07-05 新增）
+
+来源：[investigation-note-cline-prompt-layering.md](../../decisions/investigation/investigation-note-cline-prompt-layering.md) Task E
+
+| # | 场景 | 触发条件 | 表现 | 可排查性 |
+|---|------|----------|------|----------|
+| ① | 显式禁用 | frontmatter `disabled: true` 或 `enabled: false` | rule 不出现 | ✅ 明确 |
+| ② | 解析失败 | YAML 格式错误、空 body、缺 name | rule 静默消失 | ⚠️ 无用户提示 |
+| ③ | 目录未加载 | rule 文件不在 watcher 监控目录 | rule 不存在 | ⚠️ 需检查目录配置 |
+| ④ | 同名覆盖 | 多目录存在同名 rule,后者覆盖前者 | 静默替换 | ⚠️ 需检查多目录加载顺序 |
+| ⑤ | Prompt 过长 | rule 总量超出 context window | API 层截断或报错 | ❌ cline 无主动管理 |
+
+**唯一硬性跳过条件**：`disabled === true`（[rules.ts](../../decisions/investigation/result-task-e.md) `isRuleEnabled`）——无 frontmatter 条件逻辑、无 when/condition、无环境变量判断。
+
+**.clinerules 搜索路径优先级**（前 4 个,完整 7 个见源码）：
+1. `${workspace}/AGENTS.md`
+2. `${workspace}/.clinerules/`
+3. `${workspace}/.cline/rules/`
+4. `~/.agents/AGENTS.md`
+
+**调试建议**：rule 不生效时,按 ①→②→③→④→⑤ 顺序排查。最常见的"实测发现 rule 不生效"根因是 ④（同名覆盖）,非 cline 内置 RULES 覆盖。
+
 ---
 
 ## 14. 验证脚本模板（Verified，2026-07-05 新增）
