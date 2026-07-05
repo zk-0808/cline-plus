@@ -225,11 +225,13 @@ Q5_重新开始还会做吗: <是/否 + 理由>
 ### 5.3 重点验证项
 
 摘要特别点名要验证的五项：
-1. **compact** —— 本项目的 Compact 层是否就是 Cline 自动摘要
-2. **checkpoint** —— 是否需要自己做，还是 Cline 已够用
-3. **workflow** —— 本项目 Skills 是否该改为 Cline Workflow
-4. **hooks** —— 本项目铁律是否该全部改为 Cline Hook
-5. **MCP** —— 本项目 6 工具是否与 Cline MCP 重复
+1. **compact** —— ✅ 已验证(2026-06-29):本项目 Compact 层不是 Cline 自动摘要。Cline 原生 compact 是 token 阈值触发的消息历史压缩(basic/agentic 两种策略)，本项目 context-snapshot 是 compact 时自动写入的结构化会话摘要——二者是**互补关系**，非重复。plugin messageBuilder 在 compact 判定**之前**执行，收到的是 compact 前的原始消息。
+2. **checkpoint** —— ✅ 已验证(2026-06-29):**不需要自己做**。Cline 原生 checkpoint 基于 shadow Git repository，每次 tool use 后自动触发，支持三种恢复模式(文件/任务/文件+任务)，跨 editor session 持久化。原生已完全够用。
+3. **workflow** —— 待验证
+4. **hooks** —— 待验证
+5. **MCP** —— 待验证
+
+> 详细探查结论: [investigation-note-cline-runtime-probe.md](decisions/investigation/investigation-note-cline-runtime-probe.md) + [investigation-note-cline-prompt-layering-round2.md](decisions/investigation/investigation-note-cline-prompt-layering-round2.md)
 
 ---
 
