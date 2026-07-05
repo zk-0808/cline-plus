@@ -20,9 +20,16 @@
 | `issue-tracker-2026-07-05` | BL-1（VS Code plugin 系统不可用）：v4.0.1/v4.0.2 回滚到 pre-SDK,plugin 子系统代码完全不存在,无 assignee/milestone/PR,7 天无官方回复。BL-2（codec bug PR #12032）：Open,Greptile 评分 4/5 建议合并,但作者未回应 review（空字符串处理 + 单对象/null 分支缺测试）,未合并 | Verified | - |
 | `hook-experience-insight` | **关键洞察**：context-snapshot/ submodule 已有成熟可跑的 hook 实现（beforeTool commit 守卫 + beforeModel compaction 检测 + afterTool Loop Guard + registerRule ADR-007 + registerMessageBuilder），且有完整设计文档 hook-auto-injection-design.md（§0 Hook 化分层判据 + §2 选型表 + §3 注入方式 Phase 0→3 验证）。框架 `.governance/hooks/` 不必从零开发,可改造 context-snapshot/ 为框架 CLI 端运行时 | Verified | `hooks-design-complete` |
 | `runtime-plugin-newbuild-decision` | **决策**：框架 CLI 端运行时新造,不改造 context-snapshot/。理由：context-snapshot 是基于 hook 实现的 Cline plugin（服务 cline++ 专属,含 codec bug workaround/V6 Loop Guard/cline++ 路径）,改造会过耦合——破坏 submodule 独立性或需 fork。新造可借鉴 context-snapshot 经验（hook 注册方式/context 字段访问/registerRule 调用模式）,但架构不同（配置驱动 + Capability 动态加载） | Verified | `hook-experience-insight` |
-| `prompt-layering-research-plan` | **规划**：源码探查 cline 提示词分层注入机制。5 个并行 subagent 任务（Task A registerRule 注入点 / Task B .clinerules 加载 / Task C registerMessageBuilder 机制 / Task D 系统提示词总流程 / Task E rule 失效场景）。逾期处置：2026-07-19 未执行则降级为"以实测经验为准" | Hypothesis | `runtime-plugin-newbuild-decision` |
+| `prompt-layering-research-plan` | **规划**：源码探查 cline 提示词分层注入机制。5 个并行 subagent 任务（Task A registerRule 注入点 / Task B .clinerules 加载 / Task C registerMessageBuilder 机制 / Task D 系统提示词总流程 / Task E rule 失效场景）。逾期处置：2026-07-19 未执行则降级为"以实测经验为准" | Verified | `runtime-plugin-newbuild-decision` |
 
 ## 本会话净变化
+
+### 源码探查（`cline-prompt-layering-research`）
+
+- 完成 5 个并行 subagent 源码探查，产出完整 prompt 分层图
+- ADR-007 registerRule 静态注入决策**源码验证通过**
+- 产出：`docs/decisions/investigation/investigation-note-cline-prompt-layering.md`（Verified）
+- 关键发现：registerRule append 在 base prompt 之后、无 RULES 覆盖、无长度截断、lazy function 支持热更新
 
 ### 治理层
 
@@ -76,7 +83,7 @@
 
 | id | 项 | confidence | depends_on |
 |----|----|-----------|------------|
-| `cline-prompt-layering-research` | 派 5 个并行 subagent 探查 cline 提示词分层注入机制（Task A-E,详见 investigation-plan-cline-prompt-layering.md）。产出：完整 prompt 分层图 + registerRule 注入点验证。**逾期 2026-07-19 降级** | Hypothesis | `prompt-layering-research-plan` |
+| `cline-prompt-layering-research` | ✅ 已完成。5 个 subagent 源码探查，产出完整 prompt 分层图 + registerRule 注入点验证。详见 `investigation-note-cline-prompt-layering.md` | Verified | `prompt-layering-research-plan` |
 | `runtime-plugin-newbuild` | 框架 CLI 端运行时新造（不改造 context-snapshot/,避免过耦合）。借鉴 context-snapshot hook 经验但架构不同：配置驱动 + Capability 动态加载。需先答 4 个开放问题（单一/多 plugin、dynamic/static 加载、预编译方式、目录位置） | Likely | `cline-prompt-layering-research` |
 | `capability-impl-snapshot-writer` | snapshot-writer Capability 实现（借鉴 context-snapshot/src/snapshot-writer.ts 设计,新造代码） | Likely | `runtime-plugin-newbuild` |
 | `capability-impl-git-checker` | git-checker Capability 实现（借鉴 context-snapshot/src/git-status-checker.ts 设计,新造代码） | Likely | `runtime-plugin-newbuild` |
@@ -112,6 +119,7 @@ hook 设计范本:    docs/decisions/hook-auto-injection-design.md（§0 三层�
 ADR-007:         docs/decisions/adr/ADR-007-snapshot-registerRule-static-injection.md
 验证脚本范本:    context-snapshot/verify-hook-injection.cjs
 源码探查规划:    docs/decisions/investigation/investigation-plan-cline-prompt-layering.md（5 subagent 任务 + 复查触发条件）
+源码探查结论:    docs/decisions/investigation/investigation-note-cline-prompt-layering.md（Verified,ADR-007 验证通过）
 ```
 
 ### 已知事实
@@ -120,7 +128,7 @@ ADR-007:         docs/decisions/adr/ADR-007-snapshot-registerRule-static-injecti
 - 两个 commit 已 push：`e571b6b`（框架填充）+ `aeddcf3`（README + hooks + 2 Capability 实现）
 - **hook 经验已在 context-snapshot/ 成熟**：5 种 hook 机制均有可跑实现,框架 hook 开发路径是"新造借鉴经验"而非"改造"（避免过耦合 submodule）
 - **运行时开发决策已定**：新造,不改造 context-snapshot/。借鉴 hook 经验但架构不同（配置驱动 + Capability 动态加载）
-- **源码探查规划已就绪**：5 个并行 subagent 任务（Task A-E）,可在云端派发执行,逾期 2026-07-19 降级
+- **源码探查已验证 ADR-007**：registerRule 注入在 base system prompt 之后（append），无内置 RULES 覆盖风险，无长度截断，content 支持 lazy function。详见 `investigation-note-cline-prompt-layering.md`
 - BL-1/BL-2 短期不解除,继续按"CLI 先跑"策略推进
 
 ## 新会话首动作
@@ -130,7 +138,7 @@ ADR-007:         docs/decisions/adr/ADR-007-snapshot-registerRule-static-injecti
 3. 读 [.governance/](../.governance/) 目录树
 4. 读 [docs/decisions/investigation/investigation-plan-cline-prompt-layering.md](decisions/investigation/investigation-plan-cline-prompt-layering.md)（源码探查规划,若要执行派 subagent）
 5. 读 [context-snapshot/src/index.ts](../context-snapshot/src/index.ts) 与 [docs/decisions/hook-auto-injection-design.md](decisions/hook-auto-injection-design.md)（hook 实现与设计范本）
-6. 按优先级推进：`cline-prompt-layering-research`（派 5 subagent）→ `runtime-plugin-newbuild`（新造,先答 4 个开放问题）→ `capability-impl-snapshot-writer` / `capability-impl-git-checker`（借鉴范本新造）→ `capability-sop-doc` → `dogfood-second-project`
+6. 按优先级推进：`runtime-plugin-newbuild`（新造,先答 4 个开放问题）→ `capability-impl-snapshot-writer` / `capability-impl-git-checker`（借鉴范本新造）→ `capability-sop-doc` → `dogfood-second-project`
 
 ## 引用
 
