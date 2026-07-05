@@ -410,9 +410,15 @@ Copy-Item "E:\cline++\context-snapshot\src\*" -Destination "C:\...\context-snaps
 
 > ⚠️ **教训**：sync-and-test.ps1 用 `src\*`（正确），手动同步容易漏掉通配符。建议始终用脚本同步。
 
-### 13.12 registerRule 注入点源码定位（Verified，2026-07-05 新增）
+### 13.12 registerRule 注入点源码定位（⚠️ Partially Verified，2026-07-05 新增 / 2026-07-05 盲点纠偏）
 
 来源：[investigation-note-cline-prompt-layering.md](../../decisions/investigation/investigation-note-cline-prompt-layering.md)（5 subagent 并行探查）
+
+> ⚠️ **局限声明**(2026-07-05 盲点纠偏):
+> 本次探查仅覆盖 **SDK runtime 层**(`session-runtime-orchestrator.ts` 的 `composeSystemPrompt()`)。
+> **未覆盖** cline 应用层 `src/core/prompts/system.ts` 的 `buildSystemPrompt()`——即 `config.systemPrompt` 这个 base 字符串内部如何分层拼装。
+> 本节结论"registerRule 不被覆盖"在 SDK 层成立,但在应用层可能存在**第 6 场景**:cline 内部 prompt 占用过大导致 registerRule 内容被 context window 挤出,表现为"不生效",与"被覆盖"难以区分。
+> 第二轮探查(Task F-J)详见 investigation-note §七,完成后将更新本节为 Fully Verified。
 
 **注入点源码位置**：`sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts:657-666`（`composeSystemPrompt()` 方法）
 
@@ -448,7 +454,7 @@ function mergeSystemPromptRules(systemPrompt: string, rules: ReadonlyArray<strin
 - ⚠️ **同名覆盖风险**——多目录同名 rule 后者静默替换前者（`records.set(id, ...)`），建议用 namespace 前缀避坑（如 `governance:constitution`）
 - ⚠️ **Rule 按 name 字母序排列**——无 priority/weight 字段,先注册后注册无影响
 
-### 13.13 Rule 失效 5 场景（Verified，2026-07-05 新增）
+### 13.13 Rule 失效场景（⚠️ Partially Verified，2026-07-05 新增 / 2026-07-05 盲点纠偏补第 6 场景）
 
 来源：[investigation-note-cline-prompt-layering.md](../../decisions/investigation/investigation-note-cline-prompt-layering.md) Task E
 
@@ -459,6 +465,7 @@ function mergeSystemPromptRules(systemPrompt: string, rules: ReadonlyArray<strin
 | ③ | 目录未加载 | rule 文件不在 watcher 监控目录 | rule 不存在 | ⚠️ 需检查目录配置 |
 | ④ | 同名覆盖 | 多目录存在同名 rule,后者覆盖前者 | 静默替换 | ⚠️ 需检查多目录加载顺序 |
 | ⑤ | Prompt 过长 | rule 总量超出 context window | API 层截断或报错 | ❌ cline 无主动管理 |
+| ⑥ | **Context window 挤出**(2026-07-05 盲点纠偏新增) | cline 内部 base prompt 占用过大,registerRule 内容被挤到 context window 边界外 | rule 在 SDK 层注入成功,但 model 实际未"看到" | ❌ 需估算 base prompt token 量级(待 Task I 验证) |
 
 **唯一硬性跳过条件**：`disabled === true`（[rules.ts](../../decisions/investigation/result-task-e.md) `isRuleEnabled`）——无 frontmatter 条件逻辑、无 when/condition、无环境变量判断。
 

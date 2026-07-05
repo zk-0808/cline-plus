@@ -128,6 +128,7 @@ ADR-007:         docs/decisions/adr/ADR-007-snapshot-registerRule-static-injecti
 - **插件自包含约束**：跨目录 import（如 `../../capabilities/`）在安装路径下不可解析，必须复制依赖并修正路径
 - **registerRule 服从度**：技术上"注入成功"≠"模型会用"。需要行为指令前缀（"DO NOT RE-READ"）克服 cline 训练偏好。这是 context-snapshot ADR-007 已验证的经验，在 governance 框架层同样适用
 - **beforeTool skip 有效**：CLI 3.0.37 尊重 `{ skip: true, reason }` 返回值，`editor` 工具被成功拦截
+- **源码探查盲点纠偏(2026-07-05)**:第一轮 5 subagent 探查停在 SDK runtime 层,未穿透到 cline 应用层 `buildSystemPrompt()`——即 `config.systemPrompt` 内部分层拼装未探查。导致"cline 内部提示词如何分层注入"原问题未回答。已在 investigation-note §七 设计第二轮探查(Task F-J),§13.12/§13.13 标注 Partially Verified,dev-rules §1.16 补"穿透边界判据"防止重蹈覆辙。Rule 失效场景补第 6 类:context window 挤出
 
 ## 新会话首动作
 
