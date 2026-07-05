@@ -16,6 +16,7 @@
 | `rules-split-handoff-snapshot` | registerRule 拆分为两个独立 id（`handoff-context` / `snapshot-context`），content() 改纯函数读预加载 state，I/O 移到 setup() | Verified | `adr-007-snapshot-static-injection` |
 | `docs-aligned-with-adr007` | hook-auto-injection-design.md + quick-reference.md 全部更新对齐 ADR-007。§0 scope 澄清：三层判据管执行机制，registerRule 管内容交付，正交 | Verified | `adr-007-snapshot-static-injection` |
 | `summary-extraction-p-level` | HandoffProvider summary 提取从 emoji 正则改为 P-level 标题匹配 + section 状态检测。实测 3/3 正确 | Verified | - |
+| `docs-self-sufficiency-p2` | P2 文档自足性补全：quick-reference 新增 §14 验证脚本模板 + §15 代码骨架补全（rule/messageBuilder/tool/setup闭包/sync命令）+ §16 差距分析。SOP §4 加指针。8 个开发任务维度全部自足 | Verified | `docs-aligned-with-adr007` |
 
 ## 本会话净变化
 
@@ -35,6 +36,8 @@
 - **hook-auto-injection-design.md**（6 处编辑）：§0 scope 澄清 + §1 流程图 registerRule + §2 选型表重写给 registerRule + §3 superseded 注 + §3.2 方式 D 加结论修订 + §6 路线状态更新（Phase 2 标记"CLI E2E 验证通过"）
 - **quick-reference.md**（6 处编辑）：§13.2/§13.9 结论修订反映 ADR-007 + 版本号升级 CLI 3.0.37 / SDK 0.0.56 + **新增 §13.10 CLI 3.0.37 工具名映射** + **新增 §13.11 sync 路径陷阱**
 - **plugin-dev-sop.md**（1 处编辑）：§1.1 契约速查表新增「工具名」行 → hub.d.ts HubToolExecutorName + 工具名版本变更表
+- **plugin-dev-sop.md §4 验证档位**（P2 补全，2026-07-05）：新增「验证脚本模板」+「文档自足性」两段指针，引用 quick-reference §14 / §16
+- **plugin-dev-quick-reference.md §14/§15/§16**（P2 补全，2026-07-05）：新增 §14 验证脚本模板（抽象自 verify-hook-injection.cjs 3-test 结构）+ §15 代码骨架补全（registerRule/messageBuilder/tool/setup 闭包/sync 命令 5 个骨架）+ §16 文档自足性差距分析（8 维度评估表 + 6 项残留缺口 + 复查触发条件）
 
 ### 提交记录
 
@@ -55,6 +58,8 @@
 - **正则要匹配实际格式**：emoji 正则 vs `### P1 —` 格式——写正则前先 grep 实际数据
 - **工具名是版本绑定的**：CLI 升级后旧名不再生效，E2E 测试才能暴露此问题。doc-only review 不够
 - **sync 路径是隐藏杀手**：Copy-Item 不带 wildcard 复制目录本身而非内容，导致旧代码残留
+- **差距分析先于补全**：P2 先做 8 维度差距分析再补骨架，避免"补了不该补的，漏了该补的"。补全后 8 项全自足，残留 6 项非阻塞缺口标了"用到时再补"
+- **验证脚本模板化的价值**：抽象 verify-hook-injection.cjs 成三段式模板（核心+辅助+降级+summary+exit code），下次写新验证脚本直接套，不必从零摸结构
 
 ### 模型绕过行为观察
 
