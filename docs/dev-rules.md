@@ -224,6 +224,22 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 - 用 main 分支合并等同于"已修复"——必须等 release tag（用户安装的是 release 版本）
 - 移除声明后不更新引用文档——会导致其他文档引用过时状态
 
+### 1.16 子条款：源码探查成果强制固化
+
+任何源码探查任务完成后（含 subagent 产出汇总），产出**必须**回流到 `docs/plugin/refs/plugin-dev-quick-reference.md` 对应章节（§13 系列）。
+
+**强制要求**：
+1. 附源码文件:行号定位（如 `session-runtime-orchestrator.ts:657-666`）
+2. 附 Verified 标记 + 探查日期
+3. 附关键代码片段（3-10 行核心代码）
+4. 附来源 investigation-note 链接
+
+**拒绝路径**：纯结论性 assertion 不可继承——必须含 evidence（源码路径）+ justification（为何如此设计）+ falsifiable trigger（什么条件下结论失效）。
+
+**目的**：避免后续会话遇到相同问题时反复读源码,固化后可高速开发插件。
+
+**违反信号**：会话中再次 Grep 同一源码位置 / 再次问同一契约问题 / 再次出现"cline 内部机制如何"类疑问且无 quick-reference 章节 → 立即补固化,不可拖延。
+
 ---
 
 ## 2. handoff 通用触发器

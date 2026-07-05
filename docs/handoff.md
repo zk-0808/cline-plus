@@ -96,6 +96,22 @@
 - 🔲 `.governance/decisions/adr/` 目录建立（首个 ADR：GV-7 冻结决策归档）
 - 🔲 ADR-007 迁入框架（snapshot registerRule 静态注入）
 - 🔲 verify-hook-injection.cjs 通用化（剥离 cline++ 路径,作为框架 CLI 测试脚本）
+- 🔲 `publish-developer-guide`（framework-v1.0-tag 之后）：把 quick-reference / sop / investigation-note / hook-auto-injection-design 整理成社区发布材料（博客 + 通用手册 + ADR 改写）
+
+## 源码探查成果固化纪律（强制）
+
+> **触发条件**：任何源码探查任务完成后（含 subagent 产出汇总）
+> **目的**：避免后续会话遇到相同问题时反复读源码,固化后可高速开发插件
+> **强制要求**：每次源码探查产出**必须**回流到 `docs/plugin/refs/plugin-dev-quick-reference.md` 对应章节（§13 系列）,且附源码文件:行号定位 + Verified 标记 + 关键代码片段
+> **拒绝路径**：纯结论性 assertion 不可继承——必须含 evidence（源码路径）+ justification（为何如此设计）+ falsifiable trigger（什么条件下结论失效）
+> **已固化的源码探查**（截至 2026-07-05）：
+> - §13.1-§13.11：CLI 3.0.37 plugin 系统探查（来源 investigation-note-cline-runtime-probe 等）
+> - §13.12：registerRule 注入点源码定位（来源 investigation-note-cline-prompt-layering）
+> - §13.13：Rule 失效 5 场景（来源 investigation-note-cline-prompt-layering Task E）
+> **未来探查主题候选**（避免无序扩张,按需触发）：
+> - `registerMessageBuilder` 消息变换 pipeline 深度剖析（当前 §13.1 已覆盖基础,深度不足）
+> - `beforeTool` skip 机制的回退路径（return { skip: true, reason } 后 model 收到什么）
+> - `registerTool` 与 Hub Tool 的协议契约（Hub vs Local 加载差异）
 
 ## 阻塞项
 
