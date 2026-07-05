@@ -79,6 +79,7 @@
 | `dogfood-second-project` | 第二个项目 dogfood 验证框架通用性 | Hypothesis | `s1-s5-all-pass` |
 | `framework-v1.0-tag` | 框架版本号 v1.0 git tag（dogfood 验证后） | Hypothesis | `dogfood-second-project` |
 | `s6-compaction-test` | S6 Compaction + Snapshot 实测（需 BL-2 PR #12032 合并后） | Blocked | BL-2 |
+| `prompt-layering-research-round2` | **第二轮源码探查**:穿透到 cline 应用层 `src/core/prompts/system.ts`,回答 config.systemPrompt 内部分层 + cline 内置 RULES 强约束力来源 + token 量级估算 + "rule 不生效"真实根因。5 subagent 任务(Task F-J)详见 investigation-plan-cline-prompt-layering-round2.md。逾期 2026-07-19 降级为"保守策略" | Hypothesis | `prompt-layering-research-done` |
 
 ### 后续可选
 
@@ -109,7 +110,8 @@ CLI 安装路径:     ~/.cline/plugins/installed/local/governance/
 测试计划:         docs/plugin/runtime-test-plan.md
 hook 实现范本:    context-snapshot/src/index.ts
 ADR-007:         docs/decisions/adr/ADR-007-snapshot-registerRule-static-injection.md
-源码探查:        docs/decisions/investigation/investigation-note-cline-prompt-layering.md
+源码探查(第一轮): docs/decisions/investigation/investigation-note-cline-prompt-layering.md
+源码探查(第二轮规划): docs/decisions/investigation/investigation-plan-cline-prompt-layering-round2.md
 ```
 
 ### 已知事实
