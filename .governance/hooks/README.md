@@ -273,15 +273,17 @@ SessionStart → PreToolUse → PostToolUse → PreCompact
 
 | Hook | 设计 | CLI 实现 | VS Code 实现 |
 |------|:---:|:---:|:---:|
-| session-start | ✓ 完成 | 部分(handoff-provider 待实现) | 阻塞(BL-1) |
-| pre-tool | ✓ 完成 | git-checker 可跑 | 阻塞(BL-1) |
-| post-tool | ✓ 占位 | 占位 | 阻塞(BL-1) |
-| pre-compact | ✓ 完成 | snapshot-writer 待实现 | 阻塞(BL-1) |
+| session-start | ✓ 完成 | ✓ `plugin/hooks/session-start.ts` (tsc 通过) | 阻塞(BL-1) |
+| pre-tool | ✓ 完成 | ✓ `plugin/hooks/pre-tool.ts` (tsc 通过) | 阻塞(BL-1) |
+| post-tool | ✓ 占位 | ✓ `plugin/hooks/post-tool.ts` (占位,tsc 通过) | 阻塞(BL-1) |
+| pre-compact | ✓ 完成 | ✓ `plugin/hooks/pre-compact.ts` (tsc 通过) | 阻塞(BL-1) |
 
-**后续实现优先级**:
-1. session-start 的 handoff-provider(无阻塞,纯文件读取)
-2. pre-compact 的 snapshot-writer(需 BL-2 解除后实测)
-3. post-tool 的 rule-appender(等 BL-1 解除)
+**Plugin 运行时**:`.governance/plugin/index.ts` 统一注册所有 hooks + rules + messageBuilders
+
+**后续推进**:
+1. CLI 端实测(plugin 加载 / hook 触发 / rule 注入)
+2. pre-compact snapshot-writer 长对话实测(BL-2 解除后)
+3. post-tool rule-appender 自动判断(BL-1 解除后)
 
 ---
 

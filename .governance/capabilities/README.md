@@ -346,15 +346,17 @@ interface RuleAppenderResult {
 
 | Capability | 设计 | 实现 | 阻塞 |
 |-----------|:---:|:---:|------|
-| git-checker | ✓ GV-6 完成 | CLI 端可跑 | VS Code 端阻塞(BL-1)|
-| snapshot-writer | ✓ GV-6 完成 | 设计文档,未实现 | CLI 长对话实测阻塞(BL-2)|
-| handoff-provider | ✓ GV-6 完成 | 设计文档,未实现 | 无(纯文件读取,可立即实现)|
-| rule-appender | ✓ GV-6 完成 | 设计文档,未实现 | 无(纯文件追加,可立即实现)|
+| git-checker | ✓ GV-6 完成 | ✓ `git-checker/index.ts` (tsc 通过) | VS Code 端阻塞(BL-1)|
+| snapshot-writer | ✓ GV-6 完成 | ✓ `snapshot-writer/index.ts` (tsc 通过) | CLI 长对话实测阻塞(BL-2)|
+| handoff-provider | ✓ GV-6 完成 | ✓ `handoff-provider/index.ts` (tsc 通过) | 无 |
+| rule-appender | ✓ GV-6 完成 | ✓ `rule-appender/index.ts` (33 测试过) | 无 |
 
-**后续实现优先级**:
-1. handoff-provider + rule-appender(无阻塞,纯文件操作)
-2. git-checker(需 Hook 框架支持)
-3. snapshot-writer(需 BL-2 解除后实测)
+**Plugin 运行时**:`.governance/plugin/index.ts` (tsc 通过) — 配置驱动 + Capability 静态导入 + Hook 分发
+
+**后续推进**:
+1. CLI 端实测(plugin 加载 / hook 触发 / rule 注入)
+2. VS Code 端(BL-1 解除后)
+3. snapshot-writer 长对话实测(BL-2 解除后)
 
 ---
 
