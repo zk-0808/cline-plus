@@ -1,7 +1,6 @@
 # Handoff — GV-7 目录契约 v1.2 冻结 + 交付定位校准
 
 > **生命周期**：每次覆写，无归档——会话交接文件。
-> **下次会话开局指令**：读 `docs/handoff.md` + `docs/dev-rules.md` + `docs/plugin/project-rules.md`（若未归档）。
 
 ## 本会话决策
 
@@ -68,5 +67,13 @@ handoff 模板: dev-rules.md §2.3
 
 ## 新会话首动作
 
-1. 读 [delivery-framework-design.md](decisions/delivery-framework-design.md)（GV-7 契约 v1.2）
-2. 按 GV-1（rubric + 宪法）→ EX-* 并行 → GV-6 顺序推进
+1. 读 [plugin/project-rules.md](plugin/project-rules.md)（若未归档）
+2. 读本文件
+3. 读 [delivery-framework-design.md](decisions/delivery-framework-design.md)（GV-7 契约 v1.2）
+4. 按 GV-1（rubric + 宪法）→ EX-* 并行 → GV-6 顺序推进
+
+## 引用
+
+- GV-7 契约：[delivery-framework-design.md](decisions/delivery-framework-design.md)
+- handoff 格式规则：[dev-rules.md §2.3](dev-rules.md)
+- 项目定位：[PROJECT_DEV_OUTLINE.md](PROJECT_DEV_OUTLINE.md)
