@@ -223,11 +223,12 @@
 ## 5. 探查后行动（2026-06-29 更新）
 
 1. **✅ 已完成 — 更新 design.md §8 Open Questions**：见下方 §6.1 发现，Q1/Q3 已回答
-2. **⬜ 待做 — 更新 PROJECT_DEV_OUTLINE §5.3**：checkpoint 验证项已回答（不需要自建）
-3. **⬜ 待做 — 更新 design.md §3.1 流程图**：修正 messageBuilder 与 compact 的实际顺序
+2. **✅ 已完成 — 更新 PROJECT_DEV_OUTLINE §5.3**：checkpoint 验证项已回答（不需要自建），compact 验证项已回答（互补非重复）。2026-07-06 更新
+3. **✅ 已完成 — 更新 design.md §3.1 流程图**：修正 messageBuilder 与 compact 的实际顺序。2026-06-29 已更新
 4. **⬜ 待做 — 重新设计 context snapshot 内容生成**：基于发现 1（MB 在 compact 前执行），plugin 的 compact-observer build() 收到的是 compact 前的原始消息，需自行判断是否写 snapshot
 5. **⬜ 待做 — 实现 #4 beforeModel 提示词注入**（不依赖探查，可并行）
 6. **⬜ 待做 — 更新 ADR-005 evidence_as_of**：标注 2026-06-29
+7. **✅ 已完成 — 第二轮源码探查(Task F-J)**：穿透到 cline 应用层，回答 config.systemPrompt 构造链路 / 内部分层 / RULES 强约束力来源 / token 量级 / rule 不生效真实根因。2026-07-06 完成，见 [investigation-note-cline-prompt-layering-round2.md](investigation-note-cline-prompt-layering-round2.md)
 
 ---
 

@@ -410,15 +410,11 @@ Copy-Item "E:\cline++\context-snapshot\src\*" -Destination "C:\...\context-snaps
 
 > ⚠️ **教训**：sync-and-test.ps1 用 `src\*`（正确），手动同步容易漏掉通配符。建议始终用脚本同步。
 
-### 13.12 registerRule 注入点源码定位（⚠️ Partially Verified，2026-07-05 新增 / 2026-07-05 盲点纠偏）
+### 13.12 registerRule 注入点源码定位（✅ Fully Verified，2026-07-05 新增 / 2026-07-06 第二轮探查完成）
 
-来源：[investigation-note-cline-prompt-layering.md](../../decisions/investigation/investigation-note-cline-prompt-layering.md)（5 subagent 并行探查）
+来源：[investigation-note-cline-prompt-layering.md](../../decisions/investigation/investigation-note-cline-prompt-layering.md)（5 subagent 并行探查）+ [investigation-note-cline-prompt-layering-round2.md](../../decisions/investigation/investigation-note-cline-prompt-layering-round2.md)（第二轮应用层穿透）
 
-> ⚠️ **局限声明**(2026-07-05 盲点纠偏):
-> 本次探查仅覆盖 **SDK runtime 层**(`session-runtime-orchestrator.ts` 的 `composeSystemPrompt()`)。
-> **未覆盖** cline 应用层 `src/core/prompts/system.ts` 的 `buildSystemPrompt()`——即 `config.systemPrompt` 这个 base 字符串内部如何分层拼装。
-> 本节结论"registerRule 不被覆盖"在 SDK 层成立,但在应用层可能存在**第 6 场景**:cline 内部 prompt 占用过大导致 registerRule 内容被 context window 挤出,表现为"不生效",与"被覆盖"难以区分。
-> 第二轮探查(Task F-J)详见 investigation-note §七,完成后将更新本节为 Fully Verified。
+> ✅ **第二轮探查完成**(2026-07-06):已穿透到 cline 应用层，确认 `buildClineSystemPrompt()` 在 `sdk/packages/shared/src/prompt/cline.ts:72-105`。base prompt 是单体模板（~600 token），`{{CLINE_RULES}}` 占位符在 VS Code 路径被替换为空字符串。registerRule 追加在 base prompt 末尾，不被覆盖。第 6 场景（context window 挤出）经 Task I 验证**不成立**——base prompt + registerRule 总量 <2k token。
 
 **注入点源码位置**：`sdk/packages/core/src/runtime/orchestration/session-runtime-orchestrator.ts:657-666`（`composeSystemPrompt()` 方法）
 
@@ -454,9 +450,9 @@ function mergeSystemPromptRules(systemPrompt: string, rules: ReadonlyArray<strin
 - ⚠️ **同名覆盖风险**——多目录同名 rule 后者静默替换前者（`records.set(id, ...)`），建议用 namespace 前缀避坑（如 `governance:constitution`）
 - ⚠️ **Rule 按 name 字母序排列**——无 priority/weight 字段,先注册后注册无影响
 
-### 13.13 Rule 失效场景（⚠️ Partially Verified，2026-07-05 新增 / 2026-07-05 盲点纠偏补第 6 场景）
+### 13.13 Rule 失效场景（✅ Fully Verified，2026-07-05 新增 / 2026-07-06 第二轮探查完成）
 
-来源：[investigation-note-cline-prompt-layering.md](../../decisions/investigation/investigation-note-cline-prompt-layering.md) Task E
+来源：[investigation-note-cline-prompt-layering.md](../../decisions/investigation/investigation-note-cline-prompt-layering.md) Task E + [investigation-note-cline-prompt-layering-round2.md](../../decisions/investigation/investigation-note-cline-prompt-layering-round2.md) Task J
 
 | # | 场景 | 触发条件 | 表现 | 可排查性 |
 |---|------|----------|------|----------|
@@ -465,7 +461,7 @@ function mergeSystemPromptRules(systemPrompt: string, rules: ReadonlyArray<strin
 | ③ | 目录未加载 | rule 文件不在 watcher 监控目录 | rule 不存在 | ⚠️ 需检查目录配置 |
 | ④ | 同名覆盖 | 多目录存在同名 rule,后者覆盖前者 | 静默替换 | ⚠️ 需检查多目录加载顺序 |
 | ⑤ | Prompt 过长 | rule 总量超出 context window | API 层截断或报错 | ❌ cline 无主动管理 |
-| ⑥ | **Context window 挤出**(2026-07-05 盲点纠偏新增) | cline 内部 base prompt 占用过大,registerRule 内容被挤到 context window 边界外 | rule 在 SDK 层注入成功,但 model 实际未"看到" | ❌ 需估算 base prompt token 量级(待 Task I 验证) |
+| ⑥ | **位置+服从惯性**(2026-07-06 第二轮探查修正) | registerRule 在 base prompt 末尾追加,模型对 base prompt 前半部分指令有更强服从倾向;当 rule 与 base prompt 指令方向相反时,模型倾向遵循位置靠前的指令 | rule 技术上注入成功但模型不服从 | ⚠️ 需用行为指令前缀("DO NOT RE-READ")对抗 |
 
 **唯一硬性跳过条件**：`disabled === true`（[rules.ts](../../decisions/investigation/result-task-e.md) `isRuleEnabled`）——无 frontmatter 条件逻辑、无 when/condition、无环境变量判断。
 

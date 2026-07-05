@@ -1,6 +1,6 @@
 # 源码探查结论 — Cline 提示词分层注入机制
 
-> **状态**：⚠️ Partially Verified — SDK runtime 层已验证,cline 应用层未覆盖(详见 §七 盲点纠偏)
+> **状态**：✅ Fully Verified — SDK runtime 层 + cline 应用层均已验证(第二轮探查 2026-07-06 完成,见 [investigation-note-cline-prompt-layering-round2.md](investigation-note-cline-prompt-layering-round2.md))
 > **日期**：2026-07-05(初版) / 2026-07-05(盲点纠偏)
 > **前置决策**：ADR-007 registerRule 静态注入
 
@@ -139,14 +139,14 @@ function formatRulesForSystemPrompt(rules: RuleConfig[]): string {
 
 1. **同名覆盖**：框架 rule name 需唯一，避免与用户规则冲突
 2. **无优先级机制**：多 rule 按 name 字母序排列，无法控制顺序
-3. **Constitution ≤800 token 上限合理**：无源码强制截断，但需考虑 API context window 总量
+3. **Constitution ≤800 token 上限过于保守**：第二轮探查确认 base prompt <1k token，registerRule 增量 <1k token，总量 <2k token。建议放宽到 ≤2000 token（仍仅占 32k window 的 6%）。见 [investigation-note-cline-prompt-layering-round2.md](investigation-note-cline-prompt-layering-round2.md) Task I
 
 ### 框架 runtime-plugin 设计指引
 
 - **注入方式**：使用 `registerRule`（确认可行）
 - **Rule 命名**：使用唯一前缀（如 `governance:`）避免与用户规则冲突
 - **Lazy content**：利用 `content: () => ...` 实现运行时动态加载
-- **长度控制**：Constitution ≤800 token 上限是合理的自约束（非源码强制）
+- **长度控制**：Constitution 长度上限可放宽到 ≤2000 token（第二轮探查确认 base prompt + registerRule 总量 <2k token，32k window 仅占 6%）
 
 ---
 
