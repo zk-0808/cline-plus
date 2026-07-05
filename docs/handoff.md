@@ -75,7 +75,7 @@
 - **薄入口量化纪律有效**：rules/ ≤50 行与 core/ ≤800 token 一致
 - **hook 经验在 context-snapshot/ 已成熟**：beforeTool/beforeModel/afterTool/registerRule/registerMessageBuilder 五种机制均有可跑实现 + 完整设计文档,**框架 hook 实现可借鉴经验但应新造**（避免过耦合 submodule）
 - **issue 短期不解除**：BL-1 VS Code 7 天无回复,BL-2 PR 有进展但作者未回应,继续按"CLI 先跑"策略推进
-- **rule 注入需源码验证**：实测发现"cline 内部系统提示词影响大到 rule 注入不能生效",ADR-007 基于行为观察选 registerRule 但未源码验证注入点。已派源码探查规划（5 subagent 任务）,逾期 2026-07-19 降级为"以实测经验为准"
+- **rule 注入源码验证完成**：5 subagent 探查确认 ADR-007 决策正确——registerRule 在 base prompt 末尾独立段落 append,不被内置 RULES 覆盖,无长度截断。Rule 失效 5 场景:显式禁用/解析失败/目录未加载/同名覆盖/Prompt 过长。**框架 rule 命名需带 `governance:` 前缀避免同名覆盖**
 
 ## 待办
 
