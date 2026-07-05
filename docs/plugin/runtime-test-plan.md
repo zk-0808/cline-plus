@@ -209,11 +209,11 @@ Get-Content .governance\runtime\snapshot.json | ConvertFrom-Json
 | 测试 | 状态 | 日期 | 备注 |
 |------|------|------|------|
 | L1 verify-governance.ts | 50 passed | 2026-07-06 | `npx tsx` 运行 |
-| S1 Plugin 发现 | 待测 | — | |
-| S2 Rule 注入 | 待测 | — | |
-| S3 Git-checker 阻断 | 待测 | — | |
-| S4 skipTools 白名单 | 待测 | — | |
-| S5 MessageBuilder | 待测 | — | |
+| S1 Plugin 发现 | ✅ PASS | 2026-07-06 | marker 文件创建，setup() 执行 |
+| S2 Rule 注入 | ✅ PASS | 2026-07-06 | 模型直接引用 constitution §1"执行主体边界"，不调工具 |
+| S3 Git-checker 阻断 | ✅ PASS | 2026-07-06 | editor 工具被 skip，reason 显示 6 个未 commit 文件 |
+| S4 skipTools 白名单 | ✅ PASS | 2026-07-06 | readFile 工具在 6 个未 commit 文件下正常工作 |
+| S5 MessageBuilder | ✅ PASS | 2026-07-06 | 多轮对话（read+write）无崩溃，codec bug 规避有效 |
 | S6 Compaction + Snapshot | 阻塞 | — | BL-2 PR #12032 未合并 |
 
 ---

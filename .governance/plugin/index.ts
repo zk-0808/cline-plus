@@ -73,10 +73,26 @@ function preloadSessionContext(workspacePath: string): void {
   const parts: string[] = [];
   const errors: string[] = [];
 
-  // 1. handoff-provider (同步版)
+  // 1. handoff-provider (同步版) — 带行为指令前缀
+  //    借鉴 context-snapshot ADR-007 实测经验：
+  //    - 不加行为指令 → cline 训练偏好压过注入，模型先 search/read 文件
+  //    - 加 "DO NOT RE-READ" 指令 → 模型直接引用注入内容
   if (config.capabilities.handoffProvider.enabled) {
     const args = config.capabilities.handoffProvider.args;
-    const md: string[] = ["# Session Context (auto-injected by governance handoff-provider)", ""];
+    const md: string[] = [
+      "# GOVERNANCE SESSION CONTEXT (AUTO-INJECTED — DO NOT RE-READ FILES)",
+      "",
+      "The following project context is auto-loaded by the governance plugin.",
+      "When answering questions about project state, constitution, rules, handoff, git status, or snapshots:",
+      "1. USE the information below DIRECTLY — do NOT call readFile/search/run_commands to re-read these files",
+      "2. If the user asks about constitution rules, quote from the 'Core Constitution' section below",
+      "3. If the user asks about git status, quote from the 'Git Status' section below",
+      "4. If the user asks about handoff or pending todos, quote from the 'Handoff' section below",
+      "5. Only call tools if the requested information is NOT in the context below",
+      "",
+      "--- CONTEXT START ---",
+      "",
+    ];
 
     // constitution (必读)
     try {
@@ -148,6 +164,7 @@ function preloadSessionContext(workspacePath: string): void {
       // snapshot 不存在或解析失败 → 跳过
     }
 
+    md.push("--- CONTEXT END ---");
     parts.push(md.join("\n"));
   }
 
