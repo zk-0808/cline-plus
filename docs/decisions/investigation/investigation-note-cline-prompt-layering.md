@@ -1,8 +1,33 @@
 # 源码探查结论 — Cline 提示词分层注入机制
 
-> **状态**：Verified（5 个并行子任务完成，源码验证）
-> **日期**：2026-07-05
+> **状态**：⚠️ Partially Verified — SDK runtime 层已验证,cline 应用层未覆盖(详见 §七 盲点纠偏)
+> **日期**：2026-07-05(初版) / 2026-07-05(盲点纠偏)
 > **前置决策**：ADR-007 registerRule 静态注入
+
+---
+
+## ⚠️ 重要局限声明(2026-07-05 盲点纠偏)
+
+本次探查 5 个 subagent 任务**仅穿透到 SDK runtime 层**(`session-runtime-orchestrator.ts` 的 `composeSystemPrompt()`),回答了:
+
+- ✅ registerRule 注入到 `config.systemPrompt` **之后**(SDK 层 append)
+- ✅ registerRule 不被内置 RULES 段落覆盖(SDK 层无覆盖逻辑)
+- ✅ SDK 层无长度截断(由 API 层兜底)
+
+**未回答**的关键问题:
+
+- ❌ `config.systemPrompt` 这个 base 字符串**内部是怎么拼起来的**——即 cline 应用层 `src/core/prompts/system.ts` 的 `buildSystemPrompt()` 如何分层拼装
+- ❌ cline 内置 TOOL USE 格式 / 工具列表 / EDITING FILES / RULES / CAPABILITIES / 系统信息 / 目标 等段落的**精确顺序与 token 量级**
+- ❌ "rule 注入不能生效"的**真实根因**——是位置(被覆盖)?还是长度(被截断)?还是语气(优先级弱)?还是时序(注入晚于 model 首次请求)?
+- ❌ cline 内置 RULES 段落的**强约束力来自哪里**——是位置靠前?是格式(标题层级)?是措辞(MUST/MUST NOT)?
+
+**对结论的影响**:
+
+§13.12 "registerRule 不被覆盖"在 **SDK 层是对的**,但在**应用层可能错**——若 cline 内部 prompt 占用过大导致 registerRule 内容被 context window 挤出,表现为"不生效",与"被覆盖"难以区分。
+
+§13.13 "Rule 失效 5 场景"**漏了第 6 场景**:cline 内部 prompt 占用过大导致 registerRule 内容被 context window 挤出。
+
+**纠偏动作**:见 §七 盲点纠偏计划(第二轮探查)。
 
 ---
 
@@ -133,3 +158,142 @@ function formatRulesForSystemPrompt(rules: RuleConfig[]): string {
 - Task D 结果: `result-task-d.md`
 - Task E 结果: `result-task-e.md`
 - ADR-007: `docs/decisions/adr/ADR-007-snapshot-registerRule-static-injection.md`
+
+---
+
+## 七、盲点纠偏计划(第二轮探查)
+
+### 7.1 盲点根因
+
+第一轮探查停在 **SDK runtime 层**(`session-runtime-orchestrator.ts`),只回答了 "registerRule 注入到 `config.systemPrompt` 之后"——但 `config.systemPrompt` 本身是 cline 应用层拼好的字符串,内部如何分层**未探查**。
+
+### 7.2 第二轮探查任务设计
+
+**目标文件**:`src/core/prompts/system.ts`(cline 应用层,非 SDK)
+
+**5 个并行 subagent 任务**:
+
+#### Task F: `config.systemPrompt` 构造链路
+
+**目标**:找到 SDK runtime 接收的 `config.systemPrompt` 是在 cline 应用层哪一处构造的
+
+**搜索关键词**:`buildSystemPrompt`、`createClineRunConfig`、`agentConfig.systemPrompt`、`new AgentConfig`
+
+**任务步骤**:
+1. 在 cline 仓库 `src/` 下找到 `AgentConfig` / `agentConfig` 的构造点
+2. 追踪 `systemPrompt` 字段的赋值来源
+3. 找到 `buildSystemPrompt()` 或等价函数的入口
+4. 给出从 cline UI → AgentConfig → SDK runtime 的完整调用链
+
+**产出格式**:
+```
+- 构造入口: <file:line>
+- 调用链: UI → ... → buildSystemPrompt() → ... → AgentConfig.systemPrompt
+- buildSystemPrompt 签名: <参数 + 返回值>
+```
+
+#### Task G: base system prompt 内部分层
+
+**目标**:搞清楚 `buildSystemPrompt()` 内部各段落的拼装顺序
+
+**搜索关键词**:`buildSystemPrompt`、`getSystemPrompt`、`SYSTEM_PROMPT_TEMPLATE`、`sections`、`promptSections`
+
+**任务步骤**:
+1. 找到 `buildSystemPrompt()` 函数体
+2. 按顺序列出所有 section 的拼装调用(TOOL USE / 工具列表 / EDITING FILES / RULES / CAPABILITIES / 系统信息 / 目标)
+3. 标注每个 section 的源码位置
+4. 特别标注 `{{CLINE_RULES}}` 占位符的替换逻辑
+
+**产出格式**:
+```
+base system prompt 拼装顺序(从顶到底):
+1. <section A> — 来源 <file:line>
+2. <section B> — 来源 <file:line>
+...
+
+{{CLINE_RULES}} 替换逻辑: <file:line>
+```
+
+#### Task H: cline 内置 RULES 段落内容与位置
+
+**目标**:找到 cline 内置的 RULES 段落内容,理解其强约束力来源
+
+**搜索关键词**:`CLINE_RULES`、`RULES_SECTION`、`getRulesSection`、`# Rules`
+
+**任务步骤**:
+1. 找到 cline 内置 RULES 段落的定义源码
+2. 列出 RULES 段落的完整内容(或关键片段)
+3. 判断强约束力来源:位置靠前?标题层级?措辞(MUST/SHALL)?
+4. 对比 registerRule 注入的格式(`## rule-name`),判断语气差异
+
+**产出格式**:
+```
+- RULES 段落定义: <file:line>
+- 内容摘要: <3-5 句>
+- 强约束力来源: <位置 / 格式 / 措辞>
+- 与 registerRule 格式对比: <差异点>
+```
+
+#### Task I: token 量级估算
+
+**目标**:估算 cline 内部 system prompt 各段落的 token 量级,判断是否接近 context window 上限
+
+**任务步骤**:
+1. 找到 base system prompt 的完整字符串(或各 section 字符串)
+2. 用 char/4 粗估 token 量级(中英文混合用 char/3)
+3. 列出各 section 的 token 估算
+4. 计算总 base token + registerRule 注入后的增量
+5. 判断是否接近常见 context window(200k / 128k / 32k)
+
+**产出格式**:
+```
+| Section | 字符数 | Token 估算 |
+|---------|--------|-----------|
+| TOOL USE | ... | ... |
+| ...
+
+base 总量: <token>
+registerRule 注入后增量: <token>
+距离 200k 上限: <百分比>
+```
+
+#### Task J: "rule 不生效"真实根因分析
+
+**目标**:基于 Task F-I 的结果,回答"为什么 rule 注入不能生效"
+
+**任务步骤**:
+1. 综合分析 4 类根因:位置(被覆盖)、长度(被截断)、语气(优先级弱)、时序(注入晚)
+2. 对照第一轮 §13.13 的 5 场景,补第 6 场景(context window 挤出)
+3. 给出"rule 不生效"的诊断决策树
+4. 给出 framework runtime-plugin 的规避策略
+
+**产出格式**:
+```
+"rule 不生效" 根因分类:
+1. 位置类: <描述 + 证据>
+2. 长度类: <描述 + 证据>
+3. 语气类: <描述 + 证据>
+4. 时序类: <描述 + 证据>
+
+诊断决策树: <ASCII>
+框架规避策略: <3-5 条>
+```
+
+### 7.3 第二轮探查的复查触发条件
+
+- **若 Task F 找不到 buildSystemPrompt()**:可能 cline 应用层用了不同函数名,改搜 `systemPrompt =` 赋值语句
+- **若 Task I 显示 base prompt < 10k token**:长度类根因排除,重点查语气和时序
+- **若 Task I 显示 base prompt > 50k token**:长度类根因成立,框架需考虑长度控制策略
+- **若 Task J 结论与第一轮冲突**:以第二轮为准(更深入),更新 §13.12/§13.13
+
+### 7.4 逾期处置
+
+- 逾期日:2026-07-19(同第一轮)
+- 逾期降级:若第二轮仍未完成,框架 runtime-plugin 开发按"长度类根因成立"假设设计(保守策略),constitution ≤800 token 硬约束 + 注入位置尽量靠前
+
+### 7.5 对框架设计的影响
+
+第二轮探查结果将直接影响:
+1. **constitution 长度上限**:若 base prompt 已接近 context window,≤800 token 可能仍需进一步压缩
+2. **注入策略**:若时序类根因成立(registerRule 注入晚于 model 首次请求),需改用 registerMessageBuilder 注入到第一条 user message
+3. **rule 措辞**:若语气类根因成立,需用 MUST/SHALL 强约束措辞,而非描述性语言
