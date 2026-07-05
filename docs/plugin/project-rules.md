@@ -1,6 +1,8 @@
 # Project Rules — Plugin (context-snapshot) 开发期约束
 
-> **生命周期**：功能绑定 — context-snapshot plugin 开发，功能冻结后删除（跨功能通用规则迁入 dev-rules.md）。
+> **生命周期**：示例包参考实现（context-snapshot 项目级规则样例）— 原 context-snapshot 开发期约束，现降级为示例包参考。规则本身仍适用本仓库内部遵守，但**新规则不再追加**——沉淀到 `.governance/rules/`（GV-7 §三）。
+>
+> **例外**：§3.7 跨会话续作读取门控**保留为活跃规则**，直到 GV-6 Capability 设计落地（handoff-provider 接管其职责）后迁入 Capability，本文件整体归档。
 
 ---
 

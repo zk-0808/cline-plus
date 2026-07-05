@@ -10,7 +10,9 @@
 >
 > **与 `.clinerules` 的关系**：`.clinerules` 约束模型**执行行为**（遇不明确条件即停止询问）；本文件约束**执行主体边界与方法论**。两者互补，不重叠。
 >
-> **当前状态**：🟢 解冻（2026-07-03 handoff-schema 收口）— handoff-schema 功能整体结束，按 [本文件 L518 维护节奏](#) 进入交接期评估。project-rules.md 已归档至 [archive/handoff-schema-project-rules.md](archive/handoff-schema-project-rules.md)，预期迁入项为空（无规则迁入 dev-rules）。V2 改动历史见归档文件。thin-adapter-layer 作为新功能启动，需新建 `project-rules-thin-adapter.md` 沉淀其专属规则。
+> **当前状态**：📖 示例包参考实现（冻结追加）— handoff-schema 收口后，本仓库主线转向 GV-7 治理脚手架交付（见 [delivery-framework-design.md](decisions/delivery-framework-design.md)）。本文件降级为示例包参考实现，规则本身仍适用本仓库内部治理，但**新规则不再追加到本文件**——沉淀到 `.governance/rules/`（GV-7 §三）。project-rules.md 已归档至 [archive/handoff-schema-project-rules.md](archive/handoff-schema-project-rules.md)，V2 改动历史见归档文件。
+>
+> **复查触发**：若 GV-1/GV-6 推进过程中发现需要追加新跨功能规则 → 重新评估"冻结追加"定位。
 
 ---
 
@@ -271,9 +273,9 @@ handoff.md 的「未完成项 / 后续动作」表**必须**包含以下三列�
 
 **agent 自动填，人工可覆写**。格式纪律由本规则 + handoff 模板保障。
 
-### 2.3 子条款：handoff 格式稳定性
+### 2.3 子条款：handoff.md 格式保持现状
 
-handoff.md 的格式保持现状，不改动原有结构。每次覆写只更新内容，不重构标题、不调整顺序、不增删章节。"新会话首动作"固定在末尾，第 1 条固定读 project-rules，第 2 条固定读本文件，方便用户复制开局指令。
+handoff.md 的格式保持现状，不改动原有结构。每次覆写只更新内容，不重构标题、不调整顺序、不增删章节。末尾保留独立的 `## Handoff（推荐下次会话开局交接语句）` section（code block 形式的开局指令），便于复制。
 
 ---
 
