@@ -1,4 +1,4 @@
-# Handoff — 框架 CLI 端运行时新造完成
+# Handoff — CLI 端插件加载验证通过
 
 > **生命周期**：每次覆写，无归档——会话交接文件。
 > **进入规则**：会话开始时先读 `plugin/project-rules.md`（若未归档），再读本文件。
@@ -71,7 +71,7 @@
 
 | id | 项 | confidence | depends_on |
 |----|----|-----------|------------|
-| `runtime-cli-test` | CLI 端实测:plugin 加载 / hook 触发 / rule 注入 / git-checker block / compaction 检测。用户在真实终端执行 `cline -v` 测试 | Likely | `runtime-plugin-newbuild` |
+| `runtime-cli-test` | ✅ **已完成（S1-S3 通过）**。CLI 端实测：plugin 加载 ✓ / setup() 执行 ✓（marker 文件创建）/ registerRule 注入 ✓（模型引用 constitution+rules+handoff+git status）/ git-checker 注入 ✓。未测项：beforeTool block（需 ≥5 个未 commit 文件）、compaction 检测（需 ≥180K tokens，受 BL-2 阻塞） | Verified | `runtime-plugin-newbuild` |
 | `capability-sop-doc` | `.governance/capabilities/SOP.md` —— Capability 开发 7 步清单（读契约→读示例→定档位→写方案→实现→tsc→清理）,适配框架场景 | Hypothesis | - |
 | `dogfood-second-project` | 第二个项目 dogfood 验证框架通用性 | Hypothesis | `runtime-cli-test` |
 | `framework-v1.0-tag` | 框架版本号 v1.0 git tag（dogfood 验证后） | Hypothesis | `dogfood-second-project` |
@@ -120,6 +120,7 @@ ADR-007:         docs/decisions/adr/ADR-007-snapshot-registerRule-static-injecti
 - **beforeTool 同步 git-checker 有效**:直接内联 execSync,不走 async dispatch
 - **beforeModel 返回 undefined 规避 codec bug**:验证 V6 经验在框架层同样适用
 - BL-1/BL-2 短期不解除,继续按"CLI 先跑"策略推进
+- **CLI 端插件加载已验证（2026-07-05）**:governance 插件被 Cline CLI 正确发现和加载,setup() 执行,registerRule 注入生效,模型可读取 constitution/rules/handoff/git status。关键修复:插件必须安装到 `~/.cline/plugins/installed/local/`（非项目级 `.cline/plugins/`），且必须自包含（capabilities 依赖需一并复制，import 路径从 `../../capabilities/` 修正为 `../capabilities/`）。同步脚本：`scripts/sync-governance-plugin.ps1`
 
 ## 新会话首动作
 
