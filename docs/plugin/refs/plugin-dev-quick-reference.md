@@ -409,3 +409,292 @@ Copy-Item "E:\cline++\context-snapshot\src\*" -Destination "C:\...\context-snaps
 **验证方法**：同步后检查目标文件的 `LastWriteTime` 和内容（如 `Select-String` 搜索关键标记），不要只看 Copy-Item 无报错就认为成功。
 
 > ⚠️ **教训**：sync-and-test.ps1 用 `src\*`（正确），手动同步容易漏掉通配符。建议始终用脚本同步。
+
+---
+
+## 14. 验证脚本模板（Verified，2026-07-05 新增）
+
+> **来源**：抽象自 [verify-hook-injection.cjs](../../../context-snapshot/verify-hook-injection.cjs) 3-test 结构。该脚本 Phase 3 实测 PASS，覆盖核心功能 + 辅助功能 + 降级场景。
+>
+> **定位**：plugin 单元/集成验证的可复用骨架。SOP §4 验证档位 🟡 B / 🔴 C 推荐使用此模板。
+
+### 14.1 三段式结构（核心功能 + 辅助功能 + 降级）
+
+```javascript
+/**
+ * <Phase> 验证 — <被测模块名>
+ * Run: node verify-<feature>.cjs
+ */
+const { <CoreClass> } = require("./dist/src/<path>.js");
+const { <HelperClass> } = require("./dist/src/<path>.js");
+
+const WORKSPACE = "<absolute-path>";
+
+console.log("<Phase> — <Feature> Verification");
+console.log(`Workspace: ${WORKSPACE}\n`);
+
+// ─── Test 1: 核心功能 ───
+console.log(`${"═".repeat(60)}`);
+console.log("  Test 1: <CoreClass>");
+console.log(`${"═".repeat(60)}`);
+
+const core = new <CoreClass>();
+const detectResult = core.detect(WORKSPACE);
+console.log(`detect(): ${detectResult ? "✅ found" : "❌ not found"}`);
+
+const loadResult = core.load(WORKSPACE);
+console.log(`load().detected: ${loadResult.detected ? "✅" : "❌"}`);
+console.log(`load().content length: ${loadResult.content.length} chars`);
+
+// ─── Test 2: 辅助功能（如 git/tool 状态） ───
+console.log(`\n${"═".repeat(60)}`);
+console.log("  Test 2: <HelperClass>");
+console.log(`${"═".repeat(60)}`);
+
+const helper = new <HelperClass>();
+const helperResult = helper.<primaryMethod>(WORKSPACE);
+console.log(`<primaryMethod>(): ${helperResult.<flag> ? "✅" : "❌"}`);
+
+const threshold = <N>;
+const wouldBlock = helperResult.<flag> && helperResult.<count> >= threshold;
+console.log(`Would block (threshold=${threshold}): ${wouldBlock ? "🚫 YES" : "✅ NO"}`);
+
+// ─── Test 3: 降级场景（非 git / 空目录 / 边界值） ───
+console.log(`\n${"═".repeat(60)}`);
+console.log("  Test 3: 降级测试 (<edge-case-desc>)");
+console.log(`${"═".repeat(60)}`);
+
+const degrade = helper.<primaryMethod>("<non-workspace-path>");
+console.log(`isRepo/valid: ${degrade.<flag> ? "✅" : "❌ (expected)"}`);
+console.log(`Would block: ${degrade.<flag> && degrade.<count> >= threshold ? "🚫" : "✅ NO (降级正确)"}`);
+
+// ─── Summary ───
+console.log(`\n${"═".repeat(60)}`);
+console.log("  SUMMARY");
+console.log(`${"═".repeat(60)}`);
+const t1Pass = detectResult && loadResult.detected && loadResult.content.length > 0;
+const t2Pass = helperResult.<flag> && helperResult.<count> >= 0;
+const t3Pass = !degrade.<flag>;
+console.log(`Test 1 (<CoreClass>): ${t1Pass ? "✅ PASS" : "❌ FAIL"}`);
+console.log(`Test 2 (<HelperClass>): ${t2Pass ? "✅ PASS" : "❌ FAIL"}`);
+console.log(`Test 3 (降级): ${t3Pass ? "✅ PASS" : "❌ FAIL"}`);
+const allPass = t1Pass && t2Pass && t3Pass;
+console.log(`\nOVERALL: ${allPass ? "✅ PASSED" : "❌ FAILED"}`);
+console.log(`\n注: hook 路由验证需 CLI 集成测试（需用户跑 cline -i）`);
+process.exit(allPass ? 0 : 1);
+```
+
+### 14.2 三段式选型理由
+
+| Test 段 | 验证目标 | 何时必填 | 何时可省 |
+|--------|---------|---------|---------|
+| **Test 1 核心功能** | 主类/主流程的 happy path | 必填 | — |
+| **Test 2 辅助功能** | 协作类（git/tool/registry） | 涉及外部系统时 | 纯函数 / 无协作类 |
+| **Test 3 降级场景** | 边界条件 / 错误恢复 | 涉及外部依赖时 | 纯内存逻辑 |
+
+**降级场景的典型选择**：
+- 非 git 工作区（`C:\Windows\System32` / 空目录）
+- 字段缺失（`undefined` / 空字符串）
+- 阈值边界（count = 0 / count = threshold-1 / count = threshold）
+
+### 14.3 使用规范
+
+1. **必填 summary + exit code**——CI 可集成（`process.exit(allPass ? 0 : 1)`）
+2. **每个 Test 独立判定**——单 Test 失败不影响其他 Test 执行
+3. **降级 Test 用"expected ❌"标注**——区分"预期失败"和"真失败"
+4. **末尾注明 hook 路由限制**——单元验证不能替代 CLI 集成，避免误判"全 PASS = 功能可用"
+
+### 14.4 适用档位（与 SOP §4 对齐）
+
+| SOP 验证档 | 是否用本模板 | 替代/补充 |
+|-----------|------------|----------|
+| 🟢 A | 不必——1-2 次工具调用即可 | 直接调用即可 |
+| 🟡 B | **推荐**——5-15 次工具调用档位用模板固化 | + instrument.log |
+| 🔴 C | **必填**——长对话前先用模板跑过单元逻辑 | + CLI 集成测试 |
+
+---
+
+## 15. 代码骨架补全（2026-07-05 新增）
+
+> **来源**：§16 差距分析识别的 5 处骨架缺口。本节补齐后，"只看 quick-reference 能否写出代码"的自足性大幅提升。
+
+### 15.1 registerRule 骨架（ADR-007 双 id 模式）
+
+```typescript
+import type { AgentPlugin } from "@cline/core";
+
+const myPlugin: AgentPlugin = {
+  name: "my-plugin",
+  manifest: { capabilities: ["rules"] },
+  setup(api, ctx) {
+    const workspacePath = ctx.workspaceInfo.rootPath;  // 闭包捕获
+
+    // 预加载（I/O 在 setup 完成，content 只读——ADR-007 §5.1）
+    let contentA = "";
+    let contentB = "";
+    try { contentA = loadAssetA(workspacePath); } catch (e) { console.error(`[my-plugin] A preload failed: ${e}`); }
+    try { contentB = loadAssetB(workspacePath); } catch (e) { console.error(`[my-plugin] B preload failed: ${e}`); }
+
+    // 双 id 独立降级（ADR-007）
+    api.registerRule({ id: "asset-a-context", content: () => contentA });
+    api.registerRule({ id: "asset-b-context", content: () => contentB });
+  },
+};
+```
+
+**关键约束**（来自 §13.2 + ADR-007）：
+- `content()` 是纯函数——只读预加载 state，禁止 I/O
+- `id` 唯一——多个 rule 用不同 id 独立注册
+- "求值一次"——session 启动求值，运行时永不重求值，**只能用于静态资产**
+
+### 15.2 registerMessageBuilder 骨架（动态 per-turn 内容）
+
+```typescript
+import type { AgentPlugin, AgentExtensionMessageBuilder } from "@cline/core";
+
+const builder: AgentExtensionMessageBuilder = {
+  id: "my-builder",
+  build(ctx) {
+    // ctx 含 snapshot / request / messages
+    // ⚠️ content 必须是 ContentBlock[]，不能是 string（§13.6 codec bug）
+    return [
+      {
+        role: "user",
+        content: [{ type: "text", text: "injected per-turn context" }],
+      },
+    ];
+  },
+};
+
+const myPlugin: AgentPlugin = {
+  name: "my-plugin",
+  manifest: { capabilities: ["messageBuilders"] },
+  setup(api, ctx) {
+    api.registerMessageBuilder(builder);
+  },
+};
+```
+
+**关键约束**（来自 §13.1 + §13.6 + ADR-007）：
+- `build()` 每次 turn 都会被调用（非仅 compact 时）
+- **服从度不足**——messageBuilder 注入的 system 消息被 cline agent 训练偏好压过（ADR-007），**静态内容优先走 registerRule**
+- `content` 必须是 `AgentMessagePart[]` 数组，**禁止 string**
+
+### 15.3 registerTool 骨架
+
+```typescript
+import type { AgentPlugin } from "@cline/core";
+import { createTool } from "@cline/core";
+
+const myTool = createTool({
+  name: "my-tool",
+  description: "做某件事",
+  inputSchema: {
+    type: "object",
+    properties: {
+      target: { type: "string", description: "目标" },
+    },
+    required: ["target"],
+  },
+  async execute({ input, ctx }) {
+    // ctx 含 snapshot / workspacePath
+    const result = doWork(input.target);
+    return {
+      content: [{ type: "text", text: JSON.stringify(result) }],
+    };
+  },
+});
+
+const myPlugin: AgentPlugin = {
+  name: "my-plugin",
+  manifest: { capabilities: ["tools"] },
+  setup(api) {
+    api.registerTool(myTool);
+  },
+};
+```
+
+**关键约束**（来自 §7 官方设计准则）：
+- 所有 tool 必须在 `setup()` 注册——不能在 lifecycle hook 里注册
+- `execute` 返回 `content` 必须是 `ContentBlock[]`（同 §13.6）
+
+### 15.4 setup() 闭包捕获 workspacePath（坑点 2 代码化）
+
+```typescript
+setup(api, ctx) {
+  // ✅ 正确：从 PluginSetupContext 闭包捕获
+  const workspacePath = ctx.workspaceInfo.rootPath;
+
+  // ❌ 错误 1：从 beforeRun context 拿
+  // hooks: { beforeRun(ctx) { const wp = ctx.workspacePath; } }  // undefined！
+
+  // ❌ 错误 2：硬编码绝对路径
+  // const workspacePath = "E:\\cline++";  // 不可移植
+
+  // 闭包内所有 hook / rule / builder 都用这个 workspacePath
+  api.registerRule({ id: "x", content: () => readAsset(workspacePath) });
+}
+```
+
+**理由**（来自 §13.9 坑点 2）：`AgentRunLifecycleContext` 只有 `snapshot`，无 `workspacePath`。hook 运行时拿不到，必须 setup 时闭包捕获。
+
+### 15.5 plugin 本地同步命令模板（合并 §13.11 陷阱）
+
+```powershell
+# 完整同步命令（PowerShell，全 ASCII）
+$src = "E:\cline++\context-snapshot\src"
+$dst1 = "$env:USERPROFILE\.cline\plugins\installed\local\context-snapshot\src"
+$dst2 = "$env:USERPROFILE\.cline\plugins\_installed\local\context-snapshot\src"
+
+# 用 src\*（不是 src）—— §13.11 陷阱
+Copy-Item "$src\*" -Destination "$dst1\" -Recurse -Force
+Copy-Item "$src\*" -Destination "$dst2\" -Recurse -Force
+
+# 验证：检查 LastWriteTime + 关键标记
+Get-ChildItem "$dst1\index.ts" | Select-Object LastWriteTime
+Select-String -Path "$dst1\index.ts" -Pattern "registerRule" | Select-Object -First 3
+```
+
+**为什么必须同步两个目录**（来自 §13.11）：CLI 扫描 `installed/` 和 `_installed/`（后者可能是 junction），只同步一个会加载旧代码。
+
+---
+
+## 16. 文档自足性差距分析（2026-07-05 新增）
+
+> **目的**：验证"只看 SOP + quick-reference 能否直接写出 plugin 代码"。本节是 P2 差距分析的产出，作为文档自洽性的基线。
+>
+> **方法**：以"plugin 开发者拿到这两份文档"为视角，按 8 个开发任务维度评估覆盖度。
+
+### 16.1 覆盖度评估表
+
+| # | 开发任务 | SOP 覆盖 | quick-reference 覆盖 | 自足性 | 备注 |
+|---|---------|---------|---------------------|--------|------|
+| 1 | 写一个新 hook（beforeTool/afterTool）| §1.1 契约速查 + §4 验证档 | §13.9 契约表 + §9 样例索引 | ✅ 自足 | 链路完整 |
+| 2 | 写一条 registerRule（静态）| §1.1 契约速查 | §13.2 求值频率 + §15.1 骨架 + ADR-007 | ✅ 自足 | §15.1 补全后 |
+| 3 | 写一个 messageBuilder（动态）| §1.1 契约速查 | §13.1 调用时机 + §15.2 骨架 | ✅ 自足 | §15.2 补全后；服从度警告已标 |
+| 4 | 写一个 tool | §1.1 契约速查 | §9 样例索引 + §15.3 骨架 | ✅ 自足 | §15.3 补全后 |
+| 5 | setup() 捕获 workspacePath | §3 红线（不假设）| §13.9 坑点 2 + §15.4 代码片段 | ✅ 自足 | §15.4 补全后 |
+| 6 | 写验证脚本 | §4 验证档位 | §14 模板 | ✅ 自足 | §14 新增后 |
+| 7 | 同步 plugin 到本地 | （未覆盖）| §13.11 陷阱 + §15.5 命令模板 | ✅ 自足 | §15.5 补全后 |
+| 8 | 处理 codec bug / ContentBlock 格式 | §3 红线（不跳 tsc）| §13.6 路径 A/B + §13.9 坑点 5 | ✅ 自足 | 已有 |
+
+### 16.2 已知残留缺口（非阻塞）
+
+| 缺口 | 影响 | 缓解 | 修复时机 |
+|------|------|------|---------|
+| `automationEvents` 完整用法 | 无法写 automation event 类 plugin | §9 有样例索引 `automation-events.ts` | 用到时再补 |
+| `providers` capability 完整用法 | 无法写 provider 类 plugin | §1 capability 表有入口 | 用到时再补 |
+| `commands` capability 完整用法 | 无法写 command 类 plugin | §1 capability 表有入口 | 用到时再补 |
+| `skills` 自动发现机制 | 不知如何打包 skill | §1 表注 "bundled skills 自动发现" | 用到时再补 |
+| 长对话验证（🔴 C 档）的 codec bug workaround | 无法跑 ≥90K tokens 实测 | §13.7 注 "等 PR #12032" | PR 合并后补 |
+| CLI 集成测试（cline -i）的标准流程 | 不知如何系统性跑 CLI E2E | handoff.md / SOP §0.5 提到 | 下次实测时回流 |
+
+### 16.3 自足性结论
+
+**补全前**（本会话 P2 启动时）：8 项中 3 项自足（#1/#8 部分 / §13.6），5 项有缺口（#2/#3/#4/#5/#6/#7）。
+
+**补全后**（§14/§15 落地后）：8 项全部自足，残留 6 项非阻塞缺口（用到时再补）。
+
+**复查触发条件**：若新增 capability 类型（automationEvents/providers/commands/skills）实际开发时，本节对应行需从"残留缺口"提升为"补全项"。
+
+---

@@ -222,6 +222,10 @@ function instrument(msg: string) {
 | 🟡 B | hook 逻辑 / detectRepetition | 5-15 次工具调用 + instrument.log | 中（避 MCP + 避长输出）|
 | 🔴 C | compact / snapshot 写入 / 端到端 | ≥90K tokens 长对话 | **高**（受 §1.15 阻塞，需 workaround）|
 
+**验证脚本模板**：🟡 B / 🔴 C 档推荐用 [quick-reference §14 验证脚本模板](refs/plugin-dev-quick-reference.md) 的三段式结构（核心功能 + 辅助功能 + 降级场景 + summary + exit code）。该模板抽象自 `verify-hook-injection.cjs`，可 CI 集成。
+
+**文档自足性**：写新 capability 前，先查 [quick-reference §16 差距分析](refs/plugin-dev-quick-reference.md) 确认"只看文档能否写出代码"。8 个开发任务维度已全部自足，残留 6 项非阻塞缺口（automationEvents/providers/commands/skills 等，用到时再补）。
+
 ---
 
 ## 5. 与顶层文档的关系
