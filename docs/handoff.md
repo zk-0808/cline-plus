@@ -1,4 +1,4 @@
-# Handoff — commit 守卫 E2E 验证 + 文档补全（CLI 3.0.37 工具名 + sync 陷阱）
+# Handoff — GV-7 目录契约 v1.2 冻结 + 交付定位校准
 
 > **生命周期**：每次覆写，无归档——会话交接文件。
 > **进入规则**：会话开始时先读 `plugin/project-rules.md`（若未归档），再读本文件。
@@ -7,115 +7,84 @@
 
 | id | 决策 | confidence | depends_on |
 |----|------|-----------|------------|
-| `commit-guard-e2e-pass` | Phase 2 commit 守卫 CLI E2E 验证通过——editor #3 被 skip+reason 阻断，模型理解原因并尝试 commit 后重试 | Verified | `tool-name-cli37` |
-| `tool-name-cli37` | CLI 3.0.37 工具名变更：write_to_file→editor, execute_command→run_commands, 新增 applyPatch/bash。WRITE_TOOL_NAMES 须包含新旧两套名 | Verified | - |
-| `sync-wildcard-pitfall` | Copy-Item 'src' 复制目录本身为子文件夹，须用 'src\*' 复制内容。installed/ + _installed/ 都须同步 | Verified | - |
-| `phase-3-cli-verified` | Phase 3 CLI 集成测试通过——registerRule 路径注入 handoff 成功；debug 代码清理完成；tsc --noEmit 零错误 | Verified | `registerRule-over-messageBuilder` |
-| `registerRule-over-messageBuilder` | messageBuilder 注入的 system 消息被 cline agent 训练偏好压过；registerRule 注入到系统提示词顶层后模型直接引用注入内容 | Verified | - |
-| `adr-007-snapshot-static-injection` | **ADR-007**：snapshot 走 registerRule 静态注入（不迁 messageBuilder）。承重论据：会话内续命归 cline 原生 compaction，snapshot 只服务跨会话续作 | Verified | `registerRule-over-messageBuilder` |
-| `rules-split-handoff-snapshot` | registerRule 拆分为两个独立 id（`handoff-context` / `snapshot-context`），content() 改纯函数读预加载 state，I/O 移到 setup() | Verified | `adr-007-snapshot-static-injection` |
-| `docs-aligned-with-adr007` | hook-auto-injection-design.md + quick-reference.md 全部更新对齐 ADR-007。§0 scope 澄清：三层判据管执行机制，registerRule 管内容交付，正交 | Verified | `adr-007-snapshot-static-injection` |
-| `summary-extraction-p-level` | HandoffProvider summary 提取从 emoji 正则改为 P-level 标题匹配 + section 状态检测。实测 3/3 正确 | Verified | - |
-| `docs-self-sufficiency-p2` | P2 文档自足性补全：quick-reference 新增 §14 验证脚本模板 + §15 代码骨架补全（rule/messageBuilder/tool/setup闭包/sync命令）+ §16 差距分析。SOP §4 加指针。8 个开发任务维度全部自足 | Verified | `docs-aligned-with-adr007` |
+| `delivery-positioning-pivot` | 交付定位校准：从"优化 cline++ 自身治理"转向"交付可复用治理脚手架"。治理文档（dev-rules 15 子条款 / evidence-governance 9 章节 / reviewer-personas 6 角色）降级为示例包参考实现，而非交付主体 | Verified | - |
+| `five-layer-architecture` | 五层架构确立：L1 Core Constitution / L2 Project Rules / L3 Capability / L4 Hooks / L5 Runtime State。对应不同生命周期（年/月/周/天/每次Session）| Verified | `delivery-positioning-pivot` |
+| `gv7-contract-frozen` | **GV-7 目录契约 v1.2 冻结**：git template repo 为唯一分发形态；`.governance/` 命名空间包裹框架自有物；HANDOFF.md 留根部（可发现性）；Capability 接口三态（pass/block/inject）；rule-appender 最小追加回路；GV-1 rubric 为 EX-* 硬前置 | Verified | `five-layer-architecture` |
+| `governance-namespace` | `.governance/` 点前缀命名空间收口框架自有物，根部污染从 8 项降到 2 项（`.clinerules` + `HANDOFF.md`）。判据：人读活文件重可发现性留根部，机器写文件重整洁性埋深 | Verified | `gv7-contract-frozen` |
+| `capability-hook-orthogonal` | Capability（怎么做）与 Hook（什么时候调用）正交。Capability 只表达意图（pass/block/inject），Hook 执行动作。同一 Capability 可被多 Hook 复用 | Verified | `gv7-contract-frozen` |
+| `rule-appender-minimal-loop` | 经验沉淀最小回路：人判断"该不该沉淀" → rule-appender 机械追加到 HANDOFF.md 待沉淀区 → 人工 review 晋升到 rules/。完整治理引擎（自动判断/退役/路由）留阻塞后续集 | Verified | `gv7-contract-frozen` |
+| `rubric-hard-prerequisite` | GV-1 通用化 rubric 从软依赖升级为 EX-* 硬前置。理由：原 v1.1 填空表 EX-1a/EX-4 标"无依赖"、EX-1b/EX-2/EX-3 标"软依赖"，执行时风格会漂。统一：rubric 未定，EX-* 不开工 | Verified | `gv7-contract-frozen` |
 
 ## 本会话净变化
 
-### 功能层（submodule context-snapshot）
-
-- **HandoffProvider summary 提取重写**（已提交 submodule 3bf52d9）：
-  - [src/providers/handoff-provider.ts](context-snapshot/src/providers/handoff-provider.ts)
-    - 新增 `extractPLevelItems()` — 匹配 `##+ P\d+` 标题 + section 状态检测（已完成/部分完成/待完成）
-    - 新增 `buildSummary()` — 逐项列出 id + title + status marker（✅/⏳/🔲）
-    - 头注释更新为 registerRule (ADR-007)
-- **WRITE_TOOL_NAMES 更新**（已提交 submodule 3bf52d9）：
-  - [src/index.ts](context-snapshot/src/index.ts)
-    - 新增 editor, applyPatch, run_commands, bash 四个 CLI 3.0.37 工具名
-
 ### 治理层（父仓库）
 
-- **hook-auto-injection-design.md**（6 处编辑）：§0 scope 澄清 + §1 流程图 registerRule + §2 选型表重写给 registerRule + §3 superseded 注 + §3.2 方式 D 加结论修订 + §6 路线状态更新（Phase 2 标记"CLI E2E 验证通过"）
-- **quick-reference.md**（6 处编辑）：§13.2/§13.9 结论修订反映 ADR-007 + 版本号升级 CLI 3.0.37 / SDK 0.0.56 + **新增 §13.10 CLI 3.0.37 工具名映射** + **新增 §13.11 sync 路径陷阱**
-- **plugin-dev-sop.md**（1 处编辑）：§1.1 契约速查表新增「工具名」行 → hub.d.ts HubToolExecutorName + 工具名版本变更表
-- **plugin-dev-sop.md §4 验证档位**（P2 补全，2026-07-05）：新增「验证脚本模板」+「文档自足性」两段指针，引用 quick-reference §14 / §16
-- **plugin-dev-quick-reference.md §14/§15/§16**（P2 补全，2026-07-05）：新增 §14 验证脚本模板（抽象自 verify-hook-injection.cjs 3-test 结构）+ §15 代码骨架补全（registerRule/messageBuilder/tool/setup 闭包/sync 命令 5 个骨架）+ §16 文档自足性差距分析（8 维度评估表 + 6 项残留缺口 + 复查触发条件）
-
-### 提交记录
-
-| 提交 | 范围 | 内容 |
-|------|------|------|
-| submodule `3bf52d9` | context-snapshot | feat: HandoffProvider P-level summary + WRITE_TOOL_NAMES CLI 3.0.37 |
-| parent `7a2a216` | cline-plus | docs(hook-injection): Phase 2 commit guard CLI E2E verified |
-| parent `53231b5` | cline-plus | docs(hook-injection): Phase 2 verified by unit tests (10/10 PASS) |
-| parent `6bfe9ae` | cline-plus | docs(hook-injection): mark Phase 2 commit guard as implemented |
-| parent `983cfce` | cline-plus | docs: align design docs + quick-reference with ADR-007 registerRule |
-| parent `523f749` | cline-plus | feat(rules): ADR-007 split registerRule + handoff.md update |
-| parent `c417d90` | cline-plus | docs(plugin): 补充 CLI 3.0.37 工具名变更 + sync 路径陷阱 |
+- **新建 [docs/decisions/delivery-framework-design.md](decisions/delivery-framework-design.md)**（GV-7 v1.2 冻结）：
+  - §一 分发形态锁定：git template repo（唯一）
+  - §二 安装落位映射：repo 结构 → 用户项目落位（`.governance/` 包裹 + `.clinerules`/`HANDOFF.md` 留根部）
+  - §三 各目录契约：6 目录 + .clinerules 入口 + Capability 接口约定（pass/block/inject 三态）
+  - §四 加载顺序：SessionStart → constitution → handoff/snapshot 注入 → rules 按场景加载 → pre-tool/post-tool → pre-compact
+  - §五 删除矩阵：5 场景（完整示例/自建规则/最小安装/不用 Hook/只用宪法）+ runtime 条件式可删 + rule-appender 丢失副作用
+  - §六 填空映射：13 填空项 + 依赖标注 + 执行顺序（GV-7 → GV-1 → EX-* 并行 → GV-6）
+  - §七 经验沉淀最小回路：人判断机器追加，完整引擎留阻塞后续
+  - §八 已知局限：5 项（dogfood 一次 / VS Code 阻塞 / 通用化未验证 / hooks 非可跑代码 / 完整引擎未交付）
+  - §九 交付边界：本次可交付（契约 + 宪法 + 示例包 + Capability 设计 + CLI hooks，post-tool 纯占位）vs 阻塞后续
 
 ### 关键经验
 
-- **"能注入"≠"模型会用"**：Phase 0 只验证契约能力，Phase 3 实测才发现 messageBuilder 被训练偏好压过。契约验证 ≠ 集成验证
-- **文档结论比事实更易腐**：§13.2 的行为事实（registerRule 求值一次）没变，但设计结论（"已废弃"→"正确路径"）随 ADR-007 翻转
-- **正则要匹配实际格式**：emoji 正则 vs `### P1 —` 格式——写正则前先 grep 实际数据
-- **工具名是版本绑定的**：CLI 升级后旧名不再生效，E2E 测试才能暴露此问题。doc-only review 不够
-- **sync 路径是隐藏杀手**：Copy-Item 不带 wildcard 复制目录本身而非内容，导致旧代码残留
-- **差距分析先于补全**：P2 先做 8 维度差距分析再补骨架，避免"补了不该补的，漏了该补的"。补全后 8 项全自足，残留 6 项非阻塞缺口标了"用到时再补"
-- **验证脚本模板化的价值**：抽象 verify-hook-injection.cjs 成三段式模板（核心+辅助+降级+summary+exit code），下次写新验证脚本直接套，不必从零摸结构
-
-### 模型绕过行为观察
-
-commit 守卫 E2E 测试中发现：模型在 editor 被 skip 后，使用 `run_commands` + `echo > file` 重定向来创建文件。守卫按"每 3 次 write tool"触发检查，而非"每次文件写入"触发。这是守卫粒度限制，非 bug——但需意识到模型会寻找替代路径。
+- **定位校准要趁早**：从"优化本项目治理"转向"交付治理脚手架"后，"治理产出远大于功能产出"的尴尬自动消解——治理产出转化为框架设计依据，功能产出（Capability + Hook + Runtime）才是交付物
+- **外部建议的吸收节奏**：三份外部建议逐轮吸收，每轮补掉具体裂缝（EX-1 双落点 / .clinerules 缺位 / runtime 矛盾 / Capability 接口缺失 / 包裹 / 最小回路 / 检查清单 4 项）。契约经三轮打磨才达冻结质量
+- **软依赖要诚实升级**：原 v1.1 把 GV-1 与 EX-* 标为"软依赖"但执行时极易返工，统一升级为硬前置（rubric 未定不开工）更安全
+- **反向提醒的价值**：用 ADR / conventional commits"低自动化、高约定却好用"压制过度工程冲动，把判断权留给人、机器只做机械追加
 
 ## 待办
 
 ### 未完成项
 
-（本会话待办已全部完成）
+| id | 项 | confidence | depends_on |
+|----|----|-----------|------------|
+| `gv1-ex` | GV-1 Core Constitution 模板（≤800 token + 通用化 rubric）+ EX-1a/1b + EX-2~4 示例包通用化 | Hypothesis | `gv7-contract-frozen` |
+| `gv6` | GV-6 Capability 抽象设计（git-checker / snapshot-writer / handoff-provider / rule-appender 4 模块，落到 capabilities/ 目录）| Hypothesis | `gv7-contract-frozen` |
 
 ### 后续可选
 
-- 🔲 commit 守卫增强：考虑覆盖 run_commands echo 重定向（需在 beforeTool 解析 command input）
-- 🔲 H3 长对话实测：等 PR #12032（CLI codec bug 修复）合并后验证 compaction 触发时机
-- 🔲 test-guard-workspace 清理：被终端锁定，下次会话前手动删除
+- 🔲 第二个项目 dogfood 验证框架通用性
+- 🔲 README.md 编写（安装 + 使用说明，引导"保留 examples/ 照着改"为推荐路径）
+- 🔲 .clinerules 薄入口实现（指向 .governance/core/ 和 .governance/rules/）
+- 🔲 HANDOFF.md 空模板（含待沉淀经验区结构化区块）
 
 ## 阻塞项
 
 | 阻塞点 | 影响 | 缓解 |
 |--------|------|------|
-| TRAE sandbox 限制覆写 `.cline\plugins` | 无法在 IDE 内同步 plugin 代码 | 用户在真实 PowerShell 跑 sync-and-test.ps1 |
-| TUI 模式吞 console.log | 无法直接看 plugin 日志 | 用非 TUI 模式 |
-| PR #12032（CLI codec bug 修复） | 阻塞 H3 长对话实测 | 持续监控 |
+| BL-1 VS Code 扩展 plugin 系统不可用（issue #11944）| VS Code 端全部 Hook | CLI 端先跑通，VS Code 恢复后即插即用 |
+| BL-2 CLI codec bug（PR #12032 Open）| RT-2 snapshot 实测 + HK-1 循环检测实测 | 持续监控 PR 进展 |
 
 ## 关键资源
 
 ```
-@cline/shared:  E:\node-global\node_modules\cline\node_modules\@cline\shared\dist\
-plugin 代码:    context-snapshot/src/index.ts（已拆分 registerRule + WRITE_TOOL_NAMES 更新）
-handoff provider: context-snapshot/src/providers/handoff-provider.ts（summary 提取已重写）
-验证脚本:       context-snapshot/verify-hook-injection.cjs（3 tests PASS）
-同步脚本:       scripts/sync-and-test.ps1（全 ASCII）
-ADR-007:        docs/decisions/adr/ADR-007-snapshot-registerRule-static-injection.md
+GV-7 契约:     docs/decisions/delivery-framework-design.md（v1.2 冻结）
+执行顺序:      GV-1（rubric + 宪法）→ EX-1a/1b + EX-2~4 并行 → GV-6
+本会话前置:    docs/handoff.md 上一版（commit 0e8feb2）
 ```
 
 ### 已知事实
 
-- cline 版本：3.0.37
-- `@cline/*` 包版本：0.0.56
-- plugin 安装路径：`_installed/local/`（junction 指向 `installed/local/`）
-- registerRule 拆分：Verified（两条独立 id，tsc 零错误，3 tests PASS）
-- cline 契约支持多 registerRule（`rules: AgentExtensionRule[]`，agent.d.ts L164）
-- CLI 3.0.37 HubToolExecutorName：readFile, search, bash, webFetch, editor, applyPatch, skills, askQuestion, submit
+- 契约版本：v1.2 冻结（2026-07-05）
+- 分发形态：git template repo（唯一）
+- 目录结构：`.governance/` 包裹 + `.clinerules` + `HANDOFF.md` 留根部
+- Capability 接口：pass/block/inject 三态，本契约只锁 CapabilityResult，SessionContext/HookEvent 留给 GV-6
+- 硬前置：GV-1 rubric 未定，EX-* 不开工
 
 ## 新会话首动作
 
 1. 读 [plugin/project-rules.md](plugin/project-rules.md)（若未归档）
 2. 读本文件
-3. 读 [ADR-007](decisions/adr/ADR-007-snapshot-registerRule-static-injection.md)
-4. 清理 test-guard-workspace（如仍存在）
-5. 按优先级推进后续可选项
+3. 读 [delivery-framework-design.md](decisions/delivery-framework-design.md)（GV-7 契约 v1.2）
+4. 按 GV-1（rubric + 宪法）→ EX-* 并行 → GV-6 顺序推进
 
 ## 引用
 
-- ADR-007：[ADR-007-snapshot-registerRule-static-injection.md](decisions/adr/ADR-007-snapshot-registerRule-static-injection.md)
-- Phase 0 契约验证：[hook-auto-injection-design.md §3](decisions/hook-auto-injection-design.md)
-- hook 自动注入设计：[hook-auto-injection-design.md](decisions/hook-auto-injection-design.md)（已更新对齐 ADR-007）
-- 探查规划（H1-H5 全部 refuted）：[investigation-plan-cline-3.0.37-plugin-contract.md](decisions/investigation/investigation-plan-cline-3.0.37-plugin-contract.md)
+- GV-7 契约：[delivery-framework-design.md](decisions/delivery-framework-design.md)
+- 上一会话 handoff：commit `0e8feb2`
+- 项目定位：[PROJECT_DEV_OUTLINE.md](PROJECT_DEV_OUTLINE.md)
