@@ -30,12 +30,11 @@ Cline 原生机制读取本文件后,按下列顺序加载框架内容:
 
 ## 新会话首动作
 
-每次新会话开始时**必须**按序执行(读前禁止启动任何开发动作):
+若下方 System Prompt 中出现 "GOVERNANCE SESSION CONTEXT" 注入段
+（governance plugin 启用时自动注入，含 Constitution / Rules / Handoff / Snapshot / Git Status），
+直接使用其中内容，无需手动读取上述文件。
 
-1. 读 `.governance/core/constitution.md`
-2. 读 `HANDOFF.md`
-3. 读 `.governance/rules/` 下当前活跃入口规则
-4. 若 handoff.md 引用 examples/ 中已复制生效的规则,一并读取
+若未出现注入段（plugin 未启用），手动读 `HANDOFF.md` 获取会话上下文。
 
 ---
 

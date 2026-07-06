@@ -7,6 +7,8 @@
 > **接口契约**：CapabilityResult 三态(pass/block/inject)由 GV-7 §三锁定,本文件补齐 SessionContext / HookEvent 完整字段定义。
 >
 > **正交原则**：Capability 只表达**意图**(intent),Hook 执行**动作**。同一 Capability 可被多 Hook 复用。
+>
+> **开发新 Capability**：按 [`SOP.md`](SOP.md) 7 步流程执行。
 
 ---
 

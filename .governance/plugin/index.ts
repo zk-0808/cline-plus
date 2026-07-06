@@ -1,4 +1,4 @@
-// index.ts — Governance Plugin 入口
+﻿// index.ts — Governance Plugin 入口
 // 框架 CLI 端运行时:配置驱动 + Capability 静态导入 + Hook 分发。
 //
 // 架构决策 (runtime-plugin-newbuild):
@@ -79,6 +79,12 @@ function preloadSessionContext(workspacePath: string): void {
   //    - 加 "DO NOT RE-READ" 指令 → 模型直接引用注入内容
   if (config.capabilities.handoffProvider.enabled) {
     const args = config.capabilities.handoffProvider.args;
+    // Behavioral instruction prefix — validated by Round 2 prefix decomposition (n=10)
+    // R2-A1 (factual only):   100% tool call rate, 100% redundant read rate
+    // R2-A2 (imperative only): 100% tool call rate, 100% redundant read rate
+    // R2-A3 (both = this):     20% tool call rate, 10% redundant read rate
+    // KEY FINDING: Synergistic effect — neither component alone is effective.
+    // The combination creates a phase transition. DO NOT simplify by removing either.
     const md: string[] = [
       "# GOVERNANCE SESSION CONTEXT (AUTO-INJECTED — DO NOT RE-READ FILES)",
       "",
