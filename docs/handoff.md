@@ -1,4 +1,4 @@
-# Handoff — A/B Round 2 完成 + 协同效应确认
+# Handoff — Governance Framework v1.0 完成
 
 > **生命周期**：每次覆写，无归档——会话交接文件。
 > **进入规则**：会话开始时先读 `plugin/project-rules.md`（若未归档），再读本文件。
@@ -100,7 +100,7 @@
 |----|----|-----------|------------|
 | `capability-sop-doc` | ✅ **已完成**:`.governance/capabilities/SOP.md` — 7 步流程 + 检查清单 + 5 个常见陷阱 | ✅ Verified | - |
 | `dogfood-second-project` | ✅ **已完成**:task-tracker CLI 项目验证框架通用性。D1-D5 全通过，项目定制参数正确生效 | ✅ Verified | `s1-s5-all-pass` |
-| `framework-v1.0-tag` | 框架版本号 v1.0 git tag（dogfood 验证后） | Hypothesis | `dogfood-second-project` |
+| `framework-v1.0-tag` | ✅ **已完成**:git tag v1.0 已创建（commit ca00d84）| ✅ Verified | `dogfood-second-project` |
 | `s6-compaction-test` | S6 Compaction + Snapshot 实测（需 BL-2 PR #12032 合并后） | Blocked | BL-2 |
 | `prompt-layering-research-round2` | 第二轮源码探查完成 | ✅ Verified | `prompt-layering-research-done` |
 | `ab-test-round2` | ✅ **已完成**:prefix 分解 n=10。协同效应确认：单独无效，组合 20%。冗余读率 10% 含合理读，停止优化 | ✅ Verified | `ab-test-clinerules-conflict` |
@@ -166,7 +166,7 @@ A/B 差分测试报告:  docs/decisions/investigation/ab-test-clinerules-conflic
 1. 读 [plugin/project-rules.md](plugin/project-rules.md)（若未归档）
 2. 读本文件
 3. 如需修改 plugin 代码 → 先运行 `scripts\sync-governance-plugin.ps1` 同步到 CLI 发现路径
-4. 按优先级推进：`framework-v1.0-tag`
+4. v1.0 已 tag。后续可选：S6 compaction 测试（等 BL-2 PR 合并）→ `publish-developer-guide`
 
 ## 引用
 
