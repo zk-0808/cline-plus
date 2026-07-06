@@ -1,164 +1,261 @@
-# Governance Framework
+# Governance Framework for Cline
 
-> AI agent 治理脚手架——把"会话交接 / 证据治理 / 评审纪律 / 经验沉淀"从一次性脚本变成可复用框架。
+> AI agent 治理脚手架——把"会话交接 / 证据治理 / 经验沉淀"从手动操作变成可复用的自动化框架。
 >
-> 从 [cline++](https://github.com/zk-0808/cline-plus) 项目三周实战蒸馏。本仓库是 **git template repo**——`Use this template` 或 `git clone` 即用。
+> 从 [cline++](https://github.com/zk-0808/cline-plus) 项目三周实战蒸馏。
 
 ---
 
 ## 这是什么
 
-一套 **Cline AI agent 治理框架**,用五层架构组织:
+一套 **Cline AI agent 治理框架**，用五层架构组织：
 
-| 层 | 目录 | 生命周期 | 职责 |
-|----|------|---------|------|
-| L1 Core | `.governance/core/` | 年/月 | 跨项目通用宪法(≤800 token 判定动作) |
-| L2 Rules | `.governance/rules/` | 周 | 装好即生效的薄入口(每份 ≤50 行) |
-| L3 Capability | `.governance/capabilities/` | 月 | "怎么做"的代码模块(pass/block/inject) |
-| L4 Hooks | `.governance/hooks/` | 天 | "什么时候调用"的事件驱动检查 |
-| L5 Runtime | `HANDOFF.md` + `.governance/runtime/` | 每次 session | 动态状态文件 |
+```
+L1 Core          .governance/core/          跨项目通用宪法（判定动作）
+L2 Rules         .governance/rules/         装好即生效的薄入口规则
+L3 Capability    .governance/capabilities/  "怎么做"的代码模块（pass/block/inject）
+L4 Hooks         .governance/hooks/         "什么时候调用"的事件驱动检查
+L5 Runtime       HANDOFF.md + runtime/      动态状态文件（每次 session）
+```
 
-完整设计依据见 [`docs/decisions/delivery-framework-design.md`](docs/decisions/delivery-framework-design.md)(GV-7 v1.2 冻结契约)。
+框架提供 4 个 Capability：
+
+| Capability | 触发时机 | 作用 |
+|-----------|---------|------|
+| `handoff-provider` | SessionStart | 读 constitution + rules + handoff + snapshot，注入到会话上下文 |
+| `git-checker` | SessionStart / PreToolUse | 检测未 commit 文件堆积，达阈值时阻断写入工具 |
+| `snapshot-writer` | PreCompact | 写 snapshot.json，供下次会话恢复 |
+| `rule-appender` | 手动触发 | 把经验机械追加到 HANDOFF.md 待沉淀区 |
 
 ---
 
-## 安装
+## 快速开始
 
-### 方式 1: GitHub Template
+### 前置条件
 
-```
-点本仓库右上 "Use this template" → 创建你的项目 → git clone
-```
+- [Cline CLI](https://github.com/cline/cline) 3.0.37+（`npm install -g @anthropic-ai/cline`）
+- Node.js 18+
+- Git
 
-### 方式 2: git clone
+### 1. 获取框架
 
 ```bash
-git clone https://github.com/zk-0808/cline-plus.git your-project
+# 方式 A: clone 作为新项目
+git clone -b release/v1.0-alpha https://github.com/zk-0808/cline-plus.git your-project
 cd your-project
-rm -rf .git docs/  # 删除源项目历史与 cline++ 专属文档
+rm -rf .git
 git init
-```
 
-### 方式 3: 叠加到已有项目
-
-```bash
+# 方式 B: 叠加到已有项目
 cd your-existing-project
-git remote add template https://github.com/zk-0808/cline-plus.git
-git fetch template main
-git checkout template/main -- .governance/ .clinerules HANDOFF.md
-git remote remove template
+git remote add governance https://github.com/zk-0808/cline-plus.git
+git fetch governance release/v1.0-alpha
+git checkout governance/release/v1.0-alpha -- .governance/ .clinerules
+git remote remove governance
 ```
 
----
+### 2. 调整项目参数
 
-## 接入后第一步: 改参数
-
-打开 [`.governance/core/constitution.md`](.governance/core/constitution.md) 底部"项目可调参数"区,按你的项目调整:
+打开 `.governance/core/constitution.md` 底部"项目可调参数"区，按你的项目调整：
 
 ```markdown
-| 参数 | 本仓库取值 | 含义 |
-|------|-----------|------|
-| `independent_evidence_count` | 2 | 关键结论独立证据类型最小数 |
 | `uncommitted_file_threshold` | 5 | handoff 触发器 b 文件堆积阈值 |
-| ... |
+| `independent_evidence_count` | 2 | 关键结论独立证据类型最小数 |
 ```
 
-判定动作不动,只改取值。
+判定动作不动，只改取值。同步更新 `.governance/hooks/config.json` 中的 `threshold`。
 
----
+### 3. 同步插件到 CLI
 
-## 三种使用路径
-
-按你的需求选一条:
-
-### 路径 A: 完整示例(推荐默认)
-
-保留 `.governance/examples/` 全部 4 份示例包,照着改:
-
-- [`examples/dev-rules.md`](.governance/examples/dev-rules.md) — 执行边界规则(含 cline++ 假设清单 + 修改提示)
-- [`examples/evidence-governance.md`](.governance/examples/evidence-governance.md) — 证据状态机
-- [`examples/reviewer-personas.md`](.governance/examples/reviewer-personas.md) — 评审角色配置
-- [`examples/handoff-example.md`](.governance/examples/handoff-example.md) — HANDOFF.md 填写示例
-
-每份示例头部含"cline++ 特定假设"区块——按表格修改建议改你的项目即可。
-
-### 路径 B: 自建规则
-
-删除 `.governance/rules/` 入口规则,保留 `core/` + 自建 rules/ + `HANDOFF.md`。骨架 + 自定义。
-
-### 路径 C: 最小安装
-
-删除 `.governance/examples/` 与 `.governance/hooks/` + `.governance/capabilities/`,仅保留 `core/` + `rules/` + `runtime/` + `.clinerules`。纯文档治理,无自动化。
-
-完整删除矩阵见 [delivery-framework-design.md §五](docs/decisions/delivery-framework-design.md)。
-
----
-
-## 新会话首动作(给 AI 的指令)
-
-每次新会话开始时,把下面这句贴给 AI:
-
-```text
-读 .governance/core/constitution.md + HANDOFF.md + .governance/rules/。
+**Windows (PowerShell):**
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/sync-governance-plugin.ps1
 ```
 
-AI 会按 [`rules/handoff-entry.md`](.governance/rules/handoff-entry.md) 的读取门控执行:先读宪法,再读交接文件,再读活跃入口规则。读完前不会启动任何开发动作。
-
----
-
-## 启用 Hook(可选)
-
-若你用 Cline CLI 且想启用自动化:
-
-1. 实现 `.governance/capabilities/` 4 个 Capability(设计见 [`capabilities/README.md`](.governance/capabilities/README.md))
-2. 配置 `.governance/hooks/` 4 个 Hook
-3. Hook 触发时调用 Capability,实现:
-   - **SessionStart**: 自动读 HANDOFF.md + snapshot.json 注入上下文
-   - **PreToolUse**: 检测未 commit 文件堆积达阈值 → 阻断工具调用
-   - **PreCompact**: 写 snapshot.json
-   - **PostToolUse**: 纯占位,可自加 lint/test
-
-不用 Hook 时,上述动作由人工触发(读 HANDOFF.md / 检查 git status)。
-
----
-
-## 经验沉淀最小回路
-
-框架内置"经验可沉淀"承诺:
-
-```
-人判断"这值得沉淀"
-  ↓
-调用 capabilities/rule-appender
-  ↓
-追加到 HANDOFF.md 待沉淀区(结构化)
-  ↓
-人工 review → 晋升到 rules/ 或删除
+**macOS / Linux (Bash):**
+```bash
+bash scripts/sync-governance-plugin.sh
 ```
 
-**判断由人做,追加由机器做,晋升由人做**。完整治理引擎(自动判断/退役/路由)留阻塞后续集。
+这会把 `.governance/plugin/` + `.governance/capabilities/` 复制到 `~/.cline/plugins/installed/local/governance/`。
 
-详见 [`rules/lifecycle.md`](.governance/rules/lifecycle.md)。
+### 4. 验证
+
+```bash
+cline "What is the title of section 1 in Core Constitution?" --json --auto-approve true -t 30
+```
+
+如果模型直接回答"执行主体边界"且不调工具——插件加载成功。
+
+检查 marker 文件：
+```bash
+cat .governance/runtime/plugin-loaded.marker
+# 应输出 "loaded at <timestamp>"
+```
 
 ---
 
-## 框架契约
+## 工作原理
 
-- **分发形态**: git template repo(唯一)
-- **版本管理**: git tag(v1.0 / v1.1 ...)
-- **目录契约**: [`docs/decisions/delivery-framework-design.md`](docs/decisions/delivery-framework-design.md) (GV-7 v1.2 冻结)
-- **接口契约**: Capability 三态(pass/block/inject),见 [`capabilities/README.md`](.governance/capabilities/README.md)
+### Session 启动时
+
+```
+Cline CLI 启动
+  → 发现 ~/.cline/plugins/installed/local/governance/
+  → 调用 plugin.setup()
+  → preloadSessionContext():
+      读 constitution.md + rules/*.md + HANDOFF.md + snapshot.json + git status
+      拼装为 markdown 注入段
+  → registerRule() 将注入段加入系统提示词
+  → 模型在系统提示词中看到完整的会话上下文
+```
+
+### 写入工具调用时
+
+```
+模型调用 editor / write / execute_command
+  → beforeTool hook 触发
+  → git-checker 检查 git status
+  → 未 commit 文件 ≥ threshold?
+      → 是: 返回 { skip: true, reason: "未 commit 文件堆积..." }  → 工具被阻断
+      → 否: 返回 undefined  → 工具正常执行
+```
+
+### 对话压缩时（PreCompact）
+
+```
+Cline 触发 compaction
+  → beforeModel hook 触发
+  → snapshot-writer 提取 decisions / todos / next_actions
+  → 写入 .governance/runtime/snapshot.json
+  → 下次 SessionStart 时 handoff-provider 读取并注入
+```
+
+---
+
+## 自定义
+
+### 添加新规则
+
+在 `.governance/rules/` 下新建 `.md` 文件。规则会自动被 `handoff-provider` 读取并注入。
+
+### 添加新 Capability
+
+按 [`.governance/capabilities/SOP.md`](.governance/capabilities/SOP.md) 的 7 步流程开发。
+
+### 配置 Hook
+
+编辑 `.governance/hooks/config.json`：
+
+```json
+{
+  "session-start": {
+    "enabled": true,
+    "capabilities": {
+      "handoffProvider": { "enabled": true, "args": { ... } },
+      "gitChecker": { "enabled": true, "args": { "threshold": 5 } }
+    }
+  },
+  "pre-tool": { ... },
+  "pre-compact": { ... }
+}
+```
 
 ---
 
 ## 已知局限
 
-| 局限 | 缓解 |
-|------|------|
-| 框架仅在 cline++ 一个项目 dogfood 过 | `examples/` 示例包降低自建门槛;等第二个项目验证 |
-| VS Code 端 Hook 全部阻塞 | CLI 端先跑通,VS Code 恢复后即插即用 |
-| Core Constitution 通用化未经验证 | 保留判定动作而非空泛原则,降低过拟合风险 |
-| hooks/ + capabilities/ 当前为设计文档 | 设计 + CLI 端可跑部分;完整实现等阻塞解除 |
+> 以下是 v1.0-alpha 的已知硬伤。使用前请评估是否影响你的场景。
+
+### 1. Compaction/Snapshot 未实测
+
+`snapshot-writer` 代码已实现且配置已启用，但因 Cline CLI 的 codec bug（[PR #12032](https://github.com/cline/cline/pull/12032)），从未在真实 compaction 中触发。
+
+**影响**：框架承诺的"长对话不丢上下文"未经验证。短对话（不需要 compaction）不受影响。
+
+**缓解**：等 PR 合并后实测。当前 snapshot.json 会被 handoff-provider 读取，但内容可能是空的。
+
+### 2. 单模型验证
+
+前缀服从度策略（"事实陈述 + 否定祈使"协同效应）仅在 `deepseek-v4-flash` 上通过 A/B 测试（n=10）。
+
+**影响**：换用 Claude / GPT 等其他模型时，注入段可能被忽略，模型仍会冗余读文件。
+
+**缓解**：前缀策略是"防御性"的——即使模型服从度高，加了前缀也不会变差。但如果模型服从度低，可能需要调整措辞。
+
+### 3. 仅 CLI 端可用
+
+VS Code 插件系统（[issue #11944](https://github.com/cline/cline/issues/11944)）不可用，所有 Hook 在 VS Code 端无效。
+
+**影响**：VS Code 用户只能使用 `.governance/` 文档治理（人工读文件），无法使用自动化 Hook。
+
+**缓解**：CLI 端全功能可用。VS Code 恢复后即插即用。
+
+### 4. 仅 Windows/PowerShell 同步脚本
+
+`sync-governance-plugin.ps1` 是 PowerShell 脚本。macOS/Linux 用户需使用 `sync-governance-plugin.sh`（已提供，但未在 macOS/Linux 上实测）。
+
+### 5. 前缀策略不可拆分
+
+A/B 测试发现，"事实陈述"单独使用 100% 无效，"否定祈使"单独使用 100% 无效，**两者组合后 20% 工具调用率**。这不是加性效应而是相变。不要尝试简化前缀（删掉任一组件会导致回到 100%）。
+
+详见 [`docs/decisions/investigation/ab-test-clinerules-conflict.md`](docs/decisions/investigation/ab-test-clinerules-conflict.md)。
+
+---
+
+## 验证状态
+
+| 测试 | 状态 | 说明 |
+|------|------|------|
+| S1 Plugin 发现 | ✅ PASS | marker 文件创建，setup() 执行 |
+| S2 Rule 注入 | ✅ PASS | 模型直接回答 constitution 内容，0 工具调用 |
+| S3 Git-checker 阻断 | ✅ PASS | 达阈值时 editor 工具被 skip |
+| S4 只读不阻断 | ✅ PASS | readFile 正常工作 |
+| S5 Codec 安全 | ✅ PASS | 多轮对话无崩溃 |
+| S6 Compaction | 🔴 BLOCKED | CLI codec bug，等 PR #12032 |
+| D1-D5 Dogfood | ✅ PASS | 第二项目（task-tracker CLI）全通过 |
+
+测试环境：Cline CLI 3.0.37 + deepseek-v4-flash + Windows 11
+
+---
+
+## 目录结构
+
+```
+your-project/
+├── .governance/
+│   ├── core/
+│   │   ├── constitution.md      # L1 宪法（判定动作 + 项目可调参数）
+│   │   └── rubric.md            # 通用化判定标准
+│   ├── rules/
+│   │   ├── handoff-entry.md     # L2 交接机制入口
+│   │   └── lifecycle.md         # L2 文档生命周期 + 晋升流程
+│   ├── capabilities/
+│   │   ├── SOP.md               # Capability 开发 7 步流程
+│   │   ├── README.md            # 类型定义 + 复用矩阵
+│   │   ├── git-checker/         # git 状态检测
+│   │   ├── handoff-provider/    # 会话上下文注入
+│   │   ├── snapshot-writer/     # 快照写入
+│   │   └── rule-appender/       # 经验追加
+│   ├── hooks/
+│   │   ├── config.json          # Hook 配置（启用/禁用/参数）
+│   │   └── README.md            # Hook 设计说明
+│   ├── plugin/
+│   │   ├── index.ts             # 插件入口（setup + hooks）
+│   │   ├── config-loader.ts     # 配置加载器
+│   │   ├── types.ts             # 插件类型定义
+│   │   └── hooks/               # Hook 实现
+│   ├── examples/                # 示例规则包
+│   └── runtime/                 # 运行时产物（gitignore）
+├── .clinerules                  # Cline 条件加载入口
+├── HANDOFF.md                   # 会话交接文件
+├── scripts/
+│   ├── sync-governance-plugin.ps1   # Windows 同步脚本
+│   └── sync-governance-plugin.sh    # macOS/Linux 同步脚本
+└── docs/
+    └── decisions/
+        └── delivery-framework-design.md  # 框架契约文档
+```
 
 ---
 
