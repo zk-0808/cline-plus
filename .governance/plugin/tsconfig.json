@@ -3,8 +3,12 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2022"],
-    "types": ["node"],
+    "lib": [
+      "ES2022"
+    ],
+    "types": [
+      "node"
+    ],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -24,6 +28,10 @@
     "../capabilities/git-checker/index.ts",
     "../capabilities/git-checker/types.ts",
     "../capabilities/snapshot-writer/index.ts",
-    "../capabilities/snapshot-writer/types.ts"
+    "../capabilities/snapshot-writer/types.ts",
+    "staleness-utils.ts",
+    "../capabilities/tracer/index.ts",
+    "../capabilities/tracer/types.ts",
+    "../capabilities/staleness-sweeper/index.ts"
   ]
 }

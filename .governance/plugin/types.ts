@@ -164,4 +164,6 @@ export interface PluginState {
   compactCount: number;
   // git-checker 频率控制
   toolCallCount: number;
+  tracePath: string;
+  traceEnabled: boolean;
 }

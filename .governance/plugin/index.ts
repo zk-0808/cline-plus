@@ -17,6 +17,8 @@ import { execSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { loadConfig } from "./config-loader.js";
 import { detectCompaction, dispatchPreCompact } from "./hooks/pre-compact.js";
+import { traceSync, estTokens } from "../capabilities/tracer/index.js";
+import { processStaleness } from "./staleness-utils.js";
 import type { PluginState, SessionContext, HooksConfig } from "./types.js";
 
 const PLUGIN_NAME = "governance";
@@ -30,6 +32,8 @@ const state: PluginState = {
   lastFullMessages: null,
   compactCount: 0,
   toolCallCount: 0,
+  tracePath: ".governance/runtime/traces.jsonl",
+  traceEnabled: true,
 };
 
 // ── 预加载内容 (setup 同步完成,content() 只读) ──
@@ -131,8 +135,26 @@ function preloadSessionContext(workspacePath: string): void {
     // HANDOFF.md
     try {
       const handoffPath = join(workspacePath, args.handoffPath);
-      const handoff = readFileSync(handoffPath, "utf8");
-      md.push("## Handoff", handoff, "");
+      let handoff = readFileSync(handoffPath, "utf8");
+      // P0: process staleness
+      const stalenessResult = processStaleness(handoff);
+      handoff = stalenessResult.content;
+      if (stalenessResult.staleCount > 0 || stalenessResult.agingCount > 0) {
+        handoff += "\n\n> **[Staleness Summary]** " + stalenessResult.staleCount + " stale, " + stalenessResult.agingCount + " aging entries detected.";
+      }
+      // P1: trace staleness metrics
+      if (state.traceEnabled) {
+        traceSync({
+          session_id: state.sessionId,
+          hook: "session-start",
+          capability: "stalenessSweeper",
+          event: "sweep",
+          metrics: { stale_count: stalenessResult.staleCount, filtered_count: stalenessResult.filteredCount },
+          workspacePath: state.workspacePath,
+          tracePath: state.tracePath,
+        });
+      }
+md.push("## Handoff", handoff, "");
     } catch {
       md.push(
         "## Handoff",
@@ -230,6 +252,18 @@ function preloadSessionContext(workspacePath: string): void {
     console.warn(`[${PLUGIN_NAME}] preload errors: ${errors.join("; ")}`);
   }
   console.log(`[${PLUGIN_NAME}] session context preloaded (${sessionContextContent.length} chars)`);
+  // P1 tracing: record injection metrics
+  if (state.traceEnabled) {
+    traceSync({
+      session_id: state.sessionId,
+      hook: "session-start",
+      capability: "handoffProvider",
+      event: "inject",
+      metrics: { chars: sessionContextContent.length, tokens: estTokens(sessionContextContent.length) },
+      workspacePath: state.workspacePath,
+      tracePath: state.tracePath,
+    });
+  }
 }
 
 // ── Plugin 定义 ──
@@ -334,6 +368,19 @@ export const plugin = {
             `(tool=${toolName}, blocked by governance pre-tool hook)`;
           console.warn(`[${PLUGIN_NAME}] COMMIT GUARD: ${reason}`);
           return { skip: true, reason };
+          // P1 tracing: record block
+          if (state.traceEnabled) {
+            traceSync({
+              session_id: state.sessionId,
+              hook: "pre-tool",
+              capability: "gitChecker",
+              event: "block",
+              metrics: { blocked_count: 1 },
+              note: toolName,
+              workspacePath: state.workspacePath,
+              tracePath: state.tracePath,
+            });
+          }
         }
       } catch {
         // git 失败不阻断 (避免误伤)
@@ -370,6 +417,17 @@ export const plugin = {
           .then((result) => {
             if (result.snapshotWritten) {
               console.log(`[${PLUGIN_NAME}] snapshot written successfully`);
+              // P1 tracing: record snapshot
+              if (state.traceEnabled) {
+                traceSync({
+                  session_id: state.sessionId,
+                  hook: "pre-compact",
+                  capability: "snapshotWriter",
+                  event: "snapshot",
+                  workspacePath: state.workspacePath,
+                  tracePath: state.tracePath,
+                });
+              }
             }
             if (result.errors.length) {
               console.warn(`[${PLUGIN_NAME}] pre-compact errors: ${result.errors.join("; ")}`);

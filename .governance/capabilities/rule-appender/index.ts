@@ -5,8 +5,8 @@ import { dirname } from "node:path";
 import type { RuleAppenderInput, RuleAppenderResult } from "./types.ts";
 
 const SECTION_HEADER = "## 待沉淀经验";
-const TABLE_HEADER = "| id | 经验 | 来源 | 沉淀日期 | 状态 |";
-const TABLE_SEPARATOR = "|----|------|------|---------|------|";
+const TABLE_HEADER = "| id | 经验 | 来源 | 沉淀日期 | 状态 | ttl(天) | 最后验证 | 权重 |";
+const TABLE_SEPARATOR = "|----|------|------|---------|------|---------|---------|------|";
 const SECTION_NOTE =
   "> 此区由 rule-appender 自动追加,人工 review 后晋升到 rules/ 或删除。\n> 晋升流程见 .governance/rules/lifecycle.md。";
 const EMPTY_HANDOFF_TEMPLATE = `# Handoff — 会话交接
@@ -35,8 +35,8 @@ function escapeCell(text: string): string {
   return text.replace(/\|/g, "\\|").replace(/\r?\n/g, " ").trim();
 }
 
-function makeRow(id: string, content: string, source: string, date: string): string {
-  return `| ${escapeCell(id)} | ${escapeCell(content)} | ${escapeCell(source)} | ${date} | 待 review |`;
+function makeRow(id: string, content: string, source: string, date: string, ttl: number = 90): string {
+  return `| ${escapeCell(id)} | ${escapeCell(content)} | ${escapeCell(source)} | ${date} | 待 review |  |  | 1.0 |`;
 }
 
 function isSeparatorLine(line: string): boolean {

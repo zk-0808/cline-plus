@@ -42,6 +42,8 @@ venv/
 .cline/
 .clinerules.local
 handoff/auto-*.md
+.governance/runtime/*.marker
+.governance/runtime/*.jsonl
 
 # Experiments (P5 plugin sandbox lives in its own repo)
 experiments/

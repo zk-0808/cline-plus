@@ -1,77 +1,105 @@
-# Handoff — 会话交接
+# Handoff - Phase 1 Tracing + Phase 2 Staleness
 
-> **生命周期**：每次覆写,无归档——会话交接文件。
->
-> **进入规则**：会话开始时先读 `.governance/core/constitution.md` 与 `.governance/rules/`,再读本文件。
->
-> **使用方式**：本文件为空模板。新会话开始时按 `.governance/rules/handoff-entry.md` 读取门控执行;会话结束按 constitution §4 触发器覆盖写。填写示例见 `.governance/examples/handoff-example.md`。
+> Session handoff file. Overwrite each session.
 
 ---
 
-## 本会话决策
+## Decisions
 
-| id | 决策 | confidence | depends_on |
+| id | decision | confidence | depends_on |
 |----|------|-----------|------------|
-|（待填）|
+| tracing-first | Phase 1 Tracing before Phase 2 Staleness, staleness validation needs tracing data | Verified | - |
+| staleness-tier-decay | Tier decay: fresh 1.0 -> aging 0.5 -> stale 0.1 -> expired | Likely | tracing-first |
+| delete-default-off | sweeper physical delete default off, needs ruleBlock=true | Verified | staleness-tier-decay |
+| phase-not-priority | Use Phase 1/2 not P0/P1 to avoid priority ambiguity | Verified | - |
+| open-problem | Competitors acknowledge staleness but did not sink to governance hook layer | Verified | - |
 
-## 本会话净变化
+## Net Changes
 
-### 代码
+### Code
 
--（待填）
+- NEW .governance/capabilities/tracer/types.ts
+- NEW .governance/capabilities/tracer/index.ts - trace() + traceSync() + estTokens()
+- NEW .governance/plugin/staleness-utils.ts - calcStalenessWeight() + processStaleness()
+- NEW .governance/capabilities/staleness-sweeper/index.ts
+- MOD .governance/plugin/index.ts - 3 tracing points + staleness on HANDOFF read
+- MOD .governance/plugin/types.ts - PluginState adds tracePath/traceEnabled
+- MOD .governance/capabilities/rule-appender/index.ts - table adds ttl/last_validated/weight
+- MOD .governance/hooks/config.json - tracing config section
+- NEW scripts/trace-stats.js
 
-### 文档
+### Docs
 
--（待填）
+- MOD .governance/rules/lifecycle.md - staleness mechanism documented
+- MOD .governance/plugin/tsconfig.json - include new files
 
-### 关键经验
+### Key Learnings
 
--（待填）
+- Phase 1/2 better than P0/P1: Phase=sequence, P=priority
+- staleness delete=archive not physical: irreversible risk
+- competitor claim=open problem not ignored: mem0 acknowledges but not implemented
 
-## 待办
+## TODO
 
-### 未完成项
+### Unfinished
 
-| id | 项 | confidence | depends_on |
+| id | item | confidence | depends_on |
 |----|----|-----------|------------|
-|（待填）|
+| smoke-tracing | mock 3 hook events, verify traces.jsonl, run trace-stats.js | Verified | tracing-first |
+| smoke-staleness | age=30/60/95/185 days test data, verify processStaleness() | Verified | staleness-tier-decay |
+| staleness-refresh | Design last_validated refresh mechanism | Hypothesis | staleness-tier-decay |
+| stale-injection | Decide if weight=0.1 entries still injected or filtered | Likely | staleness-tier-decay |
 
-### 后续可选
+### Optional
 
-- 🔲（待填）
+- sub-agent context isolation (needs SDK hook confirmation)
+- long conversation snapshot recovery (waiting PR #12032)
+- A/B experiment framework (tracing before/after)
 
-## 阻塞项
+## Blockers
 
-| 阻塞点 | 影响 | 缓解 |
-|--------|------|------|
-|（待填）|
+| blocker | impact | mitigation |
+|--------|------|-----------|
+| no runtime artifacts | interviewer asks did staleness work | tonight: smoke-tracing + smoke-staleness |
 
-## 关键资源
+## Key Resources
 
 ```
-（待填）
+Tracing:     .governance/capabilities/tracer/index.ts
+Staleness:   .governance/plugin/staleness-utils.ts
+Sweeper:     .governance/capabilities/staleness-sweeper/index.ts
+Stats:       scripts/trace-stats.js
+Config:      .governance/hooks/config.json
+Lifecycle:   .governance/rules/lifecycle.md
+Competitors: yantrikdb(164), memwatch(33), MemGuard(3), memharness(4), mnemos(9)
 ```
 
-## 待沉淀经验
+## Pending Experience
 
-> 此区由 rule-appender 自动追加,人工 review 后晋升到 rules/ 或删除。
-> 晋升流程见 .governance/rules/lifecycle.md。
+> Auto-appended by rule-appender, promote to rules/ or delete after review.
 
-| id | 经验 | 来源 | 沉淀日期 | 状态 |
-|----|------|------|---------|------|
-|（空,rule-appender 追加）|
+| id | experience | source | date | status | ttl(days) | last_validated | weight |
+|----|------|------|---------|------|---------|---------|------|
+| exp-tracing-first | Lay tracing before governance strategy, validate with before/after data | this session | 2026-07-08 | pending review | 90 | 2026-07-08T13:30:00.000Z | 1.0 |
+| exp-phase-label | Use Phase 1/2 not P0/P1 to avoid priority ambiguity | Claude feedback | 2026-07-08 | pending review | 90 | 2026-07-08T13:30:00.000Z | 1.0 |
+| exp-delete-to-archive | Auto-governance delete=archive, default off, irreversible risk | Claude feedback | 2026-07-08 | pending review | 90 | 2026-07-08T13:30:00.000Z | 1.0 |
+| exp-staleness-wording | Say open problem not ignored for competitor positioning | Claude feedback | 2026-07-08 | pending review | 90 | 2026-07-08T13:30:00.000Z | 1.0 |
 
-## 新会话首动作
+## Next Session First Actions
 
-1. 读 `.governance/core/constitution.md`
-2. 读本文件
-3. 读 `.governance/rules/` 下当前活跃入口规则
-4.（待填:按本会话未完成项推进顺序）
+1. Read .governance/core/constitution.md
+2. Read this file
+3. Read .governance/rules/ active entry rules
+4. Do smoke-tracing then smoke-staleness, save to docs/experiments/
 
 ---
 
-## Handoff（推荐下次会话开局交接语句）
+## Handoff
 
 ```text
-读 .governance/core/constitution.md + HANDOFF.md + .governance/rules/。
+Read .governance/core/constitution.md + HANDOFF.md + .governance/rules/.
+Then do smoke-tracing and smoke-staleness verification.
 ```
+
+
+

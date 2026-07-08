@@ -32,8 +32,8 @@
 > 此区由 rule-appender 自动追加,人工 review 后晋升到 rules/ 或删除。
 > 晋升流程见本文件下方。
 
-| id | 经验 | 来源 | 沉淀日期 | 状态 |
-|----|------|------|---------|------|
+| id | 经验 | 来源 | 沉淀日期 | 状态 | ttl(天) | 最后验证 | 权重 |
+|----|------|------|---------|------|---------|---------|------|
 |（空,rule-appender 追加）|
 ```
 
@@ -59,3 +59,32 @@
 - 退役判据详表:[`core/constitution.md` §7](../core/constitution.md)
 - 待沉淀区所在:`HANDOFF.md`(根目录)
 - 追加能力:`capabilities/rule-appender`(GV-6)
+
+
+-## 表值普期子包钟 (Memory Staleness)
+
+校点层 memory framewo��(mem0 60K stars, Letta, Zep) 廈所、表炽、模型档订天可代议前停记形接辺�{格.
+
+### 箧算分析中
+
+ | 热弌 (age) | 级凹 (weight) | 正弌 |
+ |-------------| --------------|-------|
+ | age < ttl * 0.5 | 1.0 | fresh |
+ | age < ttl | 0.5 | aging |
+ | age >= ttl | 0.1 | stale |
+ | age >= ttl * 2 | (sweeper 删閟) | expired |
+
+黄违 TTL = 90日。每借近乜在 rule-appender 放入时长是 ttl 值 历分validated。
+
+### 放入时长务命 (SessionStart)
+
+`handoff-provider` 在 SessionStart 放入HANDOFF.md 三个，订共 processStaleness() 对庄实水线务命身务，
+P stale 选每 是否８ `<!-- STALE /测试（主题防快返乡处理）` aging 选毌＜候里构，a Trace 所有倡重皅 stale_count / filtered_count
+
+### 人辉接制摐 (staleness-sweeper)
+staleness-sweeper 菜派历分在等对接成量额，人辉更接制 HANDOFF.mdΆ�属改全局溢绣：
+@ 保证仅人：完全后改全更仅法这里一礹⤍，并选拉。
+R多福认词屟怒正弌到逖。age > ttl * 2仅保证宓复一礹⤍
+C stale 选毌移于0p#�i!9�!��h��k���H����:f,�d���ܙy�(y�b�+�B��H����:!��,i�Y[L]K�\
+yo��an9.#yk�:#�9�/�(j9`/9�k��'�kd9c!zd�ˈ9�$y�*���z-)�.���&���d�9��9.��d#y..��SX:,$��`ycl��*����eo�b�yno�d#;�#�[[�\��\��Y\\�9.��/�y��z/�yb!���8� ���X�H9�m9��yi&�c�y�.N�;�&ya�y�m9�:/�za�9.#z-`z+ṥ/�i!;�#9k�9aj:+��c�����9��yb-�S�ё��Y9��yo#��9`&za�:,hy/빥.z/�za�8� ������9c๥l9�.yaj9���.����H�[[�\����Y\\���\X�[]Y\���[[�\��\��Y\\�8(
+B�H9g*9c��i!9�!��b�+�yb-��d�Y�[���[[�\��]][˝�;�"��"B�H�X�H:c/9k�;�&��\X�[]Y\���X�\�8(JB�H:.��b�yb-��d��\X�[]Y\�ܘ^]\�X\[�\��"9.b�//�d#ze�:g��."��\�ݘ[Y]Y��ZY�9c�{�"B
