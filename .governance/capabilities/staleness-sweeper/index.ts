@@ -91,8 +91,8 @@ export async function stalenessSweeper(input: SweepInput): Promise<SweepResult> 
     if (weight <= 0.1) staleCount++;
     
     // Update weight and last_validated columns
-    const now = new Date().toISOString();
-    const newCells = [...cells.slice(0, 5), ttlStr, now, weight.toFixed(1)];
+    const lastValidated = cells[6] || '';
+    const newCells = [...cells.slice(0, 5), ttlStr, lastValidated, weight.toFixed(1)];
     if (weight <= 0.1) newCells[4] = '已过期'; // mark as expired
     else if (weight < 1.0 && cells[4] === '待 review') newCells[4] = '已审'; // reviewed
     

@@ -367,7 +367,7 @@ export const plugin = {
             `请先写 handoff + commit，再继续工具调用。\n` +
             `(tool=${toolName}, blocked by governance pre-tool hook)`;
           console.warn(`[${PLUGIN_NAME}] COMMIT GUARD: ${reason}`);
-          return { skip: true, reason };
+
           // P1 tracing: record block
           if (state.traceEnabled) {
             traceSync({
@@ -381,6 +381,7 @@ export const plugin = {
               tracePath: state.tracePath,
             });
           }
+          return { skip: true, reason };
         }
       } catch {
         // git 失败不阻断 (避免误伤)
