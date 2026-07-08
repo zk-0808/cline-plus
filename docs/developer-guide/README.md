@@ -128,5 +128,5 @@ cat .governance/runtime/plugin-loaded.marker
 | Cline CLI | 3.0.37 |
 | VS Code Extension | 4.0.x（plugin 系统不可用） |
 | SDK | v0.0.56 |
-| 框架版本 | v1.0-alpha |
-| 最近更新 | 2026-07-07 |
+| 框架版本 | v1.0 |
+| 最近更新 | 2026-07-09 |

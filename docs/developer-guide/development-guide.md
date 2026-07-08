@@ -948,6 +948,9 @@ S1-S6 测试计划：
 | snapshot-writer | ✅ | ✅ tsc 通过 | CLI 长对话实测（BL-2）|
 | handoff-provider | ✅ | ✅ tsc 通过 | 无 |
 | rule-appender | ✅ | ✅ 33 测试过 | 无 |
+| tracer | ✅ | ✅ smoke-tracing PASS | 无 |
+| staleness-sweeper | ✅ | ✅ smoke-staleness PASS | 无 |
+| staleness-utils | ✅ | ✅ smoke-staleness PASS | 无 |
 
 **Plugin 运行时**：`.governance/plugin/index.ts` — 配置驱动 + Capability 静态导入 + Hook 分发
 
