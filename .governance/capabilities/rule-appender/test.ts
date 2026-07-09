@@ -50,7 +50,7 @@ function assert(cond: boolean, msg: string): void {
 }
 
 const baseInput = {
-  context: {
+  ctx: {
     cwd: tmpDir,
     gitDirtyCount: 0,
     sessionId: "test-session",
@@ -60,7 +60,7 @@ const baseInput = {
     recentDecisions: [],
     pendingTodos: [],
   },
-  trigger: { type: "PostToolUse" as const, timestamp: new Date().toISOString() },
+  event: { type: "PostToolUse" as const, timestamp: new Date().toISOString() },
 };
 
 async function cleanup(): Promise<void> {

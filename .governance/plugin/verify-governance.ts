@@ -59,7 +59,7 @@ assert(config["session-start"]?.capabilities?.handoffProvider?.enabled === true,
 assert(config["session-start"]?.capabilities?.handoffProvider?.args?.handoffPath === "HANDOFF.md", "handoffPath = HANDOFF.md");
 assert(config["pre-tool"]?.enabled === true, "pre-tool.enabled = true");
 assert(config["pre-tool"]?.capabilities?.gitChecker?.args?.threshold === 5, "gitChecker threshold = 5");
-assert(config["pre-tool"]?.skipTools?.includes("read_file") === true, "skipTools contains read_file");
+assert(config["pre-tool"]?.skipTools?.includes("readFile") === true, "skipTools contains readFile");
 assert(config["pre-compact"]?.enabled === true, "pre-compact.enabled = true");
 assert(config["post-tool"]?.enabled === false, "post-tool.enabled = false");
 
@@ -124,11 +124,11 @@ section("T4: pre-tool dispatcher — skipTools + block 逻辑");
 
 const preToolConfig = config["pre-tool"]!;
 
-// read_file 在 skipTools 白名单 → 不 skip
+// readFile 在 skipTools 白名单 → 不 skip
 const skipResult = await dispatchPreTool(
-  makeCtx(), preToolConfig, "read_file",
+  makeCtx(), preToolConfig, "readFile",
 );
-assert(skipResult.skip === false, "read_file 在白名单 → skip = false");
+assert(skipResult.skip === false, "readFile 在白名单 → skip = false");
 
 // write_to_file 不在白名单,dirty count < 5 → 不 skip (假设当前 dirty < 5)
 const writeResult = await dispatchPreTool(

@@ -1,4 +1,4 @@
-# Handoff — Governance Framework v1.0 完成
+# Handoff — Governance Framework v1.0 可选项收尾完成
 
 > **生命周期**：每次覆写，无归档——会话交接文件。
 > **进入规则**：会话开始时先读 `plugin/project-rules.md`（若未归档），再读本文件。
@@ -7,65 +7,69 @@
 
 | id | 决策 | confidence | depends_on |
 |----|------|-----------|------------|
-| `cli-discovery-path-fix` | ✅ 插件发现路径修正：项目级 `.cline/plugins/` → `~/.cline/plugins/installed/local/`。CLI 只扫描用户主目录，不扫描项目目录。创建 `scripts/sync-governance-plugin.ps1` 同步脚本 | Verified | `runtime-plugin-newbuild` |
-| `plugin-self-contained` | ✅ 插件必须自包含：`hooks/pre-compact.ts` 依赖 `../../capabilities/snapshot-writer/`，同步时需一并复制 capabilities，import 路径修正为 `../capabilities/` | Verified | `cli-discovery-path-fix` |
-| `rule-injection-obedience` | ✅ 修正：前缀的**事实陈述+否定祈使组合**是唯一有效杠杆（协同效应）。单独任一组件 100% 无效，组合后 20%（n=10）。原结论"位置+服从惯性"和"冲突假说"均被证伪 | Verified | `ab-test-round2` |
-| `s1-s5-all-pass` | ✅ S1-S5 CLI 集成测试全部通过。S6 受 BL-2 阻塞 | Verified | `cli-discovery-path-fix` |
-| `ab-test-round2` | ✅ Round 2 完成：prefix 分解 n=10。R2-A1(事实 only) 100%、R2-A2(祈使 only) 100%、R2-A3(两者) 20% 工具调用率。**协同效应确认**：单独无效，组合生效。冗余读率 10%，含合理读，停止优化 | Verified | `ab-test-clinerules-conflict` |
+| `optional-items-cleanup` | ✅ 6 个后续可选项全部完成：ADR 目录建立 + ADR-007 迁入 + verify 脚本通用化 + 开发者指南发布 + skipTools 更新 + Capability 类型统一 | Verified | `framework-v1.0-tag` |
 
 ## 本会话净变化
 
-### 1. 插件发现路径修正（根因修复）
+### 1. ADR 目录建立 + ADR 迁入（已完成，前序会话产出）
 
-**问题**：governance 插件放在项目级 `.cline/plugins/governance/`，Cline CLI 只扫描 `~/.cline/plugins/installed/local/`，插件不被发现。
+`.governance/decisions/adr/` 目录已存在，含：
+- `ADR-007-registerRule-static-injection.md` — 从 `docs/decisions/adr/` 迁入，相对路径已修正
+- `ADR-008-cli-discovery-path-fix.md` — cli-discovery-path-fix 决策归档
+- `README.md` — ADR 索引 + 格式说明
 
-**修复**：
-- 删除项目级 `.cline/plugins/governance/` proxy
-- 创建 `scripts/sync-governance-plugin.ps1` 同步脚本
-- 目标路径：`~/.cline/plugins/installed/local/governance/`
-- junction：`~/.cline/plugins/_installed/local/governance` → `installed/local/governance`（§13.11 双目录要求）
+### 2. verify-hook-injection.cjs 通用化
 
-### 2. 插件自包含化
+**文件**：`context-snapshot/verify-hook-injection.cjs`
 
-**问题**：`hooks/pre-compact.ts` 和 `hooks/session-start.ts` 依赖 `../../capabilities/snapshot-writer/` 和 `../../capabilities/git-checker/`，跨目录引用在安装路径下无法解析。
+**变更**：`const WORKSPACE = "e:\\cline++"` → `const WORKSPACE = process.argv[2] ?? process.cwd()`
 
-**修复**：
-- 同步时将 3 个 capability 目录（snapshot-writer / git-checker / handoff-provider）一并复制到 `~/.cline/plugins/installed/local/governance/capabilities/`
-- 修正 import 路径：`../../capabilities/` → `../capabilities/`
+脚本现在可在任何项目目录运行，支持通过命令行参数指定 workspace。
 
-### 3. Rule 注入服从度 — A/B Round 2 最终修正
+### 3. skipTools 配置更新（CLI 3.0.37 工具名变更）
 
-**原始理解**："模型不服从是因为位置差 + 冲突" → 加前缀克服位置劣势
+**涉及文件**（5 个）：
 
-**Round 1 修正（n=3）**：位置假说证伪、冲突假说无法验证，前缀是唯一杠杆
+| 文件 | 变更 |
+|------|------|
+| `.governance/hooks/config.json` | skipTools 数组新增 `readFile`、`search`、`webFetch`（保留旧名向后兼容） |
+| `.governance/plugin/types.ts` | DEFAULT_CONFIG skipTools 同步更新 + 修复重复 `read_file` bug |
+| `.governance/plugin/verify-governance.ts` | 断言从 `read_file` 改为 `readFile` |
+| `.governance/hooks/README.md` | 文档示例从 `["read_file", "list_dir"]` 改为 `["readFile", "search", "webFetch"]` |
+| `.governance/plugin/index.ts` | 无需改动（WRITE_TOOL_NAMES 已覆盖新旧名） |
 
-**Round 2 修正（n=10）—— prefix 分解实验**：
-- R2-A1（事实陈述 only）：**100% 工具调用率**
-- R2-A2（否定祈使 only）：**100% 工具调用率**
-- R2-A3（两者组合 = 生产配置）：**20% 工具调用率，10% 冗余读率**
-- **核心发现：协同效应**——两个组件单独完全无效，组合后效果跃升（相变）
-- 机制：事实陈述建立"内容已存在"信任 + 否定祈使抑制"验证"冲动 → 两者同时才建立足够信任
-- 残留 2 次工具调用含 6 次合理读（注入段外内容）→ **10% 是合理下限，停止优化**
+### 4. Capability 类型统一
 
-详见 `docs/decisions/investigation/ab-test-clinerules-conflict.md` §六
+**问题**：`handoff-provider`/`git-checker`/`snapshot-writer` 用 `ctx`/`event`，`rule-appender` 用 `context`/`trigger`。
 
-**当前配置**（R2-A3 = B+完整前缀，已部署并经 n=10 验证）：
-- `.clinerules`：条件语言（"若出现注入段...直接使用；否则手动读 HANDOFF.md"）
-- registerRule：完整前缀（事实陈述 + 5 条行为指令 + 否定祈使，**不可拆分**）
+**修复**：将 `rule-appender` 的 `CapabilityInput` 字段从 `context`/`trigger` 统一为 `ctx`/`event`。
 
-### 4. S2 测试方法修正
+**涉及文件**（4 个）：
 
-**问题**：问"governance 规则"太泛，模型把 `~/AGENTS.md`（Cline 原生 `.clinerules` 加载）也当成 governance 内容。
+| 文件 | 变更 |
+|------|------|
+| `.governance/capabilities/rule-appender/types.ts` | `CapabilityInput { context, trigger }` → `{ ctx, event }` |
+| `.governance/capabilities/rule-appender/test.ts` | `baseInput` 字段名同步更新 |
+| `.governance/capabilities/rule-appender/README.md` | 调用示例字段名同步更新 |
+| `.governance/plugin/types.ts` | 注释从"现有不一致"改为"已统一" |
 
-**修正**：问 governance 特有内容（如"What is the title of section 1 in Core Constitution?"），模型正确回答"执行主体边界"。
+### 5. 开发者指南发布
 
-### 5. 新增文件
+**已有文件**（前序会话产出，本会话补链接入口）：
+- `docs/developer-guide/README.md` — 入口 + Quickstart
+- `docs/developer-guide/design-thinking.md` — 设计思考与实验发现
+- `docs/developer-guide/development-guide.md` — 实践开发指南
 
-- `scripts/sync-governance-plugin.ps1` — 完整同步脚本
-- `scripts/ab-test-round2.ps1` — Round 2 实验脚本（3 变体 × n=10）
-- `docs/decisions/investigation/ab-test-clinerules-conflict.md` — A/B 差分测试报告（Round 1 + Round 2 完成，含协同效应结论）
-- `.governance/capabilities/SOP.md` — Capability 开发 7 步清单（含检查清单 + 常见陷阱）
-- `e:/cline-dogfood/` — 第二个项目（task-tracker CLI），dogfood 验证框架通用性
+**本会话变更**：
+
+| 文件 | 变更 |
+|------|------|
+| `README.md`（根） | 新增开发者指南链接 + 更新已知局限（dogfood 2 项目、BL-1/BL-2 状态）+ 更新"启用 Hook"段（同步脚本步骤） |
+| `docs/README.md` | 入口表新增"看开发者指南"行 |
+
+### 6. Plugin 同步
+
+运行 `scripts/sync-governance-plugin.ps1` 将上述代码变更同步到 `~/.cline/plugins/installed/local/governance/`，同步验证通过。
 
 ## CLI 集成测试结果
 
@@ -98,21 +102,16 @@
 
 | id | 项 | confidence | depends_on |
 |----|----|-----------|------------|
-| `capability-sop-doc` | ✅ **已完成**:`.governance/capabilities/SOP.md` — 7 步流程 + 检查清单 + 5 个常见陷阱 | ✅ Verified | - |
-| `dogfood-second-project` | ✅ **已完成**:task-tracker CLI 项目验证框架通用性。D1-D5 全通过，项目定制参数正确生效 | ✅ Verified | `s1-s5-all-pass` |
-| `framework-v1.0-tag` | ✅ **已完成**:git tag v1.0 已创建（commit ca00d84）| ✅ Verified | `dogfood-second-project` |
 | `s6-compaction-test` | S6 Compaction + Snapshot 实测（需 BL-2 PR #12032 合并后） | Blocked | BL-2 |
-| `prompt-layering-research-round2` | 第二轮源码探查完成 | ✅ Verified | `prompt-layering-research-done` |
-| `ab-test-round2` | ✅ **已完成**:prefix 分解 n=10。协同效应确认：单独无效，组合 20%。冗余读率 10% 含合理读，停止优化 | ✅ Verified | `ab-test-clinerules-conflict` |
 
-### 后续可选
+### 后续可选（全部已完成 ✅）
 
-- 🔲 `.governance/decisions/adr/` 目录建立（首个 ADR：cli-discovery-path-fix 决策归档）
-- 🔲 ADR-007 迁入框架（snapshot registerRule 静态注入）
-- 🔲 verify-hook-injection.cjs 通用化（剥离 cline++ 路径）
-- 🔲 `publish-developer-guide`（framework-v1.0-tag 之后）
-- 🔲 skipTools 配置更新：`read_file` → `readFile`（CLI 3.0.37 工具名变更，当前不影响功能因 readFile 不在 WRITE_TOOL_NAMES 中）
-- 🔲 Capability 类型统一：handoff-provider 用 ctx/event，rule-appender 用 context/trigger
+- ✅ `.governance/decisions/adr/` 目录建立（首个 ADR：cli-discovery-path-fix 决策归档）
+- ✅ ADR-007 迁入框架（snapshot registerRule 静态注入）
+- ✅ verify-hook-injection.cjs 通用化（剥离 cline++ 路径）
+- ✅ `publish-developer-guide`（framework-v1.0-tag 之后）
+- ✅ skipTools 配置更新：`read_file` → `readFile`（CLI 3.0.37 工具名变更）
+- ✅ Capability 类型统一：handoff-provider 用 ctx/event，rule-appender 用 context/trigger
 
 ## 阻塞项
 
@@ -132,11 +131,11 @@ Plugin 运行时:    .governance/plugin/index.ts
 同步脚本:         scripts/sync-governance-plugin.ps1
 CLI 安装路径:     ~/.cline/plugins/installed/local/governance/
 测试计划:         docs/plugin/runtime-test-plan.md
-hook 实现范本:    context-snapshot/src/index.ts
-ADR-007:         docs/decisions/adr/ADR-007-snapshot-registerRule-static-injection.md
+开发者指南:       docs/developer-guide/README.md
+框架 ADR:         .governance/decisions/adr/README.md
+ADR-007(原):     docs/decisions/adr/ADR-007-snapshot-registerRule-static-injection.md
 源码探查(第一轮): docs/decisions/investigation/investigation-note-cline-prompt-layering.md
 源码探查(第二轮): docs/decisions/investigation/investigation-note-cline-prompt-layering-round2.md
-源码探查(第二轮规划): docs/decisions/investigation/investigation-plan-cline-prompt-layering-round2.md
 A/B 差分测试报告:  docs/decisions/investigation/ab-test-clinerules-conflict.md
 ```
 
@@ -149,6 +148,8 @@ A/B 差分测试报告:  docs/decisions/investigation/ab-test-clinerules-conflic
 - **registerRule 前缀是唯一被验证的服从度杠杆**（A/B Round 2 n=10）：事实陈述+否定祈使组合将复杂问题工具调用率从 100% 降到 20%。**单独任一组件 100% 无效**（协同效应/相变）。详见 ab-test-clinerules-conflict.md §六
 - **20% 是合理下限，不应继续压**：残留 2 次工具调用含 6 次合理读（读注入段外的 examples/hooks 等），冗余读率仅 10%
 - **`~/AGENTS.md` 干扰**：Cline 原生 `.clinerules` 加载用户主目录 AGENTS.md，与 governance registerRule 同时存在。问太泛的问题模型会混淆两个来源
+- **所有 Capability 已统一使用 `ctx`/`event` 命名**（2026-07-09 统一 rule-appender）
+- **skipTools 已更新为 CLI 3.0.37 工具名**（`readFile`/`search`/`webFetch`），保留旧名向后兼容
 - BL-1/BL-2 短期不解除，继续按"CLI 先跑"策略推进
 
 ### 关键经验
@@ -166,7 +167,7 @@ A/B 差分测试报告:  docs/decisions/investigation/ab-test-clinerules-conflic
 1. 读 [plugin/project-rules.md](plugin/project-rules.md)（若未归档）
 2. 读本文件
 3. 如需修改 plugin 代码 → 先运行 `scripts\sync-governance-plugin.ps1` 同步到 CLI 发现路径
-4. v1.0 已 tag。后续可选：S6 compaction 测试（等 BL-2 PR 合并）→ `publish-developer-guide`
+4. v1.0 已 tag，所有可选项已完成。唯一剩余：S6 compaction 测试（等 BL-2 PR 合并）
 
 ## 引用
 
@@ -175,6 +176,8 @@ A/B 差分测试报告:  docs/decisions/investigation/ab-test-clinerules-conflic
 - Plugin 运行时：[.governance/plugin/index.ts](../.governance/plugin/index.ts)
 - 同步脚本：[scripts/sync-governance-plugin.ps1](../scripts/sync-governance-plugin.ps1)
 - 测试计划：[docs/plugin/runtime-test-plan.md](plugin/runtime-test-plan.md)
+- 开发者指南：[docs/developer-guide/README.md](developer-guide/README.md)
+- 框架 ADR：[.governance/decisions/adr/README.md](../.governance/decisions/adr/README.md)
 - ADR-007：[ADR-007-snapshot-registerRule-static-injection.md](decisions/adr/ADR-007-snapshot-registerRule-static-injection.md)
 - Hook 实现范本：[context-snapshot/src/index.ts](../context-snapshot/src/index.ts)
 

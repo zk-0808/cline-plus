@@ -1,7 +1,6 @@
 // types.ts — Plugin 运行时共享类型
 // 定义配置结构 + 统一 Capability 调用接口。
-// 注意:现有 handoff-provider 用 ctx/event,rule-appender 用 context/trigger。
-// 本文件定义统一接口,dispatchers 负责适配。
+// 注意:所有 Capability 已统一使用 ctx/event 命名（rule-appender 于 2026-07-09 统一）。
 
 // ── 会话上下文 (与 GV-6 §一一致) ──
 
@@ -125,7 +124,7 @@ export const DEFAULT_CONFIG: HooksConfig = {
   },
   "pre-tool": {
     enabled: true,
-    skipTools: ["read_file", "list_dir", "read_file", "grep_search", "codebase_search"],
+    skipTools: ["readFile", "read_file", "search", "webFetch", "list_dir", "grep_search", "codebase_search"],
     capabilities: {
       gitChecker: {
         enabled: true,

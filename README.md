@@ -20,6 +20,8 @@
 
 完整设计依据见 [`docs/decisions/delivery-framework-design.md`](docs/decisions/delivery-framework-design.md)(GV-7 v1.2 冻结契约)。
 
+**想用本框架治理你的 Cline AI agent?** 读 [开发者指南](docs/developer-guide/README.md)——30 分钟从 clone 到跑通。
+
 ---
 
 ## 安装
@@ -110,13 +112,23 @@ AI 会按 [`rules/handoff-entry.md`](.governance/rules/handoff-entry.md) 的读�
 
 若你用 Cline CLI 且想启用自动化:
 
-1. 实现 `.governance/capabilities/` 4 个 Capability(设计见 [`capabilities/README.md`](.governance/capabilities/README.md))
-2. 配置 `.governance/hooks/` 4 个 Hook
-3. Hook 触发时调用 Capability,实现:
-   - **SessionStart**: 自动读 HANDOFF.md + snapshot.json 注入上下文
+1. 运行同步脚本将 `.governance/plugin/` + `.governance/capabilities/` 同步到 CLI 发现路径:
+   ```powershell
+   # Windows
+   powershell -ExecutionPolicy Bypass -File scripts\sync-governance-plugin.ps1
+   
+   # macOS/Linux
+   bash scripts/sync-governance-plugin.sh
+   ```
+2. 配置 `.governance/hooks/config.json`（阈值、路径等）
+3. 启动 `cline -i` 验证: 检查 `.governance/runtime/plugin-loaded.marker` 是否创建
+4. Hook 触发时调用 Capability,实现:
+   - **SessionStart**: 自动读 HANDOFF.md + snapshot.json + constitution + rules 注入上下文
    - **PreToolUse**: 检测未 commit 文件堆积达阈值 → 阻断工具调用
    - **PreCompact**: 写 snapshot.json
    - **PostToolUse**: 纯占位,可自加 lint/test
+
+详细步骤见 [开发者指南 §2-§4](docs/developer-guide/development-guide.md)。
 
 不用 Hook 时,上述动作由人工触发(读 HANDOFF.md / 检查 git status)。
 
@@ -155,10 +167,10 @@ AI 会按 [`rules/handoff-entry.md`](.governance/rules/handoff-entry.md) 的读�
 
 | 局限 | 缓解 |
 |------|------|
-| 框架仅在 cline++ 一个项目 dogfood 过 | `examples/` 示例包降低自建门槛;等第二个项目验证 |
-| VS Code 端 Hook 全部阻塞 | CLI 端先跑通,VS Code 恢复后即插即用 |
+| 框架在 2 个项目 dogfood 过(cline++ + task-tracker CLI) | `examples/` 示例包降低自建门槛;D1-D5 通用性验证通过 |
+| VS Code 端 Hook 全部阻塞(BL-1) | CLI 端 S1-S5 全通过,VS Code 恢复后即插即用 |
 | Core Constitution 通用化未经验证 | 保留判定动作而非空泛原则,降低过拟合风险 |
-| hooks/ + capabilities/ 当前为设计文档 | 设计 + CLI 端可跑部分;完整实现等阻塞解除 |
+| Compaction 实测阻塞(BL-2) | snapshot 写入设计完成;等 PR #12032 合并后端到端验证 |
 
 ---
 

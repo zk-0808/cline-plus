@@ -35,8 +35,8 @@ export interface HookEvent {
 }
 
 export interface CapabilityInput {
-  context: SessionContext;
-  trigger: HookEvent;
+  ctx: SessionContext;
+  event: HookEvent;
 }
 
 /** rule-appender 输入。见 capabilities/README.md §五。 */

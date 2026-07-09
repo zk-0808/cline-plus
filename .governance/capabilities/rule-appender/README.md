@@ -15,9 +15,9 @@ L3 Capability。把人判断"值得沉淀"的经验机械追加到 `HANDOFF.md` 
 ```typescript
 import { ruleAppender } from "./rule-appender";
 await ruleAppender({
-  context: { cwd:".", gitDirtyCount:0, sessionId:"s1", startedAt:new Date().toISOString(),
+  ctx: { cwd:".", gitDirtyCount:0, sessionId:"s1", startedAt:new Date().toISOString(),
     loadedRules:[], compactCount:0, recentDecisions:[], pendingTodos:[] },
-  trigger: { type:"PostToolUse", timestamp:new Date().toISOString() },
+  event: { type:"PostToolUse", timestamp:new Date().toISOString() },
   args: { handoffPath:"HANDOFF.md",
     experience: { id:"exp-001", content:"X 优于 Y 仅在 N≥100 时成立", source:"bench-1" } },
 });

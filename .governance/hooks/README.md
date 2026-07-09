@@ -104,7 +104,7 @@ interface PreToolHookConfig {
     };
   };
   // 可选: 工具名白名单(不检测的工具)
-  skipTools?: string[];               // 如 ["read_file", "list_dir"]
+  skipTools?: string[];               // 如 ["readFile", "search"]（CLI 3.0.37+ 命名）
 }
 ```
 
@@ -316,7 +316,7 @@ SessionStart → PreToolUse → PostToolUse → PreCompact
   },
   "pre-tool": {
     "enabled": true,
-    "skipTools": ["read_file", "list_dir"],
+    "skipTools": ["readFile", "search", "webFetch"],
     "capabilities": {
       "gitChecker": {
         "enabled": true,
