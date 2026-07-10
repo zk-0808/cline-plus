@@ -1,0 +1,66 @@
+{
+  "test": "smoke-staleness",
+  "date": "2026-07-09T15:50:00.000Z",
+  "status": "PASS",
+  "ttl": 90,
+  "tierBoundaries": {
+    "fresh": "age < 45d (ttl*0.5)",
+    "aging": "45d <= age < 90d (ttl)",
+    "stale": "age >= 90d (ttl)",
+    "expired": "age >= 180d (ttl*2) — sweeper deletes if ruleBlock=true"
+  },
+  "calcStalenessWeight": [
+    {
+      "age": 30,
+      "expectedWeight": 1.0,
+      "actualWeight": 1.0,
+      "label": "fresh",
+      "pass": true
+    },
+    {
+      "age": 60,
+      "expectedWeight": 0.5,
+      "actualWeight": 0.5,
+      "label": "aging",
+      "pass": true
+    },
+    {
+      "age": 95,
+      "expectedWeight": 0.1,
+      "actualWeight": 0.1,
+      "label": "stale",
+      "pass": true
+    },
+    {
+      "age": 185,
+      "expectedWeight": 0.1,
+      "actualWeight": 0.1,
+      "label": "expired (weight floor = 0.1)",
+      "pass": true
+    }
+  ],
+  "processStaleness": {
+    "staleCount": 2,
+    "expectedStaleCount": 2,
+    "agingCount": 1,
+    "expectedAgingCount": 1,
+    "filteredCount": 0,
+    "hasStaleAnnotation": true,
+    "hasAgingAnnotation": true,
+    "pass": true
+  },
+  "edgeCases": [
+    {
+      "name": "future date (+10d)",
+      "expectedWeight": 1.0,
+      "actualWeight": 1.0,
+      "pass": true
+    },
+    {
+      "name": "missing last_validated (95d)",
+      "expectedWeight": 0.1,
+      "actualWeight": 0.1,
+      "pass": true
+    }
+  ]
+}

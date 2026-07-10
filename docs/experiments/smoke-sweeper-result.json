@@ -1,0 +1,49 @@
+{
+  "test": "smoke-sweeper",
+  "date": "2026-07-09T16:00:00.000Z",
+  "status": "PASS",
+  "objective": "验证 sweeper 默认不删除 / ruleBlock=true 删除 / writeError 路径",
+  "bugFix": {
+    "file": ".governance/capabilities/staleness-sweeper/index.ts",
+    "issue": "sweeper 内联权重计算，忽略 last_validated，与 calcStalenessWeight 不一致",
+    "fix": "取消注释 import calcStalenessWeight，替换内联计算为调用 calcStalenessWeight(dateStr, ttlDays, lastValidated)",
+    "impact": "sweeper 现在能感知 refreshEntry 的 last_validated 刷新，实现权重基准统一"
+  },
+  "tests": [
+    {
+      "name": "Test 1: 默认模式 (ruleBlock=false)",
+      "sweeped": true,
+      "staleCount": 2,
+      "expiredCount": 0,
+      "updatedCount": 4,
+      "noDelete": true,
+      "pass": true
+    },
+    {
+      "name": "Test 2: ruleBlock=true",
+      "sweeped": true,
+      "staleCount": 1,
+      "expiredCount": 1,
+      "updatedCount": 3,
+      "deletedEntry": "exp-expired",
+      "pass": true
+    },
+    {
+      "name": "Test 3: 文件不存在",
+      "sweeped": false,
+      "writeError": "HANDOFF.md not found",
+      "pass": true
+    },
+    {
+      "name": "Test 4: 写回失败",
+      "skippedReason": "Windows 下跳过权限测试",
+      "pass": true
+    }
+  ],
+  "interviewTalkingPoints": [
+    "物理删除默认关闭（ruleBlock=false），避免不可逆风险",
+    "需显式开启 ruleBlock=true 才删除 age>ttl*2 的 expired 条目",
+    "所有错误路径都返回 writeError，不会静默失败",
+    "补测时发现 sweeper 权重基准不一致，统一为 calcStalenessWeight，实现 refreshEntry 和 sweeper 闭环"
+  ]
+}

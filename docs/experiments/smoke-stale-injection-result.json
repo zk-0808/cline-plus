@@ -1,0 +1,30 @@
+{
+  "test": "smoke-stale-injection",
+  "date": "2026-07-09T16:00:00.000Z",
+  "status": "PASS",
+  "objective": "对齐代码注释、lifecycle.md、简历三处口径：weight=0.1 条目是'注入并标注'而非'过滤删除'",
+  "verification": {
+    "filteredCount": 0,
+    "filteredCountExpected": 0,
+    "staleCount": 2,
+    "agingCount": 1,
+    "entriesInjected": 4,
+    "entriesInjectedExpected": 4
+  },
+  "annotationChecks": {
+    "staleHasAnnotation": true,
+    "agingHasAnnotation": true,
+    "freshNoAnnotation": true,
+    "hasStalenessWarning": true
+  },
+  "designDecisionUpdated": {
+    "file": ".governance/rules/lifecycle.md",
+    "section": "设计决策",
+    "added": "injection = annotate not filter: weight<=0.1 的 stale 条目仍注入到会话,仅追加 HTML 注释标注警告,而非删除或过滤。理由:保留边缘信息但降权提示,避免误删有价值经验。删除由 sweeper 按显式 ruleBlock=true 触发。"
+  },
+  "alignment": {
+    "codeComment": "INJECTED WITH ANNOTATION (not filtered) — staleness-utils.ts L5",
+    "lifecycleMd": "已补充 injection = annotate not filter 设计决策 — lifecycle.md 设计决策节",
+    "resume": "需将'过滤'改为'降权标注'以保持一致（用户自理）"
+  }
+}

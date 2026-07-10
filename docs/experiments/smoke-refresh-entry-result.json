@@ -1,0 +1,40 @@
+{
+  "test": "smoke-refresh-entry",
+  "date": "2026-07-09T16:00:00.000Z",
+  "status": "PASS",
+  "objective": "验证 refreshEntry 功能（随 P0-1 sweeper 修复后一并验证）",
+  "tests": [
+    {
+      "name": "Test 1: 正常刷新 exp-stale-95d",
+      "found": true,
+      "lastValidatedUpdated": true,
+      "pass": true
+    },
+    {
+      "name": "Test 2: 刷新不存在的条目 exp-xyz",
+      "found": false,
+      "contentUnchanged": true,
+      "pass": true
+    },
+    {
+      "name": "Test 3: 刷新后 stale → fresh",
+      "beforeWeight": 0.1,
+      "afterWeight": 1.0,
+      "reason": "Math.max(created, validated)=now，权重基准切换",
+      "pass": true
+    },
+    {
+      "name": "Test 4: fresh 刷新后仍 fresh",
+      "beforeWeight": 1.0,
+      "afterWeight": 1.0,
+      "reason": "age < ttl*0.5=45",
+      "pass": true
+    }
+  ],
+  "interviewTalkingPoints": [
+    "refreshEntry 能刷新 last_validated，让经验续期",
+    "sweeper 修复后统一用 calcStalenessWeight，能感知到 last_validated 变化",
+    "刷新后，权重基准从 created 切换到 last_validated，实现经验续期机制",
+    "这是 '权重基准统一' bug 修复后的完整闭环"
+  ]
+}

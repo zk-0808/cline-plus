@@ -2,7 +2,7 @@
 // Scans HANDOFF.md for stale entries and updates their weight/status.
 // Can be run manually or from a hook.
 
-// import { calcStalenessWeight } from '../plugin/staleness-utils.js';
+import { calcStalenessWeight } from '../../plugin/staleness-utils.js';
 
 export interface SweepInput {
   args: {
@@ -70,16 +70,15 @@ export async function stalenessSweeper(input: SweepInput): Promise<SweepResult> 
     const dateStr = cells[3];
     const ttlStr = cells[5];
     const ttlDays = parseInt(ttlStr) || 90;
-    
-    // Calculate age and weight
-    const ageMs = Date.now() - new Date(dateStr).getTime();
+    const lastValidated = cells[6] || '';
+
+    // Use calcStalenessWeight for consistency with processStaleness()
+    // This ensures sweeper respects last_validated from refreshEntry()
+    const weight = calcStalenessWeight(dateStr, ttlDays, lastValidated);
+
+    // Check if expired (age > ttl * 2, based on weight=0.1 floor)
+    const ageMs = Date.now() - (lastValidated ? new Date(lastValidated).getTime() : new Date(dateStr).getTime());
     const ageDays = ageMs / (1000 * 60 * 60 * 24);
-    let weight: number;
-    if (ageDays < 0 || ageDays < ttlDays * 0.5) weight = 1.0;
-    else if (ageDays < ttlDays) weight = 0.5;
-    else weight = 0.1;
-    
-    // Check if expired (age > ttl * 2)
     const expired = ageDays > ttlDays * 2;
     
     if (ruleBlock && expired) {
@@ -89,9 +88,8 @@ export async function stalenessSweeper(input: SweepInput): Promise<SweepResult> 
     }
     
     if (weight <= 0.1) staleCount++;
-    
-    // Update weight and last_validated columns
-    const lastValidated = cells[6] || '';
+
+    // Update weight and last_validated columns (lastValidated already defined above)
     const newCells = [...cells.slice(0, 5), ttlStr, lastValidated, weight.toFixed(1)];
     if (weight <= 0.1) newCells[4] = '已过期'; // mark as expired
     else if (weight < 1.0 && cells[4] === '待 review') newCells[4] = '已审'; // reviewed

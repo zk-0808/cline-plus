@@ -1,4 +1,4 @@
-﻿# Lifecycle — 文档生命周期与待沉淀区晋升流程
+﻿﻿# Lifecycle — 文档生命周期与待沉淀区晋升流程
 
 > **生命周期**：永久保留 — 框架机制入口。
 >
@@ -90,9 +90,10 @@
 
 ### 设计决策
 
+- **injection = annotate not filter**: weight<=0.1 的 stale 条目**仍注入到会话**,仅追加 HTML 注释标注 (`<!-- STALE -->`) 警告,而非删除或过滤。理由:保留边缘信息但降权提示,避免误删有价值经验。删除由 sweeper 按显式 `ruleBlock=true` 触发。
 - **delete = archive not physical**: 物理删除默认关闭,避免不可逆风险
 - **competitor claim = open problem**: mem0 等框架承认 staleness 但未下沉到 governance hook 层
-- **tracing before staleness**: Phase 1 Tracing 先于 Phase 2 Staleness,staleness 验证需要 tracing 数据
+- **tracing before staleness**: Phase 1 Tracing 先于 Phase 2 Staleness,staleness 验证需要 tracing数据
 
 ## 引用
 

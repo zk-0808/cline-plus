@@ -45,10 +45,20 @@
 
 | id | item | confidence | depends_on |
 |----|----|-----------|------------|
-| smoke-tracing | mock 3 hook events, verify traces.jsonl, run trace-stats.js | Verified | tracing-first |
-| smoke-staleness | age=30/60/95/185 days test data, verify processStaleness() | Verified | staleness-tier-decay |
-| staleness-refresh | Design last_validated refresh mechanism | Hypothesis | staleness-tier-decay |
-| stale-injection | Decide if weight=0.1 entries still injected or filtered | Likely | staleness-tier-decay |
+| staleness-refresh | Design last_validated refresh mechanism | Verified | staleness-tier-decay |
+| stale-injection | Decide if weight=0.1 entries still injected or filtered | Verified | staleness-tier-decay |
+
+### Completed (2026-07-09 smoke tests)
+
+| id | item | result | evidence |
+|----|----|--------|----------|
+| smoke-tracing | mock 3 hook events, verify traces.jsonl, run trace-stats.js | PASS | docs/experiments/smoke-tracing-result.json |
+| smoke-staleness | age=30/60/95/185 days test data, verify processStaleness() | PASS | docs/experiments/smoke-staleness-result.json |
+| smoke-sweeper | sweeper 默认不删除 / ruleBlock=true 删除 / writeError | PASS | docs/experiments/smoke-sweeper-result.json |
+| smoke-refresh-entry | refreshEntry 刷新 last_validated，权重基准统一 | PASS | docs/experiments/smoke-refresh-entry-result.json |
+| smoke-sessionstart-e2e | HANDOFF → processStaleness → staleness summary → 注入 | PASS | docs/experiments/smoke-sessionstart-e2e-result.json |
+| bug-fix-sweeper-weight | 修 sweeper 权重不一致（换用 calcStalenessWeight） | FIXED | .governance/capabilities/staleness-sweeper/index.ts |
+| doc-lifecycle-align | lifecycle.md 补充 'injection = annotate not filter' 设计决策 | UPDATED | .governance/rules/lifecycle.md |
 
 ### Optional
 
@@ -60,7 +70,7 @@
 
 | blocker | impact | mitigation |
 |--------|------|-----------|
-| no runtime artifacts | interviewer asks did staleness work | tonight: smoke-tracing + smoke-staleness |
+| (无) | runtime artifacts 已生成，测试通过 | 见 Completed 表 |
 
 ## Key Resources
 

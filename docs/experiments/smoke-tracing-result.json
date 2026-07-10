@@ -1,0 +1,46 @@
+{
+  "test": "smoke-tracing",
+  "date": "2026-07-09T15:50:00.000Z",
+  "status": "PASS",
+  "records": 3,
+  "events": [
+    {
+      "index": 1,
+      "hook": "session-start",
+      "capability": "handoffProvider",
+      "event": "inject",
+      "metrics": { "chars": 5000, "tokens": 1250 }
+    },
+    {
+      "index": 2,
+      "hook": "pre-tool",
+      "capability": "gitChecker",
+      "event": "block",
+      "metrics": { "blocked_count": 1 },
+      "note": "write_to_file"
+    },
+    {
+      "index": 3,
+      "hook": "pre-compact",
+      "capability": "snapshotWriter",
+      "event": "snapshot"
+    }
+  ],
+  "traceStatsOutput": {
+    "records": 3,
+    "totalTokens": 1250,
+    "blocks": 1,
+    "injects": 1,
+    "breakdown": [
+      "session-start/handoffProvider/inject: 1 calls, 1250 tokens",
+      "pre-tool/gitChecker/block: 1 calls, 0 tokens",
+      "pre-compact/snapshotWriter/snapshot: 1 calls, 0 tokens"
+    ]
+  },
+  "verification": {
+    "fileExists": true,
+    "recordCount": 3,
+    "allFieldsValid": true,
+    "sessionId": "smoke-tracing-session"
+  }
+}

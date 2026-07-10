@@ -1,0 +1,59 @@
+{
+  "test": "smoke-sessionstart-e2e",
+  "date": "2026-07-09T16:00:00.000Z",
+  "status": "PASS",
+  "objective": "端到端测 SessionStart 链路（HANDOFF → processStaleness → staleness summary → 注入）",
+  "flow": [
+    {
+      "step": "2.1",
+      "action": "readFileSync(HANDOFF.md)",
+      "pass": true
+    },
+    {
+      "step": "2.2",
+      "action": "processStaleness()",
+      "metrics": {
+        "staleCount": 2,
+        "agingCount": 1,
+        "filteredCount": 0
+      },
+      "pass": true
+    },
+    {
+      "step": "2.3",
+      "action": "拼接 staleness summary",
+      "summary": "2 stale, 1 aging entries detected",
+      "pass": true
+    },
+    {
+      "step": "2.4",
+      "action": "注入到 sessionContext",
+      "chars": 1104,
+      "pass": true
+    }
+  ],
+  "injectedContentChecks": {
+    "hasHandoffSection": true,
+    "hasDecisionSection": true,
+    "hasStaleAnnotation": true,
+    "hasAgingAnnotation": true,
+    "hasStalenessSummary": true,
+    "summaryFormatCorrect": true,
+    "freshEntryPresent": true,
+    "staleEntriesPresent": true,
+    "allEntriesInjected": true
+  },
+  "staleInjectionPolicy": {
+    "expStale1Deleted": false,
+    "expStale2Deleted": false,
+    "noneDeleted": true,
+    "strategy": "annotate not filter"
+  },
+  "interviewTalkingPoints": [
+    "SessionStart 链路端到端验证通过：HANDOFF → processStaleness → staleness summary → 注入",
+    "权重计算正确（2 stale + 1 aging + 0 filtered）",
+    "Staleness summary 正确拼接到注入内容末尾",
+    "所有条目均注入（含 stale），仅标注不删除，符合设计策略",
+    "这是 '治理框架真正嵌入会话' 的完整闭环证据"
+  ]
+}
