@@ -9,7 +9,7 @@
 | id | decision | confidence | depends_on |
 |----|------|-----------|------------|
 | tracing-first | Phase 1 Tracing before Phase 2 Staleness, staleness validation needs tracing data | Verified | - |
-| staleness-tier-decay | Tier decay: fresh 1.0 -> aging 0.5 -> stale 0.1 -> expired | Likely | tracing-first |
+| staleness-tier-decay | Tier decay: fresh 1.0 -> aging 0.5 -> stale 0.1 -> expired | Verified | tracing-first |
 | delete-default-off | sweeper physical delete default off, needs ruleBlock=true | Verified | staleness-tier-decay |
 | phase-not-priority | Use Phase 1/2 not P0/P1 to avoid priority ambiguity | Verified | - |
 | open-problem | Competitors acknowledge staleness but did not sink to governance hook layer | Verified | - |
@@ -43,10 +43,7 @@
 
 ### Unfinished
 
-| id | item | confidence | depends_on |
-|----|----|-----------|------------|
-| staleness-refresh | Design last_validated refresh mechanism | Verified | staleness-tier-decay |
-| stale-injection | Decide if weight=0.1 entries still injected or filtered | Verified | staleness-tier-decay |
+_(无 — Phase 1 Tracing + Phase 2 Staleness 全部完成)_
 
 ### Completed (2026-07-09 smoke tests)
 
@@ -57,6 +54,9 @@
 | smoke-sweeper | sweeper 默认不删除 / ruleBlock=true 删除 / writeError | PASS | docs/experiments/smoke-sweeper-result.json |
 | smoke-refresh-entry | refreshEntry 刷新 last_validated，权重基准统一 | PASS | docs/experiments/smoke-refresh-entry-result.json |
 | smoke-sessionstart-e2e | HANDOFF → processStaleness → staleness summary → 注入 | PASS | docs/experiments/smoke-sessionstart-e2e-result.json |
+| smoke-stale-injection | 验证 weight=0.1 条目是注入并标注而非过滤删除 | PASS | docs/experiments/smoke-stale-injection-result.json |
+| staleness-refresh | last_validated refresh 机制已验证 (refreshEntry + sweeper 闭环) | Verified | docs/experiments/smoke-refresh-entry-result.json |
+| stale-injection | 确认策略为 annotate not filter，三处口径已对齐 | Verified | docs/experiments/smoke-stale-injection-result.json |
 | bug-fix-sweeper-weight | 修 sweeper 权重不一致（换用 calcStalenessWeight） | FIXED | .governance/capabilities/staleness-sweeper/index.ts |
 | doc-lifecycle-align | lifecycle.md 补充 'injection = annotate not filter' 设计决策 | UPDATED | .governance/rules/lifecycle.md |
 
@@ -100,15 +100,18 @@ Competitors: yantrikdb(164), memwatch(33), MemGuard(3), memharness(4), mnemos(9)
 1. Read .governance/core/constitution.md
 2. Read this file
 3. Read .governance/rules/ active entry rules
-4. Do smoke-tracing then smoke-staleness, save to docs/experiments/
+4. 检查 Optional 项是否有外部依赖更新（SDK hook / PR #12032）
+5. 如有新方向，按 constitution §3 方向门控启动
 
 ---
 
 ## Handoff
 
 ```text
-Read .governance/core/constitution.md + HANDOFF.md + .governance/rules/.
-Then do smoke-tracing and smoke-staleness verification.
+Phase 1 Tracing + Phase 2 Staleness 全部完成并验证通过。
+所有 smoke test PASS，sweeper 权重不一致 bug 已修复，
+lifecycle.md 设计决策已补充，代码/文档/简历三处口径已对齐。
+无 blocker，无 unfinished。下一步看 Optional 项或开新方向。
 ```
 
 
