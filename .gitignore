@@ -58,6 +58,9 @@ experiments/
 
 # 岗位求职材料（防御规则：即使目录被还原/重新创建，也不得入库）
 /其它/
+# 求职打卡系统（含 index2/index3.html，实测含"简历/求职/面试"内容）；
+# 该目录不属于治理框架，且不在 main 的对外发布范围（release/v1.0-alpha 亦未含）
+/ai-agent-checkin/
 
 # Logs
 *.log
