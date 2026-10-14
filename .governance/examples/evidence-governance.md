@@ -472,7 +472,7 @@ evidence_source_kind: <source-snapshot-main | ecosystem | doc-release>  # 时效
 |------|------|------|------|
 | `声明日` | ✅ | Hypothesis 形成日（YYYY-MM-DD） | YYYY-MM-DD |
 | `必须补证日` | ✅ | 默认 `声明日 + 14 天`（外部生态）/ `+30 天`（官方文档/版本号） | YYYY-MM-DD |
-| `补证路径` | ✅ | 升级到 Verified 所需的下一证据类型（按 [§8 Evidence Escalation](#8-evidence-escalation)） | 实测 / unminified 源码 |
+| `补证路径` | ✅ | 升级到 Verified 所需的下一证据类型（按 [§8 Evidence Escalation](#8-evidence-escalation证据升级)） | 实测 / unminified 源码 |
 | `超期处置` | ✅ | `降级为 Unknown` / `排除出结论链` / `保留并延期（需说明理由）` | 降级为 Unknown |
 
 ### 19.2 超期处置规则

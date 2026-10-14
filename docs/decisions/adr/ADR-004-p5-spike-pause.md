@@ -134,7 +134,7 @@ ADR-003 §环境事实已记录此区分，但 ADR-002 Validation Plan 未充分
 
 [ADR-005: Split Compaction from Handoff](ADR-005-split-compact-from-handoff.md) 从根本上改变了 p5-spike 的架构前提：
 
-1. **恢复条件 ③ 已不满足**：p5-spike 的 #5 compact 双产物问题不再是"未解问题"——ADR-005 将 compaction 和 handoff 解耦，spawn 了 [context-snapshot](../../context-snapshot/) 插件（v0.7.0），以 `compact-observer` + `snapshot-writer` + `rules-injector` 三模块架构取代 p5-spike 的单插件设计
+1. **恢复条件 ③ 已不满足**：p5-spike 的 #5 compact 双产物问题不再是"未解问题"——ADR-005 将 compaction 和 handoff 解耦，spawn 了 [context-snapshot](../../../context-snapshot/) 插件（v0.7.0），以 `compact-observer` + `snapshot-writer` + `rules-injector` 三模块架构取代 p5-spike 的单插件设计
 2. **`index.jsonl` 已被废弃**：ADR-005 明确废弃 p5-spike 的 `index.jsonl` 机制（Cline SQLite DB 已存会话元数据）
 3. **`beforeRun` 已被 `rules` 注入替代**：p5-spike 的 `beforeRun` hook 被 Cline 的 `rules` API 动态注入取代
 

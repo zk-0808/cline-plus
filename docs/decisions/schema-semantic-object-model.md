@@ -92,15 +92,17 @@ V2 中"五类对象"原定位为"语义对象模型"，V3 调整为"Assertion �
 
 ### 1.0 Confidence 词汇表（共享）
 
-`confidence` 字段统一映射 [evidence-governance.md §4](../evidence-governance.md) 三档（schema 用状态机词汇，evidence-governance 用高/中/低，两者通过下表对齐）：
+`confidence` 字段统一映射 [evidence-governance.md §4](../evidence-governance.md) 三档。**本表是"字段 → 治理语义"的映射，不是判定语义的定义源**——状态转换条件与置信度门槛以 evidence-governance.md §2 / §4 为准，引用时的写法约束以该文件 [§4.2](../evidence-governance.md#42-术语使用边界) 为准：
 
 | schema 取值 | evidence-governance §4 | 定义 | 可进入的状态 |
 |------------|----------------------|------|------------|
-| `Verified` | 高 | ≥3 个独立证据类型一致，无冲突 | Decision |
-| `Likely` | 中 | 2 个独立证据类型一致，或单源但来源权威 | Verified |
-| `Hypothesis` | 低 | 单一证据，或存在未解决冲突 | Hypothesis |
+| `Verified` | 高 | ≥3 个独立证据类型一致，无冲突 | `State = Decision` |
+| `Likely` | 中 | 2 个独立证据类型一致，或单源但来源权威 | `State = Verified` |
+| `Hypothesis` | 低 | 单一证据，或存在未解决冲突 | `State = Hypothesis` |
 
-**注**：schema 用状态机词汇（Verified/Likely/Hypothesis）便于跨对象复用——同一套词汇既能标注 Verification 对象的验证强度，也能标注 Handoff 对象的判断强度。evidence-governance §4 用高/中/低便于人工记忆。两者通过本表对齐，**不是字面一致**。
+**注**：schema 借用了状态机的**词汇形态**（`Verified` / `Hypothesis` 同时是 evidence-governance §2.1 的状态名）便于跨对象复用——同一套词汇既能标注 Verification 对象的验证强度，也能标注 Handoff 对象的判断强度。evidence-governance §4 用高/中/低便于人工记忆。两者通过本表对齐，**不是字面一致**。
+
+⚠️ **同词不同义**：`confidence = Verified`（高，门槛 ≥3）**不等价于** `State = Verified`（门槛 ≥2）。一条 `State = Verified` 的结论，其字段标签可能是 `Likely`。引用时按 [evidence-governance.md §4.2](../evidence-governance.md#42-术语使用边界) 的写法约束区分层次（状态带 `State =` 前缀，字段带 `confidence =` 前缀）。本表第 4 列即按该约定书写。
 
 ### 1.1 Decision (决策对象)
 记录项目中的架构决策、规则变化或关键方向转变。

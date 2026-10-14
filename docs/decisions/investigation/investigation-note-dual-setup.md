@@ -18,6 +18,20 @@
 | **Likely** | 多项证据支持，但缺直接证明 | 结论 + 修复依据（需标注待补证）|
 | **Hypothesis** | 用于指导下一步实验，不作为结论 | 仅设计 Instrumentation |
 
+> **口径说明（2026-10-14 补，不改上文原文）**：以上三级分类是本报告 2026-06-30 的**报告级自定义口径**，用途是"什么结论可以支撑修复建议"。它与全仓治理语义的差异如下；原文保留以便追溯当时的判断依据，**历史结论不重新挂牌**。
+>
+> | 本报告口径 | 与治理语义的差异 |
+> |-----------|----------------|
+> | `Verified` = 日志/代码直接证明，无推断跳跃 | 治理语义的 `State = Verified` 门槛是 **≥2 个独立证据类型**（[evidence-governance.md §2.1](../../evidence-governance.md#21-五个状态)）；"单一证据类型直接证明"不满足该门槛，对应 `置信度 = 中` 或 `低` |
+> | `Likely` = 多项证据支持，但缺直接证明 | 治理语义**没有 `Likely` 状态**——该词是**字段标签**（= 中）。按独立证据类型数，对应 `State = Hypothesis` 或 `State = Verified` |
+> | `Hypothesis` = 仅用于指导下一步实验 | 与 `State = Hypothesis` 方向一致 |
+>
+> **行内标签**：本报告正文中的 `【Verified】` / `【Likely】`（如 §1.1、§2.1）同属上述自定义口径，按同样方式折算。
+>
+> **再次引用时**：本文件的等级词**不得直接继承**为治理语义的 `State = Verified`，须按上表折算后引用。写法约束见 [evidence-governance.md §4.2](../../evidence-governance.md#42-术语使用边界)。
+>
+> **登记来源**：[project-health-audit-2026-07-02.md](../../project-health-audit-2026-07-02.md) D1（Investigation Note §10 模板执行不一致，含"自创 Likely"）与 D8（Confidence 模型与状态机正交关系未说明）。
+
 ---
 
 ## 1. 现象（Observation）—— 全部 Verified

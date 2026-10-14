@@ -11,7 +11,7 @@
 
 > ### ⚠️ 运行时约束声明（2026-06-29）
 >
-> 下方 API 能力表**仅适用于 Cline CLI 3.0.30+**。VS Code 扩展 4.0.x 全系列不支持 Plugin 系统：v4.0.0 因 esbuild 打包遗漏 `plugin-sandbox-bootstrap.js` 导致 `setup()` 永不执行（[investigation-note](../../decisions/investigation/investigation-note-vscode-bootstrap-missing.md)），v4.0.1/v4.0.2 回滚到 3.89.2 pre-SDK 代码基、plugin 系统根本不存在（[rollback 记录](../../decisions/D-2026-06-28-cline-v401-sdk-rollback.md)）。CLI 端 v0.5.0 三能力（messageBuilders + rules + hooks）全链路加载已实测确认。完整证据链见 [design.md 不可抗力声明](../design.md#不可抗力声明)。
+> 下方 API 能力表**仅适用于 Cline CLI 3.0.30+**。VS Code 扩展 4.0.x 全系列不支持 Plugin 系统：v4.0.0 因 esbuild 打包遗漏 `plugin-sandbox-bootstrap.js` 导致 `setup()` 永不执行（[investigation-note](../../decisions/investigation/investigation-note-vscode-bootstrap-missing.md)），v4.0.1/v4.0.2 回滚到 3.89.2 pre-SDK 代码基、plugin 系统根本不存在（[rollback 记录](../../decisions/D-2026-06-28-cline-v401-sdk-rollback.md)）。CLI 端 v0.5.0 三能力（messageBuilders + rules + hooks）全链路加载已实测确认。完整证据链见 [design.md 头部不可抗力声明](../design.md)。
 >
 > **影响**：本文档 §3 落地评估中所有标记"✅ 可落地"的候选，当前均只能在 CLI 环境验证和运行。VS Code 端可用性取决于 SDK 迁移何时重新合入稳定版（GitHub issue #11944 待跟进）。
 

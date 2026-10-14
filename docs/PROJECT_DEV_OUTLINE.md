@@ -370,6 +370,18 @@ Design Doc 记录"怎么做"（Implementation-level）
 <ADR 之后的直接后续任务，如 Capability Probe / Design Doc>
 ```
 
+### 9.5 不给出时间估计（作用域与例外）
+
+**规则**：所有**规划、评估、路线图类**产出不给出时间估计（工期天数 / 完成日期 / 周数）。里程碑以「**依赖满足 + 退出标准**」作为推进门控，不以日期门控。
+
+**适用范围**：ADR、Design Doc、路线图、任务书类文档（含外部评审任务书）、§5 能力验证清单。
+
+**不适用**（属记录而非预测）：
+- 已发生事件的日期标注（决策日期 / 调查日期 / `evidence_as_of` / commit 日期）
+- 时效性门控要求的前瞻日期（[evidence-governance.md §15](evidence-governance.md) 的 `expires_if_unchanged`）——它是**过期判据**，不是工期估计
+
+**源由**：2026-10-14 文档审计发现 [cline-plus-deep-research-brief.md](plugin/cline-plus-deep-research-brief.md) 两次称"不给时间估计（**项目规则**：避免时间预测）"，但全仓无规则本体；[deep-research-task-5-roadmap.md](plugin/claude-external-review/deep-research-task-5-roadmap.md) 亦将其归因于本文件。两处下游文档均引用本文件、且实际里程碑表均以依赖与退出标准表述——本规则据此补入本体，作用域经本次审计判定。
+
 ---
 
 ## 10. 协作原则（Collaboration Principles）

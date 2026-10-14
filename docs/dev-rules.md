@@ -262,6 +262,31 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 
 **纠偏信号**：探查结论被质疑"没回答用户原问题"时,先按"穿透边界判据"自检,不可辩解结论正确。
 
+### 1.17 子条款：规范性引用完整性门控
+
+**规范性引用**——本文档及 [evidence-governance.md](evidence-governance.md) / [reviewer-personas.md](reviewer-personas.md) / ADR / design.md 中指向"规则本体、术语定义、枚举取值、表格"的链接与锚点——在**提交时必须能解析到明确定义或目标**。
+
+**执行要求**：
+
+1. **链接**：目标文件必须存在
+2. **锚点**：`#fragment` 必须能匹配到目标文件中的**真实标题**（不能只凭记忆写小节名）
+3. **术语引用**：引用某个等级词（如 `Verified` / `Likely` / `Hypothesis`）时，必须能指出其**权威定义位置**，并指明所引的**层次**（状态 / 置信度 / 字段标签 / 验证行为 / 验证基线，见 [evidence-governance.md §4.2](evidence-governance.md#42-术语使用边界)）
+
+**允许的情形**：同一变更内新增的被引用文件，**允许在同一提交中建立引用**——本条款约束的是**提交时的可解析性**，不是"必须先创建被引用文件"的创建顺序。禁止的是"引用了一个从未存在过的本体"。
+
+**违反时**：不得声称该引用"已被遵循"。修复时**先确认被引用内容的作用域与权威源**，再决定处理方式（补本体 / 改指向 / 降级为任务级要求 / 标注历史口径）——**不得直接补一段文字了事**，因为那只是把悬空引用变成错误引用。
+
+**不适用范围**：`docs/archive/**` 与明确标注历史口径的存量段落**不追改**（按 [ARCHIVE.md](ARCHIVE.md) 归档约定与本条"标注而非覆盖"原则）。
+
+**执行工具**：`python scripts/check_links_anchors.py`（全仓扫描，退出码 0 = 非归档树零失效，1 = 存在须修项）。**当前基线（2026-10-14 首次全量扫描）**：199 个 md、1,175 条链接、须修 **0**、归档区豁免残留 185 处（`docs/archive/`，成因见 [RETROSPECTIVE-AUDIT.md](RETROSPECTIVE-AUDIT.md) 口径边界）。新增引用若使须修项 > 0，即为本条违规。
+
+**源由**：2026-10-14 文档审计发现三处引用未落到本体——(a) [cline-plus-deep-research-brief.md](plugin/cline-plus-deep-research-brief.md) 两次称"不给时间估计"为项目规则，但全仓无该规则本体；(b) [evidence-governance.md §20.4](evidence-governance.md) 的锚点指向一个不存在的 §4 小节名；(c) [investigation-note-dual-setup.md](decisions/investigation/investigation-note-dual-setup.md) 就地自定义了一套等级词。三者共同点是**"引用先于本体存在"**。本次审计同时确认：§1.16 的固化要求只覆盖**源码结论**，未覆盖**规则引用与术语锚点**，故补本条款。
+
+**成熟实践映射**：
+- 引用完整性 ↔ **文档构建期链接检查（link checker / Sphinx nitpicky 模式）** + **可复现构建的可解析性校验**——把引用可解析性作为提交门禁，而非人工抽查
+- 术语权威源唯一 ↔ **Glossary 单点定义 + ISO 704 术语工作原则**——同一术语承担不同层次含义时必须显式分层，不得因取值相同视为同义
+- 历史口径标注而非覆盖 ↔ **审计追踪（audit trail）/ 事件溯源（event sourcing）的 append-only 原则**——修正不重写既有记录
+
 ---
 
 ## 2. handoff 通用触发器
@@ -301,7 +326,7 @@ handoff.md 的「未完成项 / 后续动作」表**必须**包含以下三列�
 | 字段 | 规则 | 示例 |
 |------|------|------|
 | **id** | 稳定短 ID，小写字母 + 数字 + 连字符，不超 20 字符。可复用 ADR 编号 / mechanism-candidates 编号 / 任务书编号 | `a1-content-fix` / `m4-loop-guard` / `i-codec-bug` |
-| **confidence** | 取值与 [evidence-governance.md §4](evidence-governance.md) 一致：`Verified` / `Likely` / `Hypothesis` | `Verified` |
+| **confidence** | 取值为**字段标签** `Verified` / `Likely` / `Hypothesis`——与 [evidence-governance.md §4](evidence-governance.md) 的三档对齐，字段层映射见 [schema-semantic-object-model.md §1.0](decisions/schema-semantic-object-model.md#10-confidence-词汇表共享)，用词边界见 [evidence-governance.md §4.2](evidence-governance.md#42-术语使用边界) | `Verified` |
 | **depends_on** | 指向其他稳定 ID（逗号分隔），**禁止**自然语言描述 | `codec-bug-fix` 而非 “等 codec bug 修复” |
 
 **设计意图**（来源：[external-review-round2-handoff.md Q3/Q5](plugin/review/external-review-round2-handoff.md)）：
