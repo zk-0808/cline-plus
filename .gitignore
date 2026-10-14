@@ -63,4 +63,6 @@ experiments/
 *.log
 logs/
 .cline-repo/
-docs/project-status-report.md
+# 注：原先此处另有 `docs/project-status-report.md` 一条自忽略规则。该规则已失效且有害——
+# 该文件实为 212 行的活跃状态报告（非空文件），被忽略会导致对其的引用修正无法入库。
+# 已于 2026-10-14 移除。
