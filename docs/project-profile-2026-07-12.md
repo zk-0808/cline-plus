@@ -132,6 +132,7 @@
 
 - 5 份规则文档（dev-rules / evidence-governance / reviewer-personas / plugin/project-rules / search/project-rules）
 - 决策索引（ADR-001~008 + 12 个 D 决策 + 7 个 investigation-note）
+  > **订正（2026-10-14 复核）**：本行数字不实。实测 `docs/decisions/adr/` 仅 **6** 个 ADR（ADR-001/002/004/005/006/007，**无 ADR-003、无 ADR-008**）；`.governance/decisions/adr/` 另有 ADR-007、ADR-008 共 2 个（编号与前者共用同一序列）。`D-*` 实为 **13** 个（`docs/decisions/` 根 1 + `search/` 9 + `docs/archive/decisions/` 3）。"ADR-001~008"这个范围表述不成立。
 - 审计报告（2026-07-02 健康审计：56 项问题，5 根因，四档计划）
 - 开发者指南（30 分钟跑通框架）
 
@@ -161,11 +162,11 @@
 
 | 指标 | 值 | 来源 |
 |------|-----|------|
-| ADR 决策数 | 8 个（ADR-001~008） | decisions/adr/ |
-| 运营决策数 | 12 个（D 决策） | decisions/ |
+| ADR 决策数 | ~~8 个（ADR-001~008）~~ → **订正：6 个（ADR-001/002/004/005/006/007）**；另 `.governance/decisions/adr/` 2 个（ADR-007/008，共用编号序列） | decisions/adr/ |
+| 运营决策数 | ~~12 个（D 决策）~~ → **订正：13 个**（`decisions/` 根 1 + `search/` 9 + `archive/decisions/` 3） | decisions/ |
 | 治理框架版本 | v1.0（2026-07-09 tag） | git tag |
-| 框架填充完成度 | 100%（GV-1 + GV-6 + GV-7 + 4 Capability + Plugin 运行时 + hooks） | handoff.md |
-| Capability 模块数 | 6 个（全部实现，tsc 通过） | capabilities/ |
+| 框架填充完成度 | 100%（GV-1 + GV-6 + GV-7 + **GV-6 设计交付的 4 个** Capability + Plugin 运行时 + hooks） | handoff.md |
+| Capability 模块数 | **目录实体 6 个**（全部实现，tsc 通过）——比 GV-6 设计交付多 `staleness-sweeper`、`tracer`；两行口径不同，勿混用 | capabilities/ |
 | CLI 端验证测试 | S1-S5 全通过 + D1-D5 dogfood 全通过 | handoff.md |
 | 验证测试总数 | 10 项（5 CLI 端 + 5 跨项目 dogfood） | handoff.md |
 

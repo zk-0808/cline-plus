@@ -141,7 +141,7 @@ A/B 差分测试报告:  docs/decisions/investigation/ab-test-clinerules-conflic
 
 ### 已知事实
 
-- 框架填充完成度：GV-1 + EX-1a/1b + EX-2~4 + GV-6 + GV-7 + hooks + 4 Capability + Plugin 运行时 = 100%
+- 框架填充完成度：GV-1 + EX-1a/1b + EX-2~4 + GV-6 + GV-7 + hooks + 4 Capability（GV-6 设计交付口径；目录实含 6 个）+ Plugin 运行时 = 100%
 - **CLI 端插件全链路验证通过（S1-S5）**：发现 → 加载 → setup → registerRule → beforeTool block → messageBuilder → codec 安全
 - **插件发现路径**：`~/.cline/plugins/installed/local/`（非项目级 `.cline/plugins/`）
 - **插件必须自包含**：capabilities 依赖需一并复制，import 路径修正

@@ -383,7 +383,7 @@ index.ts ──→ circuit-breaker.ts ──→ config.ts
 | GV-7 契约 | ✅ v1.2 冻结 | [delivery-framework-design.md](decisions/delivery-framework-design.md) |
 | Hooks 配置 | ✅ | [config.json](../.governance/hooks/config.json) |
 | Plugin 运行时 | ✅ | [plugin/index.ts](../.governance/plugin/index.ts) |
-| 4 Capability 实现 | ✅ | git-checker / snapshot-writer / handoff-provider / rule-appender |
+| 4 Capability 实现 | ✅ | git-checker / snapshot-writer / handoff-provider / rule-appender（**GV-6 设计交付口径**；`capabilities/` 目录实含 6 个，另有 staleness-sweeper / tracer） |
 | ADR 目录 | ✅ | [adr/](../.governance/decisions/adr/) 含 ADR-007/008 |
 | 开发者指南 | ✅ | [developer-guide/](developer-guide/README.md) |
 

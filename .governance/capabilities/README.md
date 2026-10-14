@@ -4,6 +4,8 @@
 >
 > **身份**：GV-6 产出。4 个 Capability 的综合设计文档——回答"怎么做"。
 >
+> ⚠️ **范围澄清（2026-10-14 复核）**：本文档只覆盖**设计交付的 4 个** Capability（git-checker / snapshot-writer / handoff-provider / rule-appender）。`.governance/capabilities/` 目录实际含 **6** 个（另有 `staleness-sweeper`、`tracer`）；后两者未出现在本文档 §六复用矩阵与 §七实现状态表中，其实现文件存在但缺少对应设计条目。"4 个 Capability"与"6 个模块"是**两个不同口径**，引用时须写明口径。
+>
 > **接口契约**：CapabilityResult 三态(pass/block/inject)由 GV-7 §三锁定,本文件补齐 SessionContext / HookEvent 完整字段定义。
 >
 > **正交原则**：Capability 只表达**意图**(intent),Hook 执行**动作**。同一 Capability 可被多 Hook 复用。
