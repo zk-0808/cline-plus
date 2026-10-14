@@ -113,7 +113,9 @@ onEvent       → 任何 AgentRuntimeEvent 触发
 | 服从度 | ✅ 模型直接引用 | ⚠️ 被 cline agent 训练偏好压过 |
 | 适用场景 | **静态资产**（constitution/handoff/snapshot） | 动态 per-turn 内容 |
 
-> ⚠️ **关键发现**：messageBuilder 注入的 system 消息被 cline agent 训练偏好压过，模型忽略注入内容。**静态内容必须走 registerRule**。详见 [设计思考 §2](design-thinking.md#2-system-prompt-分层注入机制)。
+> ⚠️ **关键发现**：messageBuilder 注入的 system 消息被 cline agent 训练偏好压过，模型忽略注入内容。**静态 session 启动内容必须走 registerRule**。详见 [设计思考 §2](design-thinking.md#2-system-prompt-分层注入机制)。
+>
+> **边界**：registerRule 单次求值，**不可**用于期望中途刷新的动态 per-turn 注入——那类场景（如 Loop Guard 注入）必须走 messageBuilder，见 [dev-rules §1.15](../dev-rules.md)。两条结论并不冲突：它们分别限定"静态 session 启动资产"与"动态 per-turn 内容"。
 
 ### 1.6 关键约束
 

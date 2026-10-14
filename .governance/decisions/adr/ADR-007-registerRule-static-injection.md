@@ -47,7 +47,7 @@ registerRule content 只在 session 启动求值一次——这恰好是 snapsho
 
 ### 3.4 顺带化解"违反 runtime-probe §2.4"的疑点
 
-[runtime-probe §2.4](../../decisions/investigation/investigation-note-cline-runtime-probe.md) 禁止"用 registerRule 做**动态**内容注入（期望中途刷新）"。
+[runtime-probe §2.4](../../../docs/decisions/investigation/investigation-note-cline-runtime-probe.md) 禁止"用 registerRule 做**动态**内容注入（期望中途刷新）"。
 
 定位锁死后，handoff 和 snapshot **都是 session-start 静态资产**——启动时读一次正是它们要的语义。在求值那一刻加载文件内容，和"期望动态刷新"是两回事。**不是违反，是恰好用对了 registerRule 的求值时机。**
 
@@ -90,5 +90,5 @@ cline CLI 当前限制：registerRule 单次求值 + messageBuilder 服从度不
 | `registerRule(rule)` 每次注册一个 | 同上 L96 | 调两次即注册两条 |
 | `getRegisteredRules(): AgentExtensionRule[]` | 同上 L229 | 可枚举所有 rule |
 | registerRule content 只在 session 启动求值一次 | [runtime-probe §2.4](../../../docs/decisions/investigation/investigation-note-cline-runtime-probe.md) | 静态内容 OK，动态内容死路径 |
-| messageBuilder 注入 system 消息被训练偏好压过 | [handoff.md 决策 `registerRule-over-messageBuilder`](../../handoff.md) | 动态注入服从度不足 |
-| snapshot 写入在 beforeModel hook（不在 registerRule） | [index.ts L205-230](../../../../context-snapshot/src/index.ts) | 写入端早已分离 |
+| messageBuilder 注入 system 消息被训练偏好压过 | [handoff.md 决策 `registerRule-over-messageBuilder`](../../../docs/handoff.md) | 动态注入服从度不足 |
+| snapshot 写入在 beforeModel hook（不在 registerRule） | [index.ts L205-230](../../../context-snapshot/src/index.ts) | 写入端早已分离 |

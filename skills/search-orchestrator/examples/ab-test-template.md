@@ -183,7 +183,7 @@ max_results: 10
 
 ## 4. 验证记录
 
-每次跑完，把结果作为一节追加到 [search-orchestrator/survey.md](../../../docs/search-orchestrator/survey.md) §9 "Decision Outcome" 末尾表内。同时在 [`search-orchestrator/experiments/`](../../../docs/search-orchestrator/experiments/) 目录下新建 `run-<N>-<slug>.md` 独立存档。
+每次跑完，把结果作为一节追加到 [search-orchestrator/survey.md](../../../docs/search/search-orchestrator/survey.md) §9 "Decision Outcome" 末尾表内。同时在 [`search-orchestrator/experiments/`](../../../docs/search/search-orchestrator/experiments/) 目录下新建 `run-<N>-<slug>.md` 独立存档。
 
 - 改造名称 / 改造对应 commit hash
 - Query、Run A/B 结果摘要（**只贴指标计算**，不必贴全部 10 条）
@@ -196,7 +196,7 @@ max_results: 10
 
 | 日期 | 改造 | Query | 垃圾清除率 | Top-5 T1+T2 变化 | 评分 | 决策 | 详情 |
 |------|------|-------|-----------|------------------|------|------|------|
-| 2026-06-23 | Phase 3.5 Goggle | "K8s 滚动更新 ImagePullBackOff 排查方法" | 5/5 = 100% | 0 → 1（仅 kubernetes.io 升 T1） | 4/5 | **保留** + 推进 P1.5 联动 | [search-orchestrator/survey.md §9](../../../docs/search-orchestrator/survey.md) / commit 19a8953；实验报告 [run-1-goggle.md](../../../docs/search-orchestrator/experiments/run-1-goggle.md) |
+| 2026-06-23 | Phase 3.5 Goggle | "K8s 滚动更新 ImagePullBackOff 排查方法" | 5/5 = 100% | 0 → 1（仅 kubernetes.io 升 T1） | 4/5 | **保留** + 推进 P1.5 联动 | [search-orchestrator/survey.md §9](../../../docs/search/search-orchestrator/survey.md) / commit 19a8953；实验报告 [run-1-goggle.md](../../../docs/archive/search/experiments/run-1-goggle.md) |
 
 > 评分计算说明：原始评分 2/5 用错指标（BOOST 命中数），按本模板正确指标重评为 4/5。
 

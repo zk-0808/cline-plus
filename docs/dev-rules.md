@@ -199,7 +199,7 @@ minified 代码**可用于定位**（入口 / 调用链 / 字符串 / API / hook
 
 **O8 对影响范围的修正**：原"🟡 Loop Guard 实测"分级基于"避免 MCP + 避免长输出"假设，但路径 B 表明 beforeModel 注入本身即触发 bug，不分步骤数量。Loop Guard 注入层应改为 **🔴 阻塞**，检测层仍为 🟢。替代方案见 [mechanism-landing-assessment.md Q2 V6 路径](plugin/audit/mechanism-landing-assessment.md)（afterTool + messageBuilder 绕过 codec）。
 
-**V6 实现已完成**（2026-07-01）：Loop Guard 改用 messageBuilder 注入（afterTool 检测循环 → loopState → messageBuilder 注入 user-role 消息，content 为 ContentBlock[] 格式绕过 codec），beforeModel hook 已移除。注入层从 🔴 阻塞恢复为 🟢 可用（V6 路径）。A1 修复（content string → array）+ V6 替代实现双保险。**注**：registerRule 路径已废弃——rule content 函数在 CLI 3.0.34 只在 session 启动时评估一次，运行时永不重新求值（死路径），详见 [handoff.md §4 V6 测试记录](handoff.md)。
+**V6 实现已完成**（2026-07-01）：Loop Guard 改用 messageBuilder 注入（afterTool 检测循环 → loopState → messageBuilder 注入 user-role 消息，content 为 ContentBlock[] 格式绕过 codec），beforeModel hook 已移除。注入层从 🔴 阻塞恢复为 🟢 可用（V6 路径）。A1 修复（content string → array）+ V6 替代实现双保险。**注**：registerRule **不适合动态 per-turn 注入**——rule content 函数在 CLI 3.0.34 只在 session 启动时评估一次，运行时永不重新求值（对"期望中途刷新"的场景即死路径）。**静态 session 启动资产（constitution / handoff / snapshot）仍应走 registerRule**（该静态注入定位见 ADR-007；两份 API 的场景分工对照见 [development-guide §1.5](developer-guide/development-guide.md)）。详见 [handoff.md §4 V6 测试记录](handoff.md)。
 
 **workaround 不等同环境可用**（§1.15 禁止条款）：workaround 期间实测结果仅证明"避开 bug 的路径可用"，不证明"环境完整可用"。
 

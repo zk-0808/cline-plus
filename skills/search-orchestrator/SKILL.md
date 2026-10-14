@@ -129,7 +129,7 @@ Q3 Hypothesis: Rust developers are scarce and expensive [unverified]
 >
 > **触发条件**：L2 建议三路；L3 建议三路并可增加反证扩展（见 §1.4.4）；L1 可只用 R1；L0 不适用。
 >
-> **执行强度（Run #2/#3 之后的诚实定位）**：本节是"软要求"——三路 fanout 在多样性与反证覆盖上**确有边际收益**，但 A/B 实测显示提示词层无法把多样性/反垄断/反证召回率**保证到达标线**（详见 [D-2026-06-24-search-defer-p2](../../docs/decisions/search/D-2026-06-24-search-defer-p2.md) 与 [D-2026-06-24-search-rollback-diversity](../../docs/decisions/search/D-2026-06-24-search-rollback-diversity.md)）。LLM 应当尽力执行三路，并在 Phase 4 显式说明每路的可达性与不足。
+> **执行强度（Run #2/#3 之后的诚实定位）**：本节是"软要求"——三路 fanout 在多样性与反证覆盖上**确有边际收益**，但 A/B 实测显示提示词层无法把多样性/反垄断/反证召回率**保证到达标线**（详见 [D-2026-06-24-search-defer-p2](../../docs/decisions/search/D-2026-06-24-search-defer-p2.md) 与 [D-2026-06-24-search-rollback-diversity](../../docs/archive/decisions/D-2026-06-24-search-rollback-diversity.md)）。LLM 应当尽力执行三路，并在 Phase 4 显式说明每路的可达性与不足。
 
 #### 1.4.1 三路 fanout 模板
 
@@ -570,14 +570,14 @@ FinalScore(result) = SearchRank + GoggleWeight + SourceWeight
 | Goggle 仅覆盖**高频垃圾域** + **少数普世权威域**（github/docs/arxiv） | 长尾交给 Source Weighting |
 | **不在提示词层引入多样性/反垄断算分**（如 DiversityPenalty） | Run #3（2026-06-24）证实：LLM 在提示词层算分不可靠，且 ±2 量级压不过 T1 SourceWeight ±10。多样性排序属机制层问题，见 mechanism-candidates #21 |
 
-> **Run #3 教训**：曾尝试新增 §3.5.6 DiversityPenalty + R1 保底来缓解 fanout 单一路垄断，复测综合 2.6/5，倒退。**回退** —— 多样性约束移交机制层（见 mechanism-candidates #21），SKILL 层不再算分。详见实验报告 [run-3-fanout-tuned](../../docs/search-orchestrator/experiments/run-3-fanout-tuned.md) 与决策 [D-2026-06-24-search-rollback-diversity](../../docs/decisions/search/D-2026-06-24-search-rollback-diversity.md) / [D-2026-06-24-search-defer-p2](../../docs/decisions/search/D-2026-06-24-search-defer-p2.md)。
+> **Run #3 教训**：曾尝试新增 §3.5.6 DiversityPenalty + R1 保底来缓解 fanout 单一路垄断，复测综合 2.6/5，倒退。**回退** —— 多样性约束移交机制层（见 mechanism-candidates #21），SKILL 层不再算分。详见实验报告 [run-3-fanout-tuned](../../docs/archive/search/experiments/run-3-fanout-tuned.md) 与决策 [D-2026-06-24-search-rollback-diversity](../../docs/archive/decisions/D-2026-06-24-search-rollback-diversity.md) / [D-2026-06-24-search-defer-p2](../../docs/decisions/search/D-2026-06-24-search-defer-p2.md)。
 
 ---
 
 ## Phase 3.6: P6 Highlights（fetch 后 verbatim 抽取）
 
 > **机制来源**：[D-2026-06-25-search-adopt-p6-highlights](../../docs/decisions/search/D-2026-06-25-search-adopt-p6-highlights.md)（active）
-> **验证**：[run-10-p6-highlights](../../docs/search-orchestrator/experiments/run-10-p6-highlights.md) — 评分 4/5，Extractive Fidelity 92.3%
+> **验证**：[run-10-p6-highlights](../../docs/archive/search/experiments/run-10-p6-highlights.md) — 评分 4/5，Extractive Fidelity 92.3%
 
 ### 3.6.1 触发条件
 
