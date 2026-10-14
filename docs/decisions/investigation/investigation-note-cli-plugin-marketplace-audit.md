@@ -4,12 +4,12 @@
 
 > **生命周期**：事件绑定 — ADR-006 §4.1 问题回答后归档（与 native-condense 系列同步）。
 >
-> **框架**：按 [evidence-governance.md §10](../evidence-governance.md) Investigation Note 模板执行。
+> **框架**：按 [evidence-governance.md §10](../../evidence-governance.md) Investigation Note 模板执行。
 >
 > **关联**：
 > - [ADR-006 §0 元原则](../adr/ADR-006-native-mechanism-first-principle.md) — "是不是又在造原生已有的轮子"自检
 > - [investigation-note-native-condense-synthesis.md](investigation-note-native-condense-synthesis.md) — A/B/C 综合报告（本探查为其后续元原则自检）
-> - [dev-rules.md §1.6](../dev-rules.md) — 双来源验证（本探查满足：官方仓库 README + 一手源码）
+> - [dev-rules.md §1.6](../../dev-rules.md) — 双来源验证（本探查满足：官方仓库 README + 一手源码）
 
 ---
 
@@ -136,7 +136,7 @@ Continue from this summary plus the preserved recent messages below.
 
 ### O5. 本地已安装 plugin 检查
 
-**检查方式**：PowerShell `Get-ChildItem $env:USERPROFILE\.cline\plugins -Recurse -Depth 3`（按 [dev-rules.md §1.4](../dev-rules.md) Windows 文件核查规范）
+**检查方式**：PowerShell `Get-ChildItem $env:USERPROFILE\.cline\plugins -Recurse -Depth 3`（按 [dev-rules.md §1.4](../../dev-rules.md) Windows 文件核查规范）
 
 **结果**：
 - `~/.cline/plugins/installed/local/context-snapshot` — 我们自己的 plugin（已安装）
@@ -150,7 +150,7 @@ Continue from this summary plus the preserved recent messages below.
 
 ### C1（Verified）：无现成轮子做"condense 时抽 semantic object 写 handoff.md"
 
-**证据**（3 独立来源，满足 [dev-rules.md §1.6](../dev-rules.md) 双来源门槛）：
+**证据**（3 独立来源，满足 [dev-rules.md §1.6](../../dev-rules.md) 双来源门槛）：
 
 | # | 证据 | 类型 | 来源 |
 |---|------|------|------|
@@ -212,7 +212,7 @@ Continue from this summary plus the preserved recent messages below.
 1. 源码已完整读取，产物形态明确（纯模板拼接，不调 LLM）
 2. 实测需切 Anthropic provider 才能看到 agentic 模式对比，当前环境受限
 3. A/B/C 综合报告已 Verified，市场探查是元原则自检补充，非必须实测
-4. 按 [dev-rules.md §1.3](../dev-rules.md) 阴性结论门控——源码分析已满足双来源，无需实测补证
+4. 按 [dev-rules.md §1.3](../../dev-rules.md) 阴性结论门控——源码分析已满足双来源，无需实测补证
 
 ---
 
@@ -228,7 +228,7 @@ Continue from this summary plus the preserved recent messages below.
 | 6 | catalog.json | https://cline.github.io/marketplace/catalog.json | 202 entries 统计 + memory tag 仅 1 entry |
 | 7 | 本地 plugin 检查 | `~/.cline/plugins/` | 仅 context-snapshot 已安装 |
 
-## 证据时效性（按 [dev-rules.md §1.13](../dev-rules.md)）
+## 证据时效性（按 [dev-rules.md §1.13](../../dev-rules.md)）
 
 - `evidence_as_of`: 2026-07-03
 - `expires_if_unchanged`: 2026-08-03（30 天后复查——cline/plugins 仓库可能新增 handoff 相关 plugin）

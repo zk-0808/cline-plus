@@ -78,7 +78,7 @@
 
 ## §1.13 结论时效性门控
 
-源由：2026-06-27 [ADR-002-p5-experiment-exit-review §2.4](adr/ADR-002-p5-experiment-exit-review.md) 引用"社区无 Plugin 实战沉淀"（2026-06-23 形成于 ADR-002 Context §5）作为舍弃 P5 论据，未复查——4 天后该结论已被 5 类反证证伪。
+源由：2026-06-27 [ADR-002-p5-experiment-exit-review §2.4](../archive/decisions/ADR-002-p5-experiment-exit-review.md) 引用"社区无 Plugin 实战沉淀"（2026-06-23 形成于 ADR-002 Context §5）作为舍弃 P5 论据，未复查——4 天后该结论已被 5 类反证证伪。
 
 ---
 

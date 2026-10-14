@@ -243,10 +243,10 @@ V6 后续修正：registerRule content 函数在 CLI 3.0.34 只评估一次（�
 ## 9. 权威源
 
 - [design.md](design.md) — 插件设计文档
-- [mechanism-landing-assessment.md](mechanism-landing-assessment.md) — V1-V6 路径评估
+- [mechanism-landing-assessment.md](audit/mechanism-landing-assessment.md) — V1-V6 路径评估
 - [plugin-dev-sop.md](plugin-dev-sop.md) — Plugin 开发规划框架
 - [snapshot-extractor-design.md](snapshot-extractor-design.md) — v0.7.0 提取器设计
-- [v2a-static-audit-report.md](v2a-static-audit-report.md) — A2 静态审计报告
+- [v2a-static-audit-report.md](audit/v2a-static-audit-report.md) — A2 静态审计报告
 - [investigation-note-cli-codec-content-map-bug.md](../decisions/investigation/investigation-note-cli-codec-content-map-bug.md) — codec bug 调查
 - [claude-external-review/review-closure-report.md](claude-external-review/review-closure-report.md) — 外部评审闭环
 - [ADR-001](../decisions/adr/ADR-001-handoff-compact-memory.md) ~ [ADR-005](../decisions/adr/ADR-005-split-compact-from-handoff.md) — 决策记录

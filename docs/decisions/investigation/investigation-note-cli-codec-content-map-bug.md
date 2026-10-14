@@ -4,10 +4,10 @@
 
 > **生命周期**：事件绑定——codec bug 修复 + CLI 版本升级后归档。
 
-> **框架**：按 [evidence-governance.md §10](../evidence-governance.md) Investigation Note 模板执行。
+> **框架**：按 [evidence-governance.md §10](../../evidence-governance.md) Investigation Note 模板执行。
 >
 > **关联**：
-> - [dev-rules.md §1.15](../dev-rules.md) — 不可抗力声明（本次新增 codec bug 行）
+> - [dev-rules.md §1.15](../../dev-rules.md) — 不可抗力声明（本次新增 codec bug 行）
 > - [investigation-note-cli-plugin-verification.md](investigation-note-cli-plugin-verification.md) — CLI 3.0.30+ plugin 链路验证（前置，证明插件代码本身正常）
 > - [investigation-note-vscode-bootstrap-missing.md](investigation-note-vscode-bootstrap-missing.md) — VS Code 4.0.x plugin 系统缺失（另一条不可抗力，本 bug 进一步缩窄可用运行环境）
 
@@ -108,9 +108,9 @@ function eK(i){switch(i.type){case"text":return{type:"text",text:i.text};case"re
 
 | 位置 | 代码 | 是否触发此错 |
 |------|------|------|
-| [compaction.ts:39](../context-snapshot/src/compaction.ts#L39) `serializeMessage` | `for (const block of message.content)` | ❌ 用 `for...of` 不是 `.map`，会报 "not iterable" 而非 "not a function" |
-| [snapshot-writer.ts](../context-snapshot/src/snapshot-writer.ts) | 无 content.map | ❌ |
-| [index.ts:41](../context-snapshot/src/index.ts#L41) `build()` | `return messages`（原样返回入参） | ❌ 不修改结构 |
+| [compaction.ts:39](../../../context-snapshot/src/compaction.ts#L39) `serializeMessage` | `for (const block of message.content)` | ❌ 用 `for...of` 不是 `.map`，会报 "not iterable" 而非 "not a function" |
+| [snapshot-writer.ts](../../../context-snapshot/src/snapshot-writer.ts) | 无 content.map | ❌ |
+| [index.ts:41](../../../context-snapshot/src/index.ts#L41) `build()` | `return messages`（原样返回入参） | ❌ 不修改结构 |
 
 ### O7. 环境确认（§1.15）
 
@@ -118,9 +118,9 @@ VS Code 扩展 v4.0.2（继承 v4.0.1 回滚，pre-SDK 代码基，**无 plugin 
 
 ### O8. beforeModel 注入的 content 类型为 string（2026-07-01 子代理审查发现）
 
-**来源**：[claude-external-review/review-closure-report.md](../plugin/claude-external-review/review-closure-report.md) §5.1 子代理审查 C 发现
+**来源**：[claude-external-review/review-closure-report.md](../../plugin/claude-external-review/review-closure-report.md) §5.1 子代理审查 C 发现
 
-[index.ts:146](../context-snapshot/src/index.ts#L146) beforeModel hook 返回的注入消息 content 为 **string 类型**：
+[index.ts:146](../../../context-snapshot/src/index.ts#L146) beforeModel hook 返回的注入消息 content 为 **string 类型**：
 
 ```typescript
 return {
@@ -136,9 +136,9 @@ return {
 - 即使 codec bug 的 `Array.isArray` 守卫被官方修复，string content 仍可能与下游期望 array 类型的代码冲突——应同步修复为 array 类型
 
 **Verified 依据**（3 独立来源）：
-1. 源码直接证据：[index.ts:146](../context-snapshot/src/index.ts#L146) content 为模板字符串
+1. 源码直接证据：[index.ts:146](../../../context-snapshot/src/index.ts#L146) content 为模板字符串
 2. codec 行为：O3 已确认 `Nd` 函数对每条消息调用 `n.content.map(eK)`
-3. 实测吻合：[handoff.md §4](../handoff.md) 记录 beforeModel 在步骤 15 首次返回修改后的 messages 后立即崩溃——步骤 15 是 detectRepetition 首次返回 repeating=true 的步骤，beforeModel 首次返回也在该步骤，崩溃发生在 codec 处理注入的 string content 时
+3. 实测吻合：[handoff.md §4](../../handoff.md) 记录 beforeModel 在步骤 15 首次返回修改后的 messages 后立即崩溃——步骤 15 是 detectRepetition 首次返回 repeating=true 的步骤，beforeModel 首次返回也在该步骤，崩溃发生在 codec 处理注入的 string content 时
 
 ### O9. 上游修复 PR #12032 提交（2026-07-02 登记）
 
@@ -172,7 +172,7 @@ PR scope 与 §1.15 恢复条件对照：
 
 ### H1（Verified）：错误源在 Cline 核心 `agent-message-codec.ts`，不在本插件
 
-**证据**（4 独立来源，满足 [dev-rules.md §1.6](../dev-rules.md) 双来源门槛）：
+**证据**（4 独立来源，满足 [dev-rules.md §1.6](../../dev-rules.md) 双来源门槛）：
 
 | # | 证据 | 类型 | 来源 |
 |---|------|------|------|
@@ -237,7 +237,7 @@ Plugin beforeModel hook 返回 messages
 
 ### Conflict Registry 登记
 
-按 [evidence-governance.md §6](../evidence-governance.md) 登记冲突：
+按 [evidence-governance.md §6](../../evidence-governance.md) 登记冲突：
 
 | 时间 | 冲突 | 证据 A | 证据 B | 处理 |
 |------|------|--------|--------|------|
@@ -249,7 +249,7 @@ Plugin beforeModel hook 返回 messages
 
 ### D1：登记 §1.15 不可抗力
 
-已在 [dev-rules.md §1.15](../dev-rules.md) 不可抗力表添加 codec bug 行，并分层标注实测影响范围：
+已在 [dev-rules.md §1.15](../../dev-rules.md) 不可抗力表添加 codec bug 行，并分层标注实测影响范围：
 - 🔴 搁置：snapshot 写入实测（90K tokens 长对话）
 - 🟡 带观察：Loop Guard 实测（避免 MCP + 避免长输出）
 - 🟢 可推进：setup marker / rules 注入（短交互）
@@ -260,7 +260,7 @@ Plugin beforeModel hook 返回 messages
 
 ### D3：未验证项跟进
 
-> **Hypothesis 生命周期**（按 [evidence-governance.md §19](../evidence-governance.md) 补登，2026-07-02）：H2/H3 为源码类，默认 30 天补证期。声明日 2026-06-30，必须补证日 2026-07-30。
+> **Hypothesis 生命周期**（按 [evidence-governance.md §19](../../evidence-governance.md) 补登，2026-07-02）：H2/H3 为源码类，默认 30 天补证期。声明日 2026-06-30，必须补证日 2026-07-30。
 
 | 项 | 状态 | 跟进动作 | 声明日 | 必须补证日 | 补证路径 | 超期处置 |
 |----|------|---------|--------|-----------|---------|---------|
@@ -268,7 +268,7 @@ Plugin beforeModel hook 返回 messages
 | H3 下游连锁风险 | Hypothetical | 下次读源码时验证 `agent-runtime.ts:621` / `runtime-event-adapter.ts:70` | 2026-06-30 | 2026-07-30 | 读 unminified 源码上述两处 | 降级为 Unknown |
 | 测试盲点 | 未验证 | 提 issue 时一并核查 codec 模块测试覆盖 | — | — | — | — |
 | 是否有已知 issue | **已确认**（#12004）| issue #12004 已由 Osraka 复现 + 提 PR #12032（见 O9）| — | — | — | — |
-| **O8 content 类型修复** | **Verified，已完成** | **[index.ts:146](../context-snapshot/src/index.ts#L146) beforeModel 注入 content 类型 string → array 已修复（A1）；V6 替代实现（messageBuilder 注入）已完成双保险** | — | — | — | — |
+| **O8 content 类型修复** | **Verified，已完成** | **[index.ts:146](../../../context-snapshot/src/index.ts#L146) beforeModel 注入 content 类型 string → array 已修复（A1）；V6 替代实现（messageBuilder 注入）已完成双保险** | — | — | — | — |
 | **O9 PR #12032 监控** | **Open，待合并** | **监控 [PR #12032](https://github.com/cline/cline/pull/12032) 合并状态 + CLI 发版；合并 + 发版后解除 §1.15 codec bug 行 + 解除 F1 阻塞** | — | — | — | — |
 
 ---
@@ -286,7 +286,7 @@ Plugin beforeModel hook 返回 messages
 - 子代理 B：调用链分析（image 分支 + 上游 + 下游）— **单源声明已降级为 Hypothetical**
 - 子代理 C：issue/PR 搜索 — **PR #5246 排除为幻觉，不采信**
 
-## 证据时效性（按 [dev-rules.md §1.13](../dev-rules.md)）
+## 证据时效性（按 [dev-rules.md §1.13](../../dev-rules.md)）
 
 - `evidence_as_of`: 2026-07-02（O9 补充更新：PR #12032 Open）
 - `expires_if_unchanged`: 2026-07-16（14 天后）

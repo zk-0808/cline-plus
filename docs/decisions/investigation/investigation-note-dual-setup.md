@@ -239,7 +239,7 @@ async beforeModel(ctx: { snapshot: any; request: any }) {
 3. 【Hypothesis】toolRecorder 单例被双重加载破坏
 4. 【Hypothesis】(unknown) 实例的 hook 仍被路由
 
-#### Hypothesis 生命周期（按 [evidence-governance.md §19](../evidence-governance.md) 补登，2026-07-02）
+#### Hypothesis 生命周期（按 [evidence-governance.md §19](../../evidence-governance.md) 补登，2026-07-02）
 
 > 源码类，默认 30 天补证期。声明日 2026-06-30，必须补证日 2026-07-30。
 

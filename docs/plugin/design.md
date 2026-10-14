@@ -367,7 +367,7 @@ snapshot 文件名格式：`{project_hash}-{timestamp}-{uuid}.md`
 | [ADR-001](../decisions/adr/ADR-001-handoff-compact-memory.md) | 上游方向决策（Accepted），本设计落实其 Implementation-level 细节 |
 | [ADR-004](../decisions/adr/ADR-004-p5-spike-pause.md) | 上游暂停决策（deferred），本设计的重启满足其恢复条件 2 |
 | [mechanism-candidates.md](../mechanism-candidates.md) #5 | 本设计对应的机制候选，完成后标"已机制化" |
-| [investigation-note-probe-5.md](../archive/decisions/investigation/investigation-note-probe-5.md) | 前置验证证据 |
+| [investigation-note-probe-5.md](../archive/decisions/investigation-note-probe-5.md) | 前置验证证据 |
 | [sdk/ARCHITECTURE.md](https://github.com/cline/cline/blob/main/sdk/ARCHITECTURE.md) | 系统架构权威源，本设计与之对齐 |
 | [custom-compaction.ts](https://github.com/cline/cline/blob/main/sdk/examples/plugins/custom-compaction.ts) | 直接模板，设计模式母本 |
 

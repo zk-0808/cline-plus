@@ -4,13 +4,13 @@
 
 > **生命周期**：事件绑定——VS Code 扩展 plugin 系统恢复后归档。
 
-> **框架**：按 [evidence-governance.md §10](../evidence-governance.md) Investigation Note 模板执行。
+> **框架**：按 [evidence-governance.md §10](../../evidence-governance.md) Investigation Note 模板执行。
 >
 > **关联**：
-> - [investigation-note-probe-5.md](../archive/decisions/investigation/investigation-note-probe-5.md) — 前置调查（本 Note 修正其 V3 结论）
+> - [investigation-note-probe-5.md](../../archive/decisions/investigation-note-probe-5.md) — 前置调查（本 Note 修正其 V3 结论）
 > - [ADR-002 Update 5](../adr/ADR-002-project-shape.md) — Probe 5 修正后的结论
-> - [handoff.md](../handoff.md) — 上次会话遗留的"setup() 不执行"未解问题
-> - [handoff-plugin-architecture.md](../archive/plugin-refs/handoff-plugin-architecture.md) §9 — Plugin 加载失败的已记录症状
+> - [handoff.md](../../handoff.md) — 上次会话遗留的"setup() 不执行"未解问题
+> - [handoff-plugin-architecture.md](../../archive/plugin-refs/handoff-plugin-architecture.md) §9 — Plugin 加载失败的已记录症状
 
 ---
 
@@ -169,7 +169,7 @@
 
 ## 产源说明
 
-本 Note 格式映射 [evidence-governance.md §14](../evidence-governance.md) 成熟实践：
+本 Note 格式映射 [evidence-governance.md §14](../../evidence-governance.md) 成熟实践：
 - **Observation/Evidence/Hypothesis/Verified/Decision 状态机** → EBSE + 科学方法
 - **Conflict Registry** → RCA 矛盾证据记录
 - **Remaining Unknown** → 科学方法合法未知项

@@ -3,10 +3,10 @@
 
 > **生命周期**：事件绑定——VS Code 扩展 plugin 系统恢复后归档。
 
-> **框架**：按 [evidence-governance.md §10](../evidence-governance.md) Investigation Note 模板记录。
+> **框架**：按 [evidence-governance.md §10](../../evidence-governance.md) Investigation Note 模板记录。
 >
 > **关联**：
-> - [investigation-note-probe-5.md](../archive/decisions/investigation/investigation-note-probe-5.md) — Probe 5 实测发现 VS Code 扩展有 plugin 装载入口，催生本盘点
+> - [investigation-note-probe-5.md](../../archive/decisions/investigation-note-probe-5.md) — Probe 5 实测发现 VS Code 扩展有 plugin 装载入口，催生本盘点
 > - [ADR-002 Update 3](../adr/ADR-002-project-shape.md) — 之前的 VS Code 扩展原生能力调研（仅覆盖 commands/skills/hooks/plugin 结构）
 > - [ADR-002 Update 4](../adr/ADR-002-project-shape.md) — 路径与 manifest 修正
 >
@@ -377,7 +377,7 @@ Customize 按钮（`marketplaceButtonClicked`，图标 `$(wrench)`）打开的�
 
 > 待用户实测 webview 内部入口后解答。Settings/Customize 已实测（J/K 段），hooks/scheduling 官方文档已读（L 段）。
 >
-> **U 项生命周期**（按 [evidence-governance.md §19](../evidence-governance.md) 补登，2026-07-02）：U3/U5/U6/U8/U9/U10/U11/U12 为待实测项，属官方文档/版本号类，默认 30 天。声明日 2026-06-27，必须补证日 2026-07-27。**因 §1.15 不可抗力（VS Code 扩展 plugin 系统不可用），U3/U5/U6/U11 暂无法实测**，超期处置为"保留并延期至 §1.15 解除"。
+> **U 项生命周期**（按 [evidence-governance.md §19](../../evidence-governance.md) 补登，2026-07-02）：U3/U5/U6/U8/U9/U10/U11/U12 为待实测项，属官方文档/版本号类，默认 30 天。声明日 2026-06-27，必须补证日 2026-07-27。**因 §1.15 不可抗力（VS Code 扩展 plugin 系统不可用），U3/U5/U6/U11 暂无法实测**，超期处置为"保留并延期至 §1.15 解除"。
 
 1. ~~**U1**：Settings 按钮内部有哪些设置项？~~ ✅ 已解答（J 段，5 tab）
 2. ~~**U2**：Customize marketplace 有哪些 plugin？分类如何？~~ ✅ 已解答（K 段）
@@ -444,7 +444,7 @@ Customize 按钮（`marketplaceButtonClicked`，图标 `$(wrench)`）打开的�
 
 ## 产源说明
 
-本 Investigation Note 沿用 [evidence-governance.md §14](../evidence-governance.md) 所列成熟实践：
+本 Investigation Note 沿用 [evidence-governance.md §14](../../evidence-governance.md) 所列成熟实践：
 - **Observation/Evidence/Hypothesis 状态机** → EBSE + 科学方法
 - **多源交叉验证**（package.json + PowerShell + 用户观察）→ EBSE 证据分级
 - **Remaining Unknown 显式列出** → 科学方法"I don't know"合法答案

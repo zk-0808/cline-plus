@@ -237,7 +237,7 @@
 | 工作流与 SKILL | 触发-执行-退出全生命周期 | Grep 搜索调用记录 | 每条发现附 Grep query + 命中/零命中证据 |
 | 知识沉淀 | 教训沉淀 / 文档时效 / 机制化治理 | 全库扫描 | 每条发现附文档清单 + 时效状态标注 |
 
-**审查纪律**（[verification-discipline skill](../skills/verification-discipline/SKILL.md) 约束）：
+**审查纪律**（[verification-discipline skill](../.trae/skills/verification-discipline/SKILL.md) 约束）：
 - 子代理单源声明不升级为 Verified
 - 停止条件：审查范围限定 docs/ 活跃文档，不扩到代码审查
 - 目标相关：每条发现指向"下一步夯实基础"，不偏离到代码修复

@@ -50,7 +50,7 @@ evidence:
 
 选 C 的核心理由：
 
-1. **SKILL 实际使用零损失**：[SKILL.md §1.4.1](../../skills/search-orchestrator/SKILL.md) 规定 R1/R2/R3 每路 `max_results=10`，项目从不分页
+1. **SKILL 实际使用零损失**：[SKILL.md §1.4.1](../../../skills/search-orchestrator/SKILL.md) 规定 R1/R2/R3 每路 `max_results=10`，项目从不分页
 2. **#24 覆盖度最高且成本最低**：禁分页比 jitter 更彻底地消除 vqd 连击
 3. **立即解除 Run #14 阻塞**：1 个会话内可落地
 4. **可升级路径**：C 是 A 的子集，后续需要 >10 结果或 backend 切换时升级到 A，无沉没成本
@@ -203,7 +203,7 @@ wrapper 落地后，用于 Run #14 Phase 0b 续跑。若能完成 Q2-Q8 采集�
 
 - **解除 Run #14 阻塞**：Phase 0b 续跑不再依赖人工节流 workaround
 - **#24 状态升级**：候选 → 已机制化（Run #14 功能性验证通过）
-- **SKILL 层零改动**：[SKILL.md](../../skills/search-orchestrator/SKILL.md) 不动，符合 web-search-setup.md §七 两层职责分离
+- **SKILL 层零改动**：[SKILL.md](../../../skills/search-orchestrator/SKILL.md) 不动，符合 web-search-setup.md §七 两层职责分离
 - **web-search-setup.md 更新**：推荐配置已从 `npx -y duckduckgo-websearch` 改为 wrapper 路径
 - **不影响 #22 Browser Fetch**：#22 是 fetch 层反爬，#24 是 search 层反爬，正交
 

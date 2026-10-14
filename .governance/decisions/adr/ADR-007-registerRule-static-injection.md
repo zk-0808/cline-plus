@@ -3,7 +3,7 @@
 - **Status**: Accepted
 - **Date**: 2026-07-04
 - **Deciders**: 项目所有者
-- **Related**: [ADR-005](../../../docs/decisions/adr/ADR-005-split-compact-from-handoff.md)、[ADR-006](ADR-006-native-mechanism-first-principle.md)、[hook-auto-injection-design.md](../../../docs/decisions/hook-auto-injection-design.md)、[thin-adapter-layer-design.md](../../../docs/decisions/thin-adapter-layer-design.md)
+- **Related**: [ADR-005](../../../docs/decisions/adr/ADR-005-split-compact-from-handoff.md)、[ADR-006](../../../docs/decisions/adr/ADR-006-native-mechanism-first-principle.md)、[hook-auto-injection-design.md](../../../docs/decisions/hook-auto-injection-design.md)、[thin-adapter-layer-design.md](../../../docs/decisions/thin-adapter-layer-design.md)
 - **Evidence as of**: 2026-07-04
 - **Expires if unchanged**: 2026-08-04（30 天后复查）
 

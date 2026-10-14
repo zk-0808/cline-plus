@@ -3,11 +3,11 @@
 
 > **生命周期**：事件绑定——VS Code 扩展 plugin 系统恢复后归档（当前受 §1.15 不可抗力）。
 
-> **框架**：按 [evidence-governance.md §10](../evidence-governance.md) Investigation Note 模板，配合 [reviewer-personas.md](../reviewer-personas.md) 固定角色集 + [dev-rules.md §1.12](../dev-rules.md) 多角色 subagent 并行调用规则。
+> **框架**：按 [evidence-governance.md §10](../../evidence-governance.md) Investigation Note 模板，配合 [reviewer-personas.md](../../reviewer-personas.md) 固定角色集 + [dev-rules.md §1.12](../../dev-rules.md) 多角色 subagent 并行调用规则。
 >
 > **关联**：
 > - [investigation-note-vscode-settings-inventory.md](investigation-note-vscode-settings-inventory.md) — Customize 面板实测发现 Marketplace 规模（~50 Skills / ~200 MCP / ~22 Plugins）
-> - 旧结论出处待 C 号 subagent 核查（推测在 [survey.md](../search/search-orchestrator/survey.md) 或 ADR-002 早期 Update）
+> - 旧结论出处待 C 号 subagent 核查（推测在 [survey.md](../../search/search-orchestrator/survey.md) 或 ADR-002 早期 Update）
 
 ### 核心问题
 
@@ -158,7 +158,7 @@ VS Code 扩展（4.0.0）
 
 ### 5. 外源二手信息部分采纳（2026-06-27 用户提供）
 
-> **证据治理标注**：本节信息来自用户提供的二手博客/教程（deployhq.com / apifox.com / bilibili / runoob / zhaomenghuan blog）+ 官方一手（marketplace.visualstudio.com / github.com/cline/cline/CONTRIBUTING.md）。按 [evidence-governance.md §16](../evidence-governance.md)，二手博客为**低置信度**，不作为独立语义结论，仅与我方一手证据交叉后采纳增量部分。
+> **证据治理标注**：本节信息来自用户提供的二手博客/教程（deployhq.com / apifox.com / bilibili / runoob / zhaomenghuan blog）+ 官方一手（marketplace.visualstudio.com / github.com/cline/cline/CONTRIBUTING.md）。按 [evidence-governance.md §16](../../evidence-governance.md)，二手博客为**低置信度**，不作为独立语义结论，仅与我方一手证据交叉后采纳增量部分。
 >
 > **层级说明**：外源主要覆盖"使用层 / MCP 自定义层 / 主仓贡献层 / fork 层"，**未触及 cline/marketplace catalog registry 上架机制**（本调查核心）。故仅采纳以下与本调查相邻的增量。
 
@@ -209,5 +209,5 @@ VS Code 扩展（4.0.0）
 
 ## 产源说明
 
-本调查按 [reviewer-personas.md §1](../reviewer-personas.md) 共享约束（best-practice mapper 定位）+ [dev-rules.md §1.12](../dev-rules.md) 多角色 subagent 并行调用规则执行。4 个 subagent 分别注入 SE Reviewer / Best-Practice Mapper / Process Reviewer / SE Reviewer 角色 prompt，独立输出后由父代理整合。无创新部分。
+本调查按 [reviewer-personas.md §1](../../reviewer-personas.md) 共享约束（best-practice mapper 定位）+ [dev-rules.md §1.12](../../dev-rules.md) 多角色 subagent 并行调用规则执行。4 个 subagent 分别注入 SE Reviewer / Best-Practice Mapper / Process Reviewer / SE Reviewer 角色 prompt，独立输出后由父代理整合。无创新部分。
 

@@ -5,7 +5,7 @@
 - **Superseded-by**: [ADR-005](ADR-005-split-compact-from-handoff.md)（拆分 compaction 与 handoff，spawn context-snapshot 插件）
 - **Deciders**: 项目所有者
 - **Supersedes**: 无（承接 ADR-003 rolled-back 后的 partial Go 状态）
-- **Related**: ADR-002（Validation Plan §实验环境硬约束）、ADR-003（No-Go 误判撤销，partial Go）、[experiments/p5-spike/run-p5-capability-spike.md](../../experiments/p5-spike/run-p5-capability-spike.md) §5
+- **Related**: ADR-002（Validation Plan §实验环境硬约束）、ADR-003（No-Go 误判撤销，partial Go）、[experiments/p5-spike/run-p5-capability-spike.md](../../../experiments/p5-spike/run-p5-capability-spike.md) §5
 - **Evidence as of**: 2026-06-27
 - **Expires if unchanged**: 2026-07-27（CLI 载体稳定性 + VS Code 扩展环境对齐类，30 天；恢复条件 ② 已被 design.md 不可抗力声明推翻，复查时优先核查 SDK 迁移 issue #11944）
 
@@ -27,7 +27,7 @@ ADR-003 撤销 No-Go 误判后，P5 Spike 回到 partial Go：#6 session_start h
 
 ## Evidence（2026-06-27 实跑证据链）
 
-完整记录见 [run-p5-capability-spike.md §5](../../experiments/p5-spike/run-p5-capability-spike.md)。关键事实：
+完整记录见 [run-p5-capability-spike.md §5](../../../experiments/p5-spike/run-p5-capability-spike.md)。关键事实：
 
 ### 事实 1：CLI 与 VS Code 扩展是两套独立版本号体系
 
@@ -65,7 +65,7 @@ ADR-003 §环境事实已记录此区分，但 ADR-002 Validation Plan 未充分
 - 即使 CLI 验证成功，VS Code 支持 plugin 后仍需重验
 - 等于在"非生产载体"上验证"生产载体才需要的能力"
 
-[ADR-002-p5-experiment-exit-review §3.3](../archive/decisions/adr/ADR-002-p5-experiment-exit-review.md) 已指出此张力（"实验环境 CLI 与生产环境 VS Code 仍分离，实验结论难以直接迁移"），但当时作为"反对舍弃"的论据被保留。今天的事实 2+3 使该张力从"理论担忧"变为"实操阻塞"。
+[ADR-002-p5-experiment-exit-review §3.3](../../archive/decisions/ADR-002-p5-experiment-exit-review.md) 已指出此张力（"实验环境 CLI 与生产环境 VS Code 仍分离，实验结论难以直接迁移"），但当时作为"反对舍弃"的论据被保留。今天的事实 2+3 使该张力从"理论担忧"变为"实操阻塞"。
 
 ---
 
@@ -138,4 +138,4 @@ ADR-003 §环境事实已记录此区分，但 ADR-002 Validation Plan 未充分
 2. **`index.jsonl` 已被废弃**：ADR-005 明确废弃 p5-spike 的 `index.jsonl` 机制（Cline SQLite DB 已存会话元数据）
 3. **`beforeRun` 已被 `rules` 注入替代**：p5-spike 的 `beforeRun` hook 被 Cline 的 `rules` API 动态注入取代
 
-因此恢复条件 ③（"#5 compact 双产物实证仍为未解问题"）已被 ADR-005 推翻，本 ADR 从 deferred 转为 **superseded**。#6 `beforeRun` hook 已实证触发的结论保留（`experiments/p5-spike/handoff/session-start.log`），但架构路径已由 context-snapshot 继承。目录添加 [DEPRECATED.md](../../experiments/p5-spike/DEPRECATED.md) 就地归档。
+因此恢复条件 ③（"#5 compact 双产物实证仍为未解问题"）已被 ADR-005 推翻，本 ADR 从 deferred 转为 **superseded**。#6 `beforeRun` hook 已实证触发的结论保留（`experiments/p5-spike/handoff/session-start.log`），但架构路径已由 context-snapshot 继承。目录添加 [DEPRECATED.md](../../../experiments/p5-spike/DEPRECATED.md) 就地归档。

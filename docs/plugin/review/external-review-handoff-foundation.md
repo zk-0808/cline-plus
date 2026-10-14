@@ -6,15 +6,15 @@
 > **评审日期**：2026-07-01
 > **归档日期**：2026-07-01
 > **触发使用条件**：mechanism-candidates #5 / #6 从「实验中（重构中）」推进到正式机制化落地阶段；或 §1.15 codec bug 解除后重启 snapshot 长对话实测路径时
-> **关联**：[design.md](design.md) · [ADR-005](../decisions/adr/ADR-005-split-compact-from-handoff.md) · [mechanism-candidates.md](../mechanism-candidates.md) #5/#6 · [dev-rules.md §2](../dev-rules.md) · [snapshot-writer.ts](../../context-snapshot/src/snapshot-writer.ts)
+> **关联**：[design.md](../design.md) · [ADR-005](../../decisions/adr/ADR-005-split-compact-from-handoff.md) · [mechanism-candidates.md](../../mechanism-candidates.md) #5/#6 · [dev-rules.md §2](../../dev-rules.md) · [snapshot-writer.ts](../../../context-snapshot/src/snapshot-writer.ts)
 
 ---
 
 ## 0. 本文件的角色
 
-本文件**不**是决策文档，**不**是调查笔记，而是**待激活的外部评审参考输入**。当前 handoff 机制化仍处于 v0.6.0 workaround 验证阶段（受 [§1.15 codec bug](../dev-rules.md) 阻塞），本评审提出的结构化升级方向暂不进入实施。
+本文件**不**是决策文档，**不**是调查笔记，而是**待激活的外部评审参考输入**。当前 handoff 机制化仍处于 v0.6.0 workaround 验证阶段（受 [§1.15 codec bug](../../dev-rules.md) 阻塞），本评审提出的结构化升级方向暂不进入实施。
 
-当 handoff 正式开发启动时（触发条件见上方），本文件应作为 [design.md](design.md) 的并行参考，由开发者判断哪些评审建议纳入正式设计、哪些暂缓、哪些拒绝，并在 [ADR-005](../decisions/adr/ADR-005-split-compact-from-handoff.md) 或后续 ADR 中记录处置结论。
+当 handoff 正式开发启动时（触发条件见上方），本文件应作为 [design.md](../design.md) 的并行参考，由开发者判断哪些评审建议纳入正式设计、哪些暂缓、哪些拒绝，并在 [ADR-005](../../decisions/adr/ADR-005-split-compact-from-handoff.md) 或后续 ADR 中记录处置结论。
 
 ---
 
@@ -42,15 +42,15 @@
 
 **为何值钱**：绝大多数 handoff 文档只记录「做了什么」，而当前 handoff 记录的是「我对这件事的确信程度以及凭什么确信」。对跨 agent 协作来说，这是最值钱的部分——下一个 agent 接手时不需要重新建立信任度，能直接读到「哪些是事实、哪些是推测、推测的单源还是交叉验证」。
 
-**对应现状**：见 [investigation-note-cli-codec-content-map-bug.md](../decisions/investigation/investigation-note-cli-codec-content-map-bug.md) 的 O1-O7 + H1-H3 证据链，[handoff.md](../handoff.md) §4 验证结果中的 H1-H4 排除声明。
+**对应现状**：见 [investigation-note-cli-codec-content-map-bug.md](../../decisions/investigation/investigation-note-cli-codec-content-map-bug.md) 的 O1-O7 + H1-H3 证据链，[handoff.md](../../handoff.md) §4 验证结果中的 H1-H4 排除声明。
 
 ### 3.2 出口判据用「答得上」而非「做了没」
 
-**现状**：[plugin-dev-sop.md](plugin-dev-sop.md) 中 rules 注入实测用「Cline 新 session 正确答出决策表」来验收，而不是「注入函数被调用了」。
+**现状**：[plugin-dev-sop.md](../plugin-dev-sop.md) 中 rules 注入实测用「Cline 新 session 正确答出决策表」来验收，而不是「注入函数被调用了」。
 
 **为何值钱**：这是一种成熟的工程判据——「以结果可观测性定义完成」的思想本身就是跨 agent 移交的核心。接收方 agent 不关心你跑没跑，只关心状态是否真的传到了。
 
-**对应现状**：[handoff.md](../handoff.md) §4 「rules 注入实测 ✅ 通过 — 注入含 XYZ789 标记的 snapshot，Cline 新 session 正确答出决策表」。
+**对应现状**：[handoff.md](../../handoff.md) §4 「rules 注入实测 ✅ 通过 — 注入含 XYZ789 标记的 snapshot，Cline 新 session 正确答出决策表」。
 
 ### 3.3 不可抗力 / 环境门控的显式声明
 
@@ -58,7 +58,7 @@
 
 **为何值钱**：把「功能可用」和「环境可用」严格区分开，是诚实的、防止下游 agent 误判的设计。很少有人会主动写这种「我验证了但请别过度相信」的免责。
 
-**对应现状**：[dev-rules.md §1.15](../dev-rules.md) 不可抗力门控 + [handoff.md](../handoff.md) §4 「workaround 验证 ≠ 环境完整可用」声明。
+**对应现状**：[dev-rules.md §1.15](../../dev-rules.md) 不可抗力门控 + [handoff.md](../../handoff.md) §4 「workaround 验证 ≠ 环境完整可用」声明。
 
 ---
 
@@ -80,9 +80,9 @@
 
 **问题**：真正的跨会话基石应该能回答「如果 codec bug 修了，哪些被阻塞项会自动解锁」——这需要把引用变成显式的**依赖边**。
 
-**建议**：当前 §1.15 已有「影响分层 🔴/🟡/🟢」的雏形（[dev-rules.md §1.15](../dev-rules.md)），把这个思路推广成一张 `blocker → blocked` 的关系表，价值会立刻放大。
+**建议**：当前 §1.15 已有「影响分层 🔴/🟡/🟢」的雏形（[dev-rules.md §1.15](../../dev-rules.md)），把这个思路推广成一张 `blocker → blocked` 的关系表，价值会立刻放大。
 
-**与现状关系**：[handoff.md](../handoff.md) §「未完成项 / 后续动作」表已隐含依赖（如「Loop Guard 注入层端到端验证」depends on「codec bug 修复」），但未字段化。可考虑在未完成项表中新增 `blocker_ref` 列。
+**与现状关系**：[handoff.md](../../handoff.md) §「未完成项 / 后续动作」表已隐含依赖（如「Loop Guard 注入层端到端验证」depends on「codec bug 修复」），但未字段化。可考虑在未完成项表中新增 `blocker_ref` 列。
 
 ### 4.3 隐患三：缺少「状态新鲜度 / 失效条件」
 
@@ -135,7 +135,7 @@
 
 **决策点**：
 - 是否接受该提议，由谁出草案（评审方 / 项目方自行起草）
-- 五类对象的字段定义需与 [snapshot-writer.ts](../../context-snapshot/src/snapshot-writer.ts) 的 5 节模板对齐，避免出现「文档 schema」与「plugin 生成模板」两套结构
+- 五类对象的字段定义需与 [snapshot-writer.ts](../../../context-snapshot/src/snapshot-writer.ts) 的 5 节模板对齐，避免出现「文档 schema」与「plugin 生成模板」两套结构
 - 若采纳，需判断是否触发新 ADR（建议是：在 ADR-005 下加 Update，而非新开 ADR，因为本建议是 ADR-005 拆分方向的协议化深化，不是方向变更）
 
 ### 6.2 state.json 与 ADR-005 废弃 index.jsonl 的关系
@@ -200,7 +200,7 @@ dev-rules.md §1.13 当前仅约束 ADR。评审建议 4.3 要求 handoff 内关
 1. **本文件不是决策**：评审建议的采纳与否，需在 handoff 正式开发启动时由项目所有者判断，并在 ADR-005 Update 或新 ADR 中记录处置结论
 2. **避免选择性采纳**：三大特色与三大隐患是配套的——保留特色的同时必须解决隐患，否则「带置信度的快照」会退化回「写得很好的 changelog」
 3. **先验证再扩展**：评审方推荐的最小一步（三字段）是低风险切入点，建议先在 1-2 份 handoff 上试运行三字段，验证书写负担与可读性，再决定是否全面 schema 化
-4. **与 [plugin-dev-sop.md](plugin-dev-sop.md) 的关系**：若采纳结构化 schema，plugin-dev-sop 的「契约速查表」需同步追加 handoff schema 的字段定义，确保开发者在写 handoff 时有可查的契约源
+4. **与 [plugin-dev-sop.md](../plugin-dev-sop.md) 的关系**：若采纳结构化 schema，plugin-dev-sop 的「契约速查表」需同步追加 handoff schema 的字段定义，确保开发者在写 handoff 时有可查的契约源
 
 ---
 

@@ -401,8 +401,8 @@ Assertion 语义模型决策落地后：
 
 | 文档 | 关系 |
 |---|---|
-| [schema-semantic-object-model.md](./decisions/schema-semantic-object-model.md) | V2 五类对象定义——待重新定位为"Assertion 载体分类" |
-| [handoff-schema/design.md](./handoff-schema/design.md) | schema 设计文档——§5 演进路线可能需要新增 Assertion 模型阶段 |
-| [handoff-schema/project-rules.md §6](./handoff-schema/project-rules.md) | v0 过渡版——等模型定后重构 |
-| [evidence-governance.md §4](./evidence-governance.md) | confidence 三档——可能提升为 Evidence 对象定义源 |
-| [handoff.md](./handoff.md) | 未完成项表——V2 字段表达，等模型定后反推 |
+| [schema-semantic-object-model.md](../decisions/schema-semantic-object-model.md) | V2 五类对象定义——待重新定位为"Assertion 载体分类" |
+| [handoff-schema/design.md](design.md) | schema 设计文档——§5 演进路线可能需要新增 Assertion 模型阶段 |
+| `handoff-schema/project-rules.md` §6（该文件已按设计删除） | v0 过渡版——等模型定后重构 |
+| [evidence-governance.md §4](../evidence-governance.md) | confidence 三档——可能提升为 Evidence 对象定义源 |
+| [handoff.md](../handoff.md) | 未完成项表——V2 字段表达，等模型定后反推 |

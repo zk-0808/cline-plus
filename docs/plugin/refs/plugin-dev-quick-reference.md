@@ -279,7 +279,7 @@ P5 实验直接参考的官方样例：
 - **不可用于 token 估算**，差 ~13 倍
 - **替代方案**：`Math.ceil(text.length / 4)` 标准英文近似
 
-**对设计的影响**：context-snapshot 已删除自研 `shouldCompact` + `estimateTokens`（阶段 1 清理），改用 beforeModel 长度突变检测原生 condense。详见 [project-rules-thin-adapter.md §1](../project-rules-thin-adapter.md)。
+**对设计的影响**：context-snapshot 已删除自研 `shouldCompact` + `estimateTokens`（阶段 1 清理），改用 beforeModel 长度突变检测原生 condense。详见 [project-rules-thin-adapter.md §1](../../project-rules-thin-adapter.md)。
 
 ### 13.4 serializeMessage block type 不匹配（Verified）
 
@@ -309,7 +309,7 @@ P5 实验直接参考的官方样例：
 - **路径 A（MCP tool_result）**：content 经 JSON.stringify 有损转换变非数组
 - **路径 B（beforeModel 注入）**：beforeModel 返回 content 为 string 类型，codec `Nd` 函数调 `n.content.map()` 必崩——**与消息数量/token 总量无关**，任何步骤下 beforeModel 返回 string content 都会崩溃
 
-**坑点**：所有 hook / messageBuilder 返回的 messages 必须用 `ContentBlock[]` 格式，禁止 string content。详见 [project-rules-thin-adapter.md §5](../project-rules-thin-adapter.md)。
+**坑点**：所有 hook / messageBuilder 返回的 messages 必须用 `ContentBlock[]` 格式，禁止 string content。详见 [project-rules-thin-adapter.md §5](../../project-rules-thin-adapter.md)。
 
 ### 13.7 原生 compaction 阈值与产物（Verified）
 

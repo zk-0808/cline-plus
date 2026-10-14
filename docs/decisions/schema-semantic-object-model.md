@@ -19,7 +19,7 @@
 - **Evidence**：否则无法复核
 - **Justification**：否则不知道为什么
 - **Confidence**：否则不知道证据强弱
-- **消费侧默认核查高风险断言**：否则不会重新评估（消费层规则见 [`handoff-schema/project-rules.md`](../handoff-schema/project-rules.md)）
+- **消费侧默认核查高风险断言**：否则不会重新评估（消费层规则见 `handoff-schema/project-rules.md`（**该文件已按 `docs/handoff-schema/design.md:213` 的约定删除**））
 
 这些都是原则的推论，而不是零散规则。跨载体稳定——以后无论 handoff 是 Markdown / YAML / 数据库记录，此原则都可沿用，不受具体字段设计限制。
 

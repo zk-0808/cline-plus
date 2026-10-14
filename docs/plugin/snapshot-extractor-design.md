@@ -353,7 +353,7 @@ function renderSnapshot(data: SnapshotData): string {
 
 ## 8. 不在本设计范围内
 
-- handoff.md 的 schema 化（v0.8+ 议题，见 [external-review-handoff-foundation.md](external-review-handoff-foundation.md)）
+- handoff.md 的 schema 化（v0.8+ 议题，见 [external-review-handoff-foundation.md](review/external-review-handoff-foundation.md)）
 - 语义对象模型定义（v0.8+ 议题）
 - 依赖图 / blocker_ref 字段实现（v0.8+ 预留，本版本 TodoRecord 仅预留字段位）
 - index.jsonl 恢复（已废弃，见 [design.md §3.3.2](design.md)）

@@ -176,7 +176,7 @@ messageBuilder 在原生 condense **之前**执行（§3.2），无法直接检�
 
 ### 5.2 门控范围分析
 
-[handoff-schema/project-rules.md §4](../handoff-schema/project-rules.md) 门控：
+`handoff-schema/project-rules.md` §4（**文件已删除**） 门控：
 - **范围**：handoff schema 定义 + frontmatter 扩展；**不涉及 plugin 代码**
 - **排除**：mechanism-candidates #5/#6 plugin 代码推进
 
@@ -261,7 +261,7 @@ messageBuilder 在原生 condense **之前**执行（§3.2），无法直接检�
 |--------|---------|------|
 | **触发机制** | ✅ 方案 E（beforeModel hook）| 首选方案确定；需实测验证 beforeModel 在 compaction 后触发的时序；codec bug 用 ContentBlock[] 规避 |
 | **形态选择** | ✅ 重构 context-snapshot 两阶段 | 阶段 1 清理 + 阶段 2 薄适配层；复用现有 extractors + snapshot-writer |
-| **门控范围** | ⚠️ **门控适用**（与设计文档 §5.2 "不适用"解读相反）| **thin-adapter-layer 被 [handoff-schema/project-rules.md §5](../handoff-schema/project-rules.md) "不做 plugin 代码推进"门控阻塞**——需先解除 handoff-schema 子项目或等其收口 |
+| **门控范围** | ⚠️ **门控适用**（与设计文档 §5.2 "不适用"解读相反）| **thin-adapter-layer 被 `handoff-schema/project-rules.md` §5（该文件已按设计删除）"不做 plugin 代码推进"门控阻塞**——需先解除 handoff-schema 子项目或等其收口 |
 | **输出目标** | ✅ 仍写 snapshot 文件（cline 产物） | 薄适配层**不写 `docs/handoff.md`（本项目交接文档）**；只改触发机制（自研 shouldCompact → beforeModel 检测原生 condense）；产物仍是 `getSnapshotDir()` 下 snapshot 文件（5 段式 Markdown，4 类对象，机器生成）；`docs/handoff.md` 继续由人 + AI 协作维护 |
 
 ### 10.1 范围收窄

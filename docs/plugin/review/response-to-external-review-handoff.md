@@ -5,7 +5,7 @@
 > **回应对象**：[external-review-handoff-foundation.md](external-review-handoff-foundation.md) 中归档的外部评审意见
 > **撰写日期**：2026-07-01
 > **用途**：作为下一轮外部评审的输入材料，提供项目实际上下文 + 项目方对评审建议的消化判断 + 待外部评审回答的具体问题
-> **关联**：[ADR-001](../decisions/adr/ADR-001-handoff-compact-memory.md) · [ADR-005](../decisions/adr/ADR-005-split-compact-from-handoff.md) · [design.md](design.md) · [mechanism-candidates.md](../mechanism-candidates.md) #5/#6 · [evidence-governance.md](../evidence-governance.md) · [dev-rules.md](../dev-rules.md)
+> **关联**：[ADR-001](../../decisions/adr/ADR-001-handoff-compact-memory.md) · [ADR-005](../../decisions/adr/ADR-005-split-compact-from-handoff.md) · [design.md](../design.md) · [mechanism-candidates.md](../../mechanism-candidates.md) #5/#6 · [evidence-governance.md](../../evidence-governance.md) · [dev-rules.md](../../dev-rules.md)
 
 ---
 
@@ -21,7 +21,7 @@
 
 ### 1.1 handoff 和 context snapshot 是两个已被 ADR-005 拆分的独立机制
 
-评审通篇把 handoff.md 和 context snapshot 当作一个对象讨论。但项目在 2026-06-28 已通过 [ADR-005](../decisions/adr/ADR-005-split-compact-from-handoff.md) 决议将两者拆分：
+评审通篇把 handoff.md 和 context snapshot 当作一个对象讨论。但项目在 2026-06-28 已通过 [ADR-005](../../decisions/adr/ADR-005-split-compact-from-handoff.md) 决议将两者拆分：
 
 | 维度 | context snapshot | handoff |
 |------|-----------------|---------|
@@ -29,7 +29,7 @@
 | **触发** | token 阈值（被动）| 用户指令 / 决策信号 / 长会话（主动）|
 | **产物** | `~/.cline/data/snapshot/*.md`（plugin 自动生成）| `docs/handoff.md`（人工撰写）|
 | **消费者** | Cline rules 注入（机读）| 下一个 agent / 人（人读为主）|
-| **负责方** | Plugin（[snapshot-writer.ts](../../context-snapshot/src/snapshot-writer.ts)）| 用户 + 规则（[dev-rules.md §2](../dev-rules.md)）|
+| **负责方** | Plugin（[snapshot-writer.ts](../../../context-snapshot/src/snapshot-writer.ts)）| 用户 + 规则（[dev-rules.md §2](../../dev-rules.md)）|
 | **Git 追踪** | 否（运行时产物）| 是（每次写入后立即 commit）|
 
 **拆分理由**（ADR-005 原文）：「compact 是 Cline 的事，handoff 是 Plugin/用户的事。共享 'handoff' 一词导致代码注释、函数名、文件名误导后续维护者。」
@@ -38,7 +38,7 @@
 
 ### 1.2 项目已有一套「隐性证据协议」——evidence-governance.md
 
-评审指出「证据分级 + 假设编号是真正的亮点」，并建议字段化。项目其实已有一份完整的 [evidence-governance.md](../evidence-governance.md)（Level 1 元规则），定义了：
+评审指出「证据分级 + 假设编号是真正的亮点」，并建议字段化。项目其实已有一份完整的 [evidence-governance.md](../../evidence-governance.md)（Level 1 元规则），定义了：
 
 - **五状态证据生命周期**：Observation → Evidence → Hypothesis → Verified → Decision
 - **Confidence 三档**：高（≥3 独立证据）/ 中（2 独立证据）/ 低（单源或冲突）
@@ -51,7 +51,7 @@ handoff.md 里出现的 `H1-H4` / `O1-O7` / `Likely / Hypothetical / Verified` �
 
 ### 1.3 handoff.md 的写作受 dev-rules.md §2 硬规则约束
 
-[dev-rules.md §2](../dev-rules.md) 定义了 handoff.md 的写入触发器：
+[dev-rules.md §2](../../dev-rules.md) 定义了 handoff.md 的写入触发器：
 
 - **触发器 a**：用户口头要求（无条件）
 - **触发器 c**：用户消息 ≥8 轮 + 话题已跳 + 上下文 ≥70%（仅提议，用户拍板）
@@ -64,7 +64,7 @@ handoff.md 里出现的 `H1-H4` / `O1-O7` / `Likely / Hypothetical / Verified` �
 
 ### 1.4 当前受 §1.15 codec bug 阻塞，handoff 正式开发尚未启动
 
-[dev-rules.md §1.15](../dev-rules.md) 声明的不可抗力：
+[dev-rules.md §1.15](../../dev-rules.md) 声明的不可抗力：
 
 | 环境 | 状态 | 影响 |
 |------|------|------|
@@ -80,7 +80,7 @@ context-snapshot plugin v0.6.0 的 6 项核心功能中，5 项已通过 workaro
 
 ### 1.5 项目有「机制化漏斗」——schema 化是漏斗中的 d→e 阶段
 
-[mechanism-candidates.md](../mechanism-candidates.md) 定义了经验机制化的状态机：
+[mechanism-candidates.md](../../mechanism-candidates.md) 定义了经验机制化的状态机：
 
 ```
 o（观察）→ p（模式）→ r（规则）→ d（决策代码化）→ e（实验中）→ m（已机制化）→ x（已退休）
@@ -96,19 +96,19 @@ o（观察）→ p（模式）→ r（规则）→ d（决策代码化）→ e�
 
 ### 2.1 特色一（证据分级 + 假设编号）——认同，且已有元规则支撑
 
-评审判断准确。补充一点：这不是 handoff.md 的原创，而是 [evidence-governance.md](../evidence-governance.md) 元规则在 handoff 层的投影。handoff.md 里看到的 `H1-H4` / `O1-O7` 来自调查笔记（investigation-note）的编号体系，handoff 只是引用。
+评审判断准确。补充一点：这不是 handoff.md 的原创，而是 [evidence-governance.md](../../evidence-governance.md) 元规则在 handoff 层的投影。handoff.md 里看到的 `H1-H4` / `O1-O7` 来自调查笔记（investigation-note）的编号体系，handoff 只是引用。
 
 **这意味着**：如果要字段化 `confidence`，不需要在 handoff 层重新定义，直接对接 evidence-governance.md §4 的三档模型即可。schema 化的词汇表已就绪。
 
 ### 2.2 特色二（「答得上」出口判据）——认同，且已写入 plugin-dev-sop.md
 
-评审判断准确。这条已固化在 [plugin-dev-sop.md §1-§2](plugin-dev-sop.md)，作为规划阶段的出口判据：「每步出口是'答得上来吗'——答不上来就是没到位，动作清单可以表演，答不上来表演不了。」
+评审判断准确。这条已固化在 [plugin-dev-sop.md §1-§2](../plugin-dev-sop.md)，作为规划阶段的出口判据：「每步出口是'答得上来吗'——答不上来就是没到位，动作清单可以表演，答不上来表演不了。」
 
 **这意味着**：如果 schema 化引入新字段，新字段的「填没填」不是出口判据，「填的字段能不能让下一个 agent 答得上问题」才是。这是对 schema 设计的额外约束——字段不能只为了「结构完整」而存在，必须能回答具体问题。
 
 ### 2.3 特色三（不可抗力显式声明）——认同，且已规则化为 dev-rules.md §1.15
 
-评审判断准确。这条已从「handoff 里的好习惯」升级为 [dev-rules.md §1.15](../dev-rules.md) 永久规则，带影响分层（🔴/🟡/🟢）和恢复条件声明。
+评审判断准确。这条已从「handoff 里的好习惯」升级为 [dev-rules.md §1.15](../../dev-rules.md) 永久规则，带影响分层（🔴/🟡/🟢）和恢复条件声明。
 
 **这意味着**：评审建议的 `invalidated_when` / `last_verified` 字段，在「不可抗力」这一类结论上已有雏形（§1.15 表格的「恢复条件」列）。问题是如何把这种声明从「§1.15 专属」推广到「handoff 里所有关键结论」。
 
@@ -122,7 +122,7 @@ o（观察）→ p（模式）→ r（规则）→ d（决策代码化）→ e�
 
 | 若落到 snapshot | 若落到 handoff.md |
 |----------------|------------------|
-| 成本低（plugin 自动生成，改 [snapshot-writer.ts](../../context-snapshot/src/snapshot-writer.ts) 即可）| 成本高（人工撰写，强制 schema 增加每次书写负担）|
+| 成本低（plugin 自动生成，改 [snapshot-writer.ts](../../../context-snapshot/src/snapshot-writer.ts) 即可）| 成本高（人工撰写，强制 schema 增加每次书写负担）|
 | 消费者是 Cline rules 注入（机读天然适配）| 消费者是 agent + 人（人读叙事不能丢）|
 | 与 ADR-005 已废弃的 index.jsonl 有概念重叠风险 | 与 dev-rules §2 触发器 a「无条件立即产出」有节奏冲突 |
 | 可直接进 mechanism-candidates 漏斗的 d 阶段 | 需先回答「这是系统问题还是 Prompt 问题」（Gate 0.5）|
@@ -138,9 +138,9 @@ o（观察）→ p（模式）→ r（规则）→ d（决策代码化）→ e�
 
 认同「依赖关系埋在散文里」的诊断。但项目已有两个半结构化的雏形：
 
-**雏形 A**：[dev-rules.md §1.15](../dev-rules.md) 的不可抗力影响分层表（🔴/🟡/🟢 + 恢复条件），本质上是 `blocker → blocked` 关系表的特例。
+**雏形 A**：[dev-rules.md §1.15](../../dev-rules.md) 的不可抗力影响分层表（🔴/🟡/🟢 + 恢复条件），本质上是 `blocker → blocked` 关系表的特例。
 
-**雏形 B**：[handoff.md](../handoff.md) §「未完成项 / 后续动作」表已隐含依赖关系，如：
+**雏形 B**：[handoff.md](../../handoff.md) §「未完成项 / 后续动作」表已隐含依赖关系，如：
 - 「Loop Guard 注入层端到端验证」→ depends on → 「codec bug 修复」
 - 「dual-setup 升级到 Verified」→ depends on → 「Cline 官方说明或源码证据」
 
@@ -155,7 +155,7 @@ o（观察）→ p（模式）→ r（规则）→ d（决策代码化）→ e�
 
 ### 3.3 隐患三（缺少状态新鲜度 / 失效条件）——认同，但需区分「结论」和「动作建议」
 
-认同「陈旧信息被当现状」的风险。但项目已有 [dev-rules.md §1.13](../dev-rules.md) 结论时效性门控，针对 ADR 的 `evidence_as_of` / `expires_if_unchanged` 字段。问题是 §1.13 **未覆盖 handoff 文档本身**。
+认同「陈旧信息被当现状」的风险。但项目已有 [dev-rules.md §1.13](../../dev-rules.md) 结论时效性门控，针对 ADR 的 `evidence_as_of` / `expires_if_unchanged` 字段。问题是 §1.13 **未覆盖 handoff 文档本身**。
 
 **关键区分**：handoff 里有两类内容，失效条件不同：
 
@@ -208,7 +208,7 @@ o（观察）→ p（模式）→ r（规则）→ d（决策代码化）→ e�
 
 ### 4.3 决策点：schema 化与 mechanism-candidates 漏斗的对接
 
-[mechanism-candidates.md](../mechanism-candidates.md) 的漏斗要求「d（决策代码化）」阶段必须通过 Gate 0（Runtime Event 接入点）和 Gate 0.5（系统问题 vs Prompt 问题）。
+[mechanism-candidates.md](../../mechanism-candidates.md) 的漏斗要求「d（决策代码化）」阶段必须通过 Gate 0（Runtime Event 接入点）和 Gate 0.5（系统问题 vs Prompt 问题）。
 
 评审建议的 schema 化如果落到 handoff.md：
 - 若是 agent 自动填字段 → Prompt 层的事 → 不进漏斗 → 用 dev-rules 规则约束

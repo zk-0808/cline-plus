@@ -4,7 +4,7 @@
 > **状态**：✅ 已完成（2026-06-29 GitHub 源码拉取执行）
 > **生命周期**：任务绑定——probe 结论被后续设计引用后可归档。
 > **日期**：2026-06-29
-> **关联**：[handoff.md](../handoff.md)、[ADR-005](../adr/ADR-005-split-compact-from-handoff.md)、[design.md](../plugin/design.md) §8 Open Questions、[mechanism-landing-assessment.md](../plugin/audit/mechanism-landing-assessment.md)
+> **关联**：[handoff.md](../../handoff.md)、[ADR-005](../adr/ADR-005-split-compact-from-handoff.md)、[design.md](../../plugin/design.md) §8 Open Questions、[mechanism-landing-assessment.md](../../plugin/audit/mechanism-landing-assessment.md)
 > **源码根**：`E:\cline-repo`（本地 clone）
 > **权威源**：[sdk/ARCHITECTURE.md](file:///e:/cline-repo/sdk/ARCHITECTURE.md)（设计意图）+ unminified `.ts` 源码（实际行为）
 

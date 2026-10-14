@@ -257,10 +257,10 @@ lifecycle:
 
 | 评审投影模型 | 项目方已有产出 | 对应状态 |
 |------------|-------------|---------|
-| snapshot 机械投影（plugin 序列化，confidence 计算得出） | [compaction.ts](../../context-snapshot/src/compaction.ts) buildCompactionSummary + 提取器 v0.7.0 | 已实现（受 §1.15 阻塞实测） |
-| handoff 叙事投影（agent 撰写，confidence 断言得出） | [dev-rules.md §2.2](../dev-rules.md) 三字段强制 + [plugin/project-rules.md §3.3](project-rules.md) 特化字段 | 已规则化 |
+| snapshot 机械投影（plugin 序列化，confidence 计算得出） | [compaction.ts](../../../context-snapshot/src/compaction.ts) buildCompactionSummary + 提取器 v0.7.0 | 已实现（受 §1.15 阻塞实测） |
+| handoff 叙事投影（agent 撰写，confidence 断言得出） | [dev-rules.md §2.2](../../dev-rules.md) 三字段强制 + [plugin/project-rules.md §3.3](../project-rules.md) 特化字段 | 已规则化 |
 | 共享 ID 空间 | dev-rules §2.2 `id` 字段 + §3.3 `blocker_ref` 指向稳定 ID | 已采纳 |
-| 共享 confidence 词汇表 | [evidence-governance.md §4](../evidence-governance.md) Verified / Likely / Hypothesis | 已采纳，两边复用 |
+| 共享 confidence 词汇表 | [evidence-governance.md §4](../../evidence-governance.md) Verified / Likely / Hypothesis | 已采纳，两边复用 |
 
 **项目方未显式抽出"五类对象（decision / change / verification / blocker / handoff）字段定义"**——这是评审 §5 提议的"语义对象模型草案"。项目方暂不单独出这份草案，理由：五类对象的字段已分散落在 dev-rules §2.2 / §3.3 / evidence-governance §15+§19 中，再抽一份独立草案会与现有规则文件重复，违反"单点真理"原则。若后续 handoff schema 正式开发启动时需要，可在 ADR-005 下加 Update 显式化。
 
@@ -280,7 +280,7 @@ lifecycle:
 
 评审建议用 `lifecycle.kind/exit_when` 统一字段收编 §1.13 `expires_if_unchanged`。项目方暂不采纳，理由：
 
-1. **已存在双轨制**：[evidence-governance §15](../evidence-governance.md) ADR 时效（`expires_if_unchanged`，conclusion 语义）+ [§19](../evidence-governance.md) Hypothesis 生命周期（`必须补证日`，action 语义）已构成结论型/动作型的双轨治理。再引入 `lifecycle.kind` 统一字段会与现有双轨制重叠，增加复杂度。
+1. **已存在双轨制**：[evidence-governance §15](../../evidence-governance.md) ADR 时效（`expires_if_unchanged`，conclusion 语义）+ [§19](../../evidence-governance.md) Hypothesis 生命周期（`必须补证日`，action 语义）已构成结论型/动作型的双轨治理。再引入 `lifecycle.kind` 统一字段会与现有双轨制重叠，增加复杂度。
 2. **触发条件不同**：§15 ADR 时效由 ADR frontmatter 触发；§19 Hypothesis 由 Investigation Note 触发。两者载体不同，强行统一字段会模糊载体边界。
 3. **未来评估**：若 handoff schema 正式开发时发现双轨制维护成本过高，再评估是否引入 `lifecycle.kind` 统一。
 

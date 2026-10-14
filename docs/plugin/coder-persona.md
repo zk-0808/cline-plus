@@ -1,11 +1,11 @@
 # Coder Persona - Implementation & Refactoring · TypeScript + Python
 
-> **层级**：Level 2 操作参考——与 [governance-procedure.md](governance-procedure.md) 同层。
+> **层级**：Level 2 操作参考——与 [governance-procedure.md](../governance-procedure.md) 同层。
 > **生命周期**：永久保留——跨功能复用的代码执行角色模板。
 >
 > **存放位置**：`docs/plugin/coder-persona.md`（与 reviewer-personas.md 同级，分属不同职责层）
 >
-> **定位**：当评审结论产出后，需要实际执行代码修改时，按本模板启动 coder 角色。[reviewer-personas.md](reviewer-personas.md) 负责“发现问题”，本模板负责“解决问题”。
+> **定位**：当评审结论产出后，需要实际执行代码修改时，按本模板启动 coder 角色。[reviewer-personas.md](../reviewer-personas.md) 负责“发现问题”，本模板负责“解决问题”。
 >
 > **与 reviewer-personas.md 的关系**：reviewer 输出的改进建议是 coder 的输入；coder 的产出是 reviewer 下一轮评审的输入。两者构成 review → code → review 闭环。
 >

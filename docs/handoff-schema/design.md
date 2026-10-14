@@ -210,7 +210,7 @@ V2 schema 落地后重跑无损映射测试。原 `handoff-schema-v2` 未完成�
 ### 6.3 风险：元文档膨胀
 
 **风险**：本设计文档 + schema 文档 + project-rules.md 可能造成 handoff-schema 功能的文档膨胀。
-**缓解**：[project-rules.md §三份长期文档职责划分](project-rules.md) 明确各文档边界，不重复内容。功能结束后 project-rules.md 整体删除，schema + design 归档保留。
+**缓解**：`project-rules.md` §三份长期文档职责划分（该文件已于功能结束后整体删除）明确各文档边界，不重复内容。功能结束后 project-rules.md 整体删除，schema + design 归档保留。
 
 ---
 

@@ -153,7 +153,7 @@
 
 用户选择：#5 + #6，0.5-1 天，CLI 全局安装，cline++/experiments/p5-spike/
 
-详见 [ADR-002-p5-experiment-exit-review.md](../../docs/decisions/adr/ADR-002-p5-experiment-exit-review.md) 第三轮评审记录。
+详见 [ADR-002-p5-experiment-exit-review.md](../../docs/archive/decisions/ADR-002-p5-experiment-exit-review.md) 第三轮评审记录。
 
 ---
 
