@@ -91,7 +91,7 @@
 >
 > **因此"861 个相对链接全部可解析"的准确读法是**：*非归档树*中的相对链接、以*目标文件存在*为判据，全部可解析。
 >
-> 复扫口径：199 个 md、1,175 条相对与锚点链接、可解析 990、须修 **0**、归档区豁免残留 185。校验工具已入库并可作提交门禁：[scripts/check_links_anchors.py](../scripts/check_links_anchors.py)。
+> 复扫口径：全仓 `.md`（排除 `build` / `node_modules` 等忽略目录），非归档树须修 **0**，归档区豁免残留 **185**；校验基线随文档增删而变，以门禁脚本的当前输出为准——[scripts/check_links_anchors.py](../scripts/check_links_anchors.py)。**注**：复扫只统计仓库内 `.md`，与上文审计基线的 204 分类口径（tracked + untracked + gitignored + 子模块）不同，两个数字不可直接相减。
 
 ---
 

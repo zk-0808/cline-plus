@@ -12,7 +12,7 @@
 
 所以这里刻意保留了完整过程：决策链（含回滚与取代关系）、双盲实验原始数据、被证伪的方案、以及实测遇到的阻塞。所有量化结论都能沿引用链追到具体文件与行号。
 
-如果你只想用框架，直接跳到 [快速开始](#快速开始)；如果想看工程过程，从下面三处入手。
+如果你只想用框架，直接跳到 [快速开始](#快速开始)；想知道这些约束是怎么运作的，读 [设计理念](#设计理念四条链与失效边界)；想看工程过程，从下面三处入手。
 
 ---
 
@@ -80,7 +80,32 @@ ADR-001（2026-06-23）原本判定「复用 Cline 原生 compact」，依据是
 | 薄 wrapper | `search-mcp-wrapper/` | 节流 + 熔断（1h 窗口 3 次失败）+ 指数退避，11/11 集成测试 |
 | 搜索 skill | `skills/search-orchestrator/` | Phase 0 门控、fanout、Goggles、Gap Ledger |
 | **项目复盘（故事线）** | [`docs/RETROSPECTIVE.md`](docs/RETROSPECTIVE.md) | 从起点问题到转折、阻塞、自我纠错的完整叙事 |
-| **审计方法与纠错** | [`docs/RETROSPECTIVE-AUDIT.md`](docs/RETROSPECTIVE-AUDIT.md) | 204 个文档的取证方法、186 处失效链接、5 条被证伪的自身结论 |
+| **审计方法与纠错** | [`docs/RETROSPECTIVE-AUDIT.md`](docs/RETROSPECTIVE-AUDIT.md) | 204 个文档的取证方法、186 处失效链接（范围盲区见该文「口径边界」）、5 条被证伪的自身结论 |
+
+---
+
+## 设计理念（四条链与失效边界）
+
+框架真正的产出不是规则数量，而是一条从「谁判」到「规则自己是否合格」的链：
+
+**评审**（先映射成熟实践）→ **判定**（证据状态机 + 置信度）→ **执行**（何时停、什么可继承）→ **自我校验**（规则本身是否合格）
+
+下表每一条都给出：约束它的权威文档、一个**改变了结果**的真实案例、以及**失效边界**。
+
+| 原则 | 规则来源 | 改变了结果的案例 | 失效边界 |
+|---|---|---|---|
+| **先映射成熟实践，再决定是否创新** | [`reviewer-personas.md:6,18-24`](docs/reviewer-personas.md)（禁止把成熟实践包装成本地创新） | [`evidence-governance.md §14`](docs/evidence-governance.md) 自我认定「本框架**无创新部分**」，逐条映射回 EBSE / RCA / ADR Methodology / SLR | **设计意图 ≠ 运行保证**。约束是提示词级的，不是运行时强制；v0.6.0 的 4 处契约违反仍靠用户多轮排查才定位（[`plugin-dev-sop.md:6`](docs/plugin/plugin-dev-sop.md)） |
+| **禁止跳级：观察 ≠ 解释 ≠ 结论** | [`evidence-governance.md §2.1–2.4`](docs/evidence-governance.md)（`Verified` 门槛 = ≥2 个独立证据类型） | 25 条外部评审意见 → 3 个子代理并行对抗审查 → 采纳 12 / 部分采纳 8 / **拒绝 2** / 待验证 4（[`review-closure-report.md`](docs/plugin/claude-external-review/review-closure-report.md)） | 子代理**同源 ≠ 多源**；未来日期是幻觉强信号（[`§20`](docs/evidence-governance.md) 源由：PR #5246 事件） |
+| **Unknown 是合法产出** | [`evidence-governance.md §5.3`](docs/evidence-governance.md)（「补成 Yes/No 才是失败」） | 16 份 investigation note 中 **8 份**带未解决项收尾；[`ab-test-clinerules-conflict.md:14`](docs/decisions/investigation/ab-test-clinerules-conflict.md) 主动声明 `n=3` 不足以区分 cell 间差异 | 「8/16」只证明**框架允许不完整结论存在**，不等于这 8 份都纪律良好；尚未按「主动保留 / 待补实验 / 受外部阻塞 / 已过期」细分 |
+| **源码是唯一裁判，且必须穿透分层边界** | [`dev-rules.md §1.7 / §1.16`](docs/dev-rules.md)（minified 仅可定位、不可下语义结论；探查不可停在构造方之前） | [`plugin-dev-quick-reference.md §13.1–13.13`](docs/plugin/refs/plugin-dev-quick-reference.md) 固化台账；`registerRule` **第二轮**穿透把结论从「注入成功」改判为「位置 + 服从惯性，模型不服从」 | 源码快照结论 **7 天**过期；探查会停错层（[`handoff.md:161`](docs/handoff.md) 记录的首轮盲点纠偏）；**未量化耗时**——只有笔记日期跨度，无逐项耗时记录 |
+| **引用必须落到本体** | [`dev-rules.md §1.17`](docs/dev-rules.md)（2026-10-14 新增）+ 门禁 [`scripts/check_links_anchors.py`](scripts/check_links_anchors.py) | `32d18a6`：修 6 处失效锚点、2 处路径层数错误、补上 `PROJECT_DEV_OUTLINE §9.5` 缺失的规则本体；[`evidence-governance.md §4.2`](docs/evidence-governance.md) 消歧同一个 `Verified` 承担的 5 类语义 | 这是**一次具体审计发现的缺口，不主张穷尽**；`docs/archive/` 185 处按约定不追改；历史口径**标注而非覆盖** |
+
+**两条最该记住的边界**（否则上表会被读成自我表扬）：
+
+1. **规则存在 ≠ 每次执行到位。** 上表每一项只陈述「设计意图」与「已有案例」，不构成运行保证——框架至今只在 2 个项目 dogfood 过，VS Code 端仍整体阻塞。
+2. **漏点不穷尽。** 第五条那三处悬空引用是本轮审计发现的，它同时暴露了前一轮审计的两个覆盖盲区（未校验锚点、未纳入归档区）；下一个盲区还没找到。
+
+来龙去脉见 [`docs/RETROSPECTIVE.md`](docs/RETROSPECTIVE.md)（叙事）与 [`docs/RETROSPECTIVE-AUDIT.md`](docs/RETROSPECTIVE-AUDIT.md)（方法与纠错）。
 
 ---
 
@@ -99,7 +124,7 @@ ADR-001（2026-06-23）原本判定「复用 Cline 原生 compact」，依据是
 
 本项目做过一次全量文档审计（8 分片 / 204 个 markdown / 全部带 `路径:行号` 证据），结果包括：
 
-- 修掉 **186 处**失效相对链接（861 个链接现全部可解析）
+- 修掉 **186 处**失效相对链接；后续语义审计补修 **6 处失效锚点 + 2 处路径层数错误**，并把校验入库为门禁脚本 [`scripts/check_links_anchors.py`](scripts/check_links_anchors.py)（非归档树须修 **0**；归档区 185 处为迁移遗留，按约定不追改）
 - 订正文档中「8 个 ADR / 12 个 D 决策」的错误声明（实为 6 / 13）
 - 发现同一事实被写 5 次、Capability 计数存在 4/6/7 三个口径
 - **审计自身被证伪的 5 条结论也一并记录**，未粉饰
