@@ -18,6 +18,9 @@
 
 ## 三处最值得看的地方
 
+> 想要一条完整的故事线？读 **[复盘：一个 AI agent 治理框架是怎么长出来的](docs/RETROSPECTIVE.md)**——
+> 从起点问题到转折、到撞上上游、到自我审计改错，每个关键点都指到可查文档。
+
 ### 1. 搜索能力：14 轮双盲 A/B，有量化结论也有被证伪项
 
 先做「把免费网络搜索能力交给 AI agent」这条相对独立的线，用双盲 A/B 迭代。
@@ -76,6 +79,8 @@ ADR-001（2026-06-23）原本判定「复用 Cline 原生 compact」，依据是
 | 插件实现 | `context-snapshot/`（子模块 → [cline-plugin-install](https://github.com/zk-0808/cline-plugin-install)） | 独立可分发的 snapshot 插件 |
 | 薄 wrapper | `search-mcp-wrapper/` | 节流 + 熔断（1h 窗口 3 次失败）+ 指数退避，11/11 集成测试 |
 | 搜索 skill | `skills/search-orchestrator/` | Phase 0 门控、fanout、Goggles、Gap Ledger |
+| **项目复盘（故事线）** | [`docs/RETROSPECTIVE.md`](docs/RETROSPECTIVE.md) | 从起点问题到转折、阻塞、自我纠错的完整叙事 |
+| **审计方法与纠错** | [`docs/RETROSPECTIVE-AUDIT.md`](docs/RETROSPECTIVE-AUDIT.md) | 204 个文档的取证方法、186 处失效链接、5 条被证伪的自身结论 |
 
 ---
 
