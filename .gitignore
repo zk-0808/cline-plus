@@ -56,6 +56,9 @@ experiments/
 .env.local
 *.local
 
+# 岗位求职材料（防御规则：即使目录被还原/重新创建，也不得入库）
+/其它/
+
 # Logs
 *.log
 logs/
