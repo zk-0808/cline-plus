@@ -24,6 +24,7 @@ import {
   HOOKS, LAYERS, PRESETS, CONFIG_REL, CONSTITUTION_REL,
 } from './lib/governance.mjs';
 import { listTasks, runTask } from './lib/runner.mjs';
+import { readHealth, readGateLog, HEALTH_LAYERS } from './lib/health.mjs';
 import { buildIndex, readDoc, extractClauses, searchDocs } from './lib/docs.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -183,6 +184,19 @@ const server = http.createServer(async (req, res) => {
     // ---------------- GET /api/env
     if (p === '/api/env' && req.method === 'GET') {
       return json(res, 200, await readEnv(REPO));
+    }
+
+    // ---------------- GET /api/health （健康面板：L1–L5 + 决策记录 + 记录型门禁）
+    if (p === '/api/health' && req.method === 'GET') {
+      const state = await readState(REPO);
+      const health = await readHealth(REPO, { commit: state.git?.head ?? null });
+      return json(res, 200, { ...health, layerMeta: HEALTH_LAYERS });
+    }
+
+    // ---------------- GET /api/gatelog （记录型门禁的运行历史）
+    if (p === '/api/gatelog' && req.method === 'GET') {
+      const runs = await readGateLog(REPO);
+      return json(res, 200, { runs, count: runs.length, logRel: '.governance/runtime/gate-log.jsonl' });
     }
 
     // ---------------- GET /api/batches

@@ -15,6 +15,7 @@
   <div class="brand">governance<span>·</span>console</div>
   <nav class="tabs" id="tabs">
     <button class="tab active" data-view="console" type="button">控制台</button>
+    <button class="tab" data-view="health" type="button">健康</button>
     <button class="tab" data-view="docs" type="button">规则视图</button>
     <button class="tab" data-view="clauses" type="button">条款索引</button>
   </nav>
@@ -110,7 +111,22 @@
 
 </main>
 
-<!-- ============================ 视图 2：规则视图 ============================ -->
+<!-- ============================ 视图 2：健康 ============================ -->
+<main id="view-health" class="view" hidden>
+  <section class="card" id="sec-health-head">
+    <header>
+      <h2>健康面板</h2>
+      <span class="sub">按 L1–L5 分层 · 每条检查都带可落地的规则出处 · 只读</span>
+      <span class="spacer"></span>
+      <button class="ghost sm" id="btn-health">重新检查</button>
+      <button class="ghost sm" id="btn-run-gate">运行链接门控</button>
+    </header>
+    <div class="body" id="health-summary"><div class="empty">加载中…</div></div>
+  </section>
+  <div id="health-groups"></div>
+</main>
+
+<!-- ============================ 视图 3：规则视图 ============================ -->
 <div id="view-docs" class="view" hidden>
   <div class="docs-stats" id="docs-stats"></div>
   <div class="docs-layout">
@@ -137,7 +153,7 @@
   </div>
 </div>
 
-<!-- ============================ 视图 3：条款索引 ============================ -->
+<!-- ============================ 视图 4：条款索引 ============================ -->
 <main id="view-clauses" class="view" hidden>
   <section class="card">
     <header>

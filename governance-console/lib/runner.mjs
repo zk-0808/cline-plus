@@ -3,10 +3,15 @@
  *
  * 只有这张白名单里的任务能被触发；客户端**不能**传任意命令。
  * 每条都写明：它跑什么、会不会破坏状态、超时多久。
+ *
+ * `recordsGate: true` 的任务是「记录型门禁」：它的结论无法由健康面板重算，
+ * 只能靠"某个时刻真的跑过一次"。跑完把结论追加到 runtime/gate-log.jsonl，
+ * 健康面板才有资格显示"上次运行结果"。没有记录就显示未运行 —— 未运行不等于通过。
  */
 import { execFile } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
+import { appendGateLog } from './health.mjs';
 
 export const TASKS = {
   'sync-plugin': {
@@ -29,12 +34,14 @@ export const TASKS = {
   },
   'gate-links': {
     label: '运行引用完整性门禁',
-    hint: '全仓扫描 Markdown 链接与锚点（dev-rules §1.17）。退出码 0 = 非归档树零失效。',
+    hint: '全仓扫描 Markdown 链接与锚点（dev-rules §1.17）。退出码 0 = 非归档树零失效。结果会记进 runtime/gate-log.jsonl。',
     file: 'scripts/check_links_anchors.py',
     shell: 'python',
     timeoutMs: 180000,
     destructive: false,
     confirm: null,
+    recordsGate: true,
+    gateRef: 'docs/dev-rules.md §1.17 规范性引用完整性门控',
   },
   'trace-stats': {
     label: '统计 hook 轨迹',
@@ -56,7 +63,35 @@ export function listTasks() {
     confirm: t.confirm,
     timeoutMs: t.timeoutMs,
     file: t.file,
+    recordsGate: !!t.recordsGate,
   }));
+}
+
+/** 从脚本输出里摘一行摘要，别把整段塞进日志 */
+function summarizeRun(stdout, exitCode) {
+  const lines = String(stdout ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+  // 先找结论行（PASS / FAIL），不要被 JSON 里的 "must_fix" 字段名带偏
+  const verdict = [...lines].reverse().find((l) => /\bPASS\b|\bFAIL\b|通过|失败/.test(l));
+  if (verdict) return verdict.slice(0, 200);
+  return exitCode === 0 ? '退出码 0' : `退出码 ${exitCode}`;
+}
+
+/** 从输出里摘第一个可解析的 JSON 对象（脚本约定：先打一份机读摘要） */
+function extractJson(stdout) {
+  const text = String(stdout ?? '');
+  const start = text.indexOf('{');
+  if (start < 0) return null;
+  for (let end = text.indexOf('}', start); end !== -1; end = text.indexOf('}', end + 1)) {
+    try { return JSON.parse(text.slice(start, end + 1)); } catch { /* 继续找闭合 */ }
+  }
+  return null;
+}
+
+async function readCommit(repo) {
+  return new Promise((resolve) => {
+    execFile('git', ['rev-parse', '--short', 'HEAD'], { cwd: repo, windowsHide: true, timeout: 8000 },
+      (err, stdout) => resolve(err ? null : String(stdout).trim()));
+  });
 }
 
 export function runTask(repo, taskId) {
@@ -78,18 +113,45 @@ export function runTask(repo, taskId) {
       t.shell,
       argv,
       { cwd: repo, timeout: t.timeoutMs, windowsHide: true, maxBuffer: 8 * 1024 * 1024, shell: false },
-      (err, stdout, stderr) => {
-        resolve({
+      async (err, stdout, stderr) => {
+        const exitCode = err?.code ?? 0;
+        const out = {
           ok: !err,
           taskId,
           label: t.label,
           file: t.file,
-          exitCode: err?.code ?? 0,
+          exitCode,
           durationMs: Date.now() - started,
           stdout: (stdout ?? '').slice(-20000),
           stderr: (stderr ?? '').slice(-8000),
           error: err?.killed ? `超时（>${t.timeoutMs} ms）` : (err?.message ?? null),
-        });
+        };
+
+        if (t.recordsGate) {
+          out.gateRecord = await appendGateLog(repo, {
+            at: new Date().toISOString(),
+            task: taskId,
+            file: t.file,
+            ruleRef: t.gateRef ?? null,
+            exit: exitCode,
+            durationMs: out.durationMs,
+            commit: await readCommit(repo),
+            summary: summarizeRun(stdout, exitCode),
+            // 结构化数据（数值型的 must_fix / links / files）交给脚本自己打 JSON；
+            // 打不出就只留摘要，不编数字。
+            counts: (() => {
+              const j = extractJson(stdout);
+              if (!j) return null;
+              return {
+                files: j.scanned_md ?? null,
+                links: j.links_checked ?? null,
+                must_fix: j.must_fix ?? null,
+                archived: j.exempt_archive_residue ?? null,
+              };
+            })(),
+          });
+        }
+        resolve(out);
       }
     );
   });

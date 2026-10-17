@@ -14,9 +14,10 @@ governance-console/
 ├── lib/governance.mjs     状态采集 + 变更计划（行级 diff）+ 应用 / 批次 / 还原
 ├── lib/contract.mjs       从插件源码推导分发给定的 Hook / Capability / 实现文件契约
 ├── lib/validate.mjs       配置门禁：15 项检查 + 每项独立的阻断策略
+├── lib/health.mjs         健康面板：L1–L5 分层检查 + ADR 生命周期 + 记录型门禁
 ├── lib/docs.mjs           规则文档索引 / 单篇读取 / 条款抽取 / 全文检索（只读）
 ├── lib/runner.mjs         白名单脚本执行（4 个任务，客户端不能传命令）
-├── test/                  26 个用例：门禁 16 + 批次往返 8 + 真实仓库锚定 2
+├── test/                  38 个用例：门禁 16 + 批次 8 + 契约/UI 3 + 健康 11
 └── public/                index.html · app.js · md.js · style.css · paper.css · favicon.svg
 ```
 
@@ -28,17 +29,20 @@ node governance-console/test/run.mjs
 
 ---
 
-## 三个视图
+## 四个视图
 
 | 视图 | 做什么 |
 |---|---|
 | **控制台** | 开关与一键安装（见下一节）；全部写操作先出计划再落盘 |
+| **健康** | 按 L1–L5 + 决策记录 + 记录型门禁分组，逐条报「判什么 / 观察值 / 应满足 / 依据 / 怎么修」；只读，口径见「健康面板（P1）」一节 |
 | **规则视图** | 按治理层级（L1 宪法 / L2 规则 / L3 能力 / L4 Hook / 参考包 / 决策记录 / 元规则 / 运行期入口）列出全部规则文档；点开即在页内渲染，右侧是本文目录；每份文档标注 **章节数 / 被引用次数 / 是否孤儿 / 是否有生命周期标注** |
 | **条款索引** | 从宪法、`docs/dev-rules.md` §1.x、`docs/evidence-governance.md`、`docs/PROJECT_DEV_OUTLINE.md`、`.governance/rules/` 里**机械抽取**条款（编号 / 标题 / 摘要 / 标签 / `文件:行号`），可过滤、可一键定位到原文那一行 |
 
 顶栏检索框跨全部治理文档做子串检索（`/` 聚焦），命中结果按文档分组，点进去直接渲染。
 
-**规则视图与条款索引都是只读的**：不写任何文件，不改写原文措辞，抽取结果只做聚合与截断。它们不是新的权威源——判断以原文档为准。
+**健康、规则视图与条款索引都是只读的**：不写任何文件，不改写原文措辞，抽取结果只做聚合与截断。它们不是新的权威源——判断以原文档为准。
+
+视图可直接深链：`?view=health` / `?view=docs` / `?view=clauses`（与 `?theme=paper` 同理）。
 
 ---
 
@@ -177,6 +181,82 @@ http://127.0.0.1:7717/?t=<token>&theme=paper
 
 ---
 
+## 健康面板（P1）
+
+### 与配置门禁的分工
+
+| | 配置门禁（`validate.mjs`） | 健康面板（`health.mjs`） |
+|---|---|---|
+| 判什么 | **这次写入能不能落盘**（拟议状态） | **仓库此刻处于什么状态**（磁盘现状） |
+| 有无阻断权 | 有（`blocking` 时 `applyPlan` 拒绝） | **没有**，也不给这个字段 |
+| 何时跑 | 每次生成/应用计划 | 打开视图或点「重新检查」 |
+
+两者共用同一套状态词表（`pass / fail / warn / unknown / not_applicable`），所以同一件事在两个地方的颜色含义一致。
+
+### ADR 生命周期：三个正交维度 + 一个派生显示态
+
+ADR 的「该不该复查」不是一个枚举能表达清的，所以拆成三个互相独立的维度：
+
+| 维度 | 取值 | 依据 |
+|---|---|---|
+| **时效** `expiry` | `valid` / `expired` / `unknown` | `Expires if unchanged` 与今天比较 |
+| **取代** `supersession` | `none` / `partial` / `full` / `unknown` | `Status` 文本 + `Superseded-by`；**出边的 `Supersedes` 不算**（我取代了谁 ≠ 我被取代） |
+| **复查义务** `review` | `done` / `pending` / `not_required` / `unknown` | 过期后 `Evidence as of` 是否晚于 `Expires if unchanged` |
+
+派生显示态互斥，优先级从高到低：
+
+| 显示态 | 何时 | 面板状态 |
+|---|---|---|
+| `superseded` | 被**整体**取代 | pass —— 状态明确、结论已移交，不是缺陷 |
+| `unknown` | 字段读不出 | unknown —— **不能当作有效** |
+| `expired` | 日期已过，仍是在效决策 | fail —— 复查前其结论不得作为新决策论据（`dev-rules.md §1.13`） |
+| `reverify` | 自己日期没到，但依赖的 ADR 已过期/被取代 | warn —— 引用前先核实上游变化 |
+| `due` | 7 天内到期 | warn —— 排入本月复查（`evidence-governance.md §19.5`） |
+| `current` | 在时效内 | pass |
+
+**整体被取代是唯一允许豁免复查义务的情形**：取代它的那份已经接管了结论，再去复查一份已作废的文件没有意义。其余情况（包括"部分被取代"）一律保留复查义务 —— 这一条专门写了用例 `H06` 盯住，因为"复查义务被错误豁免"是这套建模最容易犯的错。
+
+真实仓库当前读出：**6 份 ADR，5 份过期（已过 74–86 天），1 份整体被取代**。`ADR-004` 是那份被取代的，所以它**不占**复查义务，也不该和另外 5 份混成一种颜色。
+
+### 记录型门禁：没有记录不能显示成通过
+
+`scripts/check_links_anchors.py` 这类检查的结论**无法由面板重算**——它只能证明"某个时刻真的跑过一次"。所以：
+
+- 运行结果追加到 `.governance/runtime/gate-log.jsonl`（`at` / `task` / `commit` / `exit` / `durationMs` / 摘要 / 机读计数）
+- 面板读**最后一条**：没有记录 → `unknown` 并写明「未运行不等于通过」；有记录 → 才按退出码判 pass / fail
+- 该文件在 `.gitignore` 覆盖范围内：它是**本机运行记录**，不是仓库事实。换一台机器就是"未运行"，这是对的
+
+点健康页的「运行链接门控」即可跑一次并留下记录。
+
+### 检查清单
+
+| 层 | 检查 | 判什么 |
+|---|---|---|
+| L1 | `L1-PARAMS` | 8 个宪法参数齐备且在语义边界内 |
+| L1 | `L1-FILES` | `constitution.md` 与 `rubric.md` 都在 |
+| L1 | `L1-SIZE` | 宪法 ≤800 token（**没有分词器就报 unknown，不编数字**） |
+| L2 | `L2-PRESENT` / `L2-THIN` | 入口规则存在；每份 ≤50 行（薄度量化） |
+| L3 | `L3-IMPL` / `L3-ORPHAN` | 分发器静态导入可解析；没有无分发者的目录 |
+| L4 | `L4-CLINERULES` / `L4-CONFIG` / `L4-DISPATCH` | 加载入口有效；`config.json` 可解析；启用的 Capability 有人读取 |
+| L4 | `L4-PLUGIN` / `L4-MARKER` | 插件已装到 Cline 发现路径；`plugin-loaded.marker` ≤7 天 |
+| L5 | `L5-TRACES` / `L5-SNAPSHOT` | 轨迹有近期记录；`snapshot.json` 是**实例**而不是 schema |
+| DR | `ADR-*` / `DR-SOURCE-KIND` / `DR-SUMMARY` | 每份 ADR 的生命周期；时效类别字段；总体时效状况 |
+| GATE | `GATE-LINKS` | 链接锚点门控的上次运行结果 |
+
+每条检查都带 `ruleRef`（仓库里的文件 + 章节），写不出出处的检查不该存在——否则面板就在发明标准。
+
+### 这一轮读出来的 5 个问题
+
+不是测试造的，是跑一遍当前仓库就出来的：
+
+1. **`snapshot.json` 放的是 JSON Schema，不是快照实例。** 该路径同时是读写路径：`snapshot-writer` 往这里写实例、`handoff-provider` 从这里读实例。现在读到的是 schema（顶层键 `$schema / properties / required`），`schema_version` 是 `undefined`、`decisions` / `active_todos` 都取不到 —— **不报错，只是 SessionStart 注入的 Snapshot 段静默变空**。这类"静默空"正是健康面板该抓的。
+2. **`rules/lifecycle.md` 有 108 行**，而 §四 的薄度量化要求每份入口规则 ≤50 行。
+3. **5 份 ADR 已过复查期**（74–86 天），`dev-rules.md §1.13` 规定未复查就不得作为新决策论据。
+4. **`evidence_source_kind` 6 份全缺**。但 §15 原文写的是「新增 ADR 必填，存量 ADR 在下次 Update 时补」——**存量缺失是规则自己给的宽限，不是违规**，所以只报 warn。判 fail 就等于把规则的宽限条款读漏了。
+5. **`traces.jsonl` 最后一条在 100 天前**，`plugin-loaded.marker` 是 103 天前——hook 机制在这台机器上已经很久没真正跑过。
+
+---
+
 ## 变更批次与还原
 
 每次应用产生**一个批次目录**：`.governance/runtime/console-disabled/<batch>/`，文本备份与目录移动都落在同一个基址下，清单写在 `.governance/runtime/console-batches/<batch>.json`。
@@ -226,8 +306,12 @@ http://127.0.0.1:7717/?t=<token>&theme=paper
 ## 已知局限
 
 - **它是把现有契约做成界面，不是新的权威源。** 页面上的中文说明与阈值理由若与 `dev-rules.md` / `constitution.md` 冲突，以文件为准。
-- **门禁证明的是「配置可靠」，不是「治理有效」。** 见上一节。这两件事不能互相替代。
-- **门禁只覆盖配置层，不覆盖运行期。** 它不会去探测 Cline 实际有没有调到你开的 Hook——那要读 `runtime/traces.jsonl` 与 `plugin-loaded.marker`，属于健康面板的范围。
+- **门禁证明的是「配置可靠」，不是「治理有效」。** 见下一节。这两件事不能互相替代。
+- **健康面板没有阻断权**，也不该有：它描述状态，不拦截操作。拦截是配置门禁的事。
+- **健康检查里有 1 项天生是 unknown**：宪法 ≤800 token 这条，仓库没引入分词器，给不出权威 token 数。宁可报 unknown 也不估一个数字冒充结论。
+- **记录型门禁的记录是本机的。** `gate-log.jsonl` 在 `.gitignore` 里，换机器/换克隆就是「未运行」。这是有意为之：本机的运行结果不该冒充仓库事实。
+- **ADR 解析认两种写法**（§15 模板的 YAML snake_case、实际文档的 Markdown 粗体标签），但仍是按字段名匹配。若把字段改成别的措辞，会落到 `unknown` —— 不是静默通过。
+- **配置门禁只覆盖配置层，不覆盖运行期。** 它不会去探测 Cline 实际有没有调到你开的 Hook——那要读 `runtime/traces.jsonl` 与 `plugin-loaded.marker`，在健康面板里。
 - **契约推导依赖源码的书写形式。** 它认的是 `types.ts` 的 `interface HooksConfig` / `DEFAULT_CONFIG` 对象字面量，以及 `*.capabilities.<key>` 与相对 import 这两种写法。若把配置读取重构成变量间接引用（如 `caps[key].enabled`），推导会读不到——那时该项退化成「未声明」，仍是 warn 级提示，不会静默判通过。
 - **目录内容指纹算的是「路径＋内容」**，能发现「计划生成后目录被改过」，但不告诉你改的是什么。
 - **不校验 Cline 端实际行为。** 它读 `.governance/runtime/plugin-loaded.marker` 判断 SessionStart 是否跑过，但 marker 陈旧只说明"没刷新"，不定位原因；真正定位要按 `plugin-dev-sop.md §2` 读源码。

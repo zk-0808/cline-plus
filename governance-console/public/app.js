@@ -210,7 +210,7 @@ function renderGateChip() {
       if (!v) return toast('门禁结果未取到', 'err');
       toast(bad.length ? bad.map((c) => `${c.id}：${c.observed ?? ''}`).slice(0, 3).join('；') : '配置门禁通过：关键项都有出处', bad.length ? 'err' : 'ok');
     },
-  }, '门禁 ', el('b', { text: label }), v ? ` · ${v.checks.length} 项` : ''));
+  }, '配置门禁 ', el('b', { text: label }), v ? ` · ${v.checks.length} 项` : ''));
 }
 
 /**
@@ -690,16 +690,149 @@ let DOCS_INDEX = null;
 let CLAUSES = null;
 let CURRENT_DOC = null;
 let SEARCHING = false;
+let HEALTH = null;
+let HEALTH_ONLY_BAD = false;
 
 function switchView(name) {
   VIEW = name;
   for (const t of document.querySelectorAll('.tab')) t.classList.toggle('active', t.dataset.view === name);
   $('view-console').hidden = name !== 'console';
+  $('view-health').hidden = name !== 'health';
   $('view-docs').hidden = name !== 'docs';
   $('view-clauses').hidden = name !== 'clauses';
 
+  if (name === 'health') loadHealth(false);
   if (name === 'docs' && !DOCS_INDEX) loadDocs();
   if (name === 'clauses' && !CLAUSES) loadClauses();
+}
+
+// ================================================================ 健康面板
+
+const HEALTH_STATUS_TEXT = {
+  pass: '通过', fail: '不通过', warn: '告警', unknown: '待定', not_applicable: '不适用',
+};
+
+async function loadHealth(force) {
+  if (HEALTH && !force) return renderHealth();
+  $('health-summary').innerHTML = '<div class="empty">检查中…</div>';
+  try {
+    HEALTH = await api('/api/health');
+  } catch (e) {
+    $('health-summary').innerHTML = '';
+    $('health-summary').appendChild(el('div', { class: 'w-item error' },
+      el('div', { class: 'dot' }),
+      el('div', { class: 'wbody' },
+        el('div', { class: 'code', text: 'HEALTH_FAILED' }),
+        el('div', { text: e.message }))));
+    return;
+  }
+  renderHealth();
+}
+
+function verdictLine(h) {
+  const s = h.summary ?? {};
+  const parts = [];
+  if (s.fail) parts.push(`${s.fail} 项不通过`);
+  if (s.unknown) parts.push(`${s.unknown} 项待定`);
+  if (s.warn) parts.push(`${s.warn} 项告警`);
+  if (s.pass) parts.push(`${s.pass} 项通过`);
+  if (s.not_applicable) parts.push(`${s.not_applicable} 项不适用`);
+  const tone = h.verdict === 'attention' ? 'err' : h.verdict === 'ok' ? 'ok' : 'warn';
+  const head = h.verdict === 'attention' ? '有需要处理的问题'
+    : h.verdict === 'incomplete' ? '有项目读不出，不能算健康'
+    : h.verdict === 'warnings' ? '没有硬失败，但有告警'
+    : '全部通过';
+  return { tone, head, parts: parts.join(' · ') };
+}
+
+function renderHealth() {
+  const h = HEALTH;
+  if (!h) return;
+  const box = $('health-summary');
+  box.innerHTML = '';
+  const v = verdictLine(h);
+
+  box.appendChild(el('div', { class: `gate-head ${v.tone}` },
+    el('b', { text: v.head }),
+    el('span', { class: 'gate-note', text: `${v.parts} · 检查于 ${new Date(h.at).toLocaleString()}${h.commit ? ` · commit ${h.commit}` : ''}` })));
+
+  // 「没有记录不能显示成通过」：把记录型门禁单独点出来
+  const gate = h.checks.find((c) => c.layer === 'GATE');
+  if (gate) {
+    box.appendChild(el('div', { class: 'h-note' },
+      el('span', { class: `chip ${gate.status === 'pass' ? 'ok' : gate.status === 'unknown' ? 'warn' : 'err'}` },
+        '记录型门禁 ', el('b', { text: HEALTH_STATUS_TEXT[gate.status] })),
+      el('span', { class: 'gate-ob', text: gate.observed })));
+  }
+
+  box.appendChild(el('label', { class: 'h-filter' },
+    el('input', {
+      type: 'checkbox', checked: HEALTH_ONLY_BAD,
+      onchange: (e) => { HEALTH_ONLY_BAD = e.target.checked; renderHealth(); },
+    }),
+    ' 只看非通过项'));
+
+  const groups = $('health-groups');
+  groups.innerHTML = '';
+
+  const metaById = new Map((h.layerMeta ?? []).map((m) => [m.id, m]));
+  for (const g of h.layerGroups) {
+    const shown = HEALTH_ONLY_BAD ? g.checks.filter((c) => c.status !== 'pass') : g.checks;
+    if (!shown.length) continue;
+    const card = el('section', { class: 'card' });
+    const counts = g.checks.reduce((a, c) => { a[c.status] = (a[c.status] ?? 0) + 1; return a; }, {});
+    card.appendChild(el('header', {},
+      el('h2', { text: metaById.get(g.id)?.label ?? g.label }),
+      el('span', { class: 'sub', text: metaById.get(g.id)?.note ?? g.note ?? '' }),
+      el('span', { class: 'spacer' }),
+      ...['fail', 'unknown', 'warn', 'pass', 'not_applicable']
+        .filter((k) => counts[k])
+        .map((k) => el('span', {
+          class: `chip ${k === 'fail' ? 'err' : k === 'pass' ? 'ok' : k === 'not_applicable' ? '' : 'warn'}`,
+        }, `${HEALTH_STATUS_TEXT[k]} `, el('b', { text: String(counts[k]) }))),
+    ));
+
+    const list = el('div', { class: 'gate-list' });
+    for (const c of shown) {
+      list.appendChild(el('div', { class: `gate-item ${c.status === 'not_applicable' ? 'unknown' : c.status}` },
+        el('span', { class: 'gate-st', text: HEALTH_STATUS_TEXT[c.status] }),
+        el('span', { class: 'gate-id', text: c.id }),
+        el('span', { class: 'gate-body' },
+          el('span', { class: 'gate-title', text: c.title }),
+          c.observed ? el('span', { class: 'gate-ob', text: c.observed }) : null,
+          c.status !== 'pass' && c.expected ? el('span', { class: 'gate-exp', text: `应满足：${c.expected}` }) : null,
+          c.fix ? el('span', { class: 'gate-fix', text: `→ ${c.fix}` }) : null,
+          el('span', { class: 'gate-ref', text: `依据：${c.ruleRef}` }),
+        )));
+    }
+    card.appendChild(list);
+    groups.appendChild(card);
+  }
+
+  if (!groups.children.length) {
+    groups.appendChild(el('section', { class: 'card' },
+      el('div', { class: 'body' }, el('div', { class: 'empty', text: '没有非通过项。' }))));
+  }
+}
+
+/** 运行记录型门禁：结论写进 runtime/gate-log.jsonl，之后面板才显示"上次运行结果" */
+async function runLinkGate() {
+  const btn = $('btn-run-gate');
+  btn.disabled = true;
+  btn.textContent = '运行中…';
+  try {
+    const r = await api('/api/run', { method: 'POST', body: JSON.stringify({ taskId: 'gate-links' }) });
+    if (r.error) { toast(r.message || r.error, 'err'); return; }
+    const exit = r.gateRecord?.exit ?? r.exitCode;
+    const summary = r.gateRecord?.summary ?? '';
+    toast(`链接门控退出码 ${exit}${summary ? `：${summary}` : ''}`, exit === 0 ? 'ok' : 'err');
+    await loadHealth(true);
+  } catch (e) {
+    toast(e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '运行链接门控';
+  }
 }
 
 // ================================================================ 规则视图
@@ -950,14 +1083,23 @@ document.addEventListener('keydown', (e) => {
 
 $('btn-refresh').addEventListener('click', () => {
   load();
+  if (HEALTH) loadHealth(true);
   if (DOCS_INDEX) loadDocs();
   if (CLAUSES) loadClauses();
 });
+$('btn-health').addEventListener('click', () => loadHealth(true));
+$('btn-run-gate').addEventListener('click', runLinkGate);
 $('btn-batches').addEventListener('click', loadBatches);
 $('d-close').addEventListener('click', closeDrawer);
 $('d-cancel').addEventListener('click', closeDrawer);
 $('d-apply').addEventListener('click', applyPlan);
 $('mask').addEventListener('click', closeDrawer);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+
+// 初始视图可深链：?view=health / docs / clauses（与 ?theme=paper 同理，便于直接打开某一面）
+(function initView() {
+  const q = new URLSearchParams(location.search).get('view');
+  if (q && ['console', 'health', 'docs', 'clauses'].includes(q)) switchView(q);
+})();
 
 load();

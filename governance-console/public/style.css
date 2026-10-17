@@ -502,6 +502,23 @@ button.sm { padding: 4px 10px; font-size: 11.5px; }
   .gate-item .gate-body { grid-column: 2; }
 }
 
+/* 健康面板：复用门禁的行样式（同一套状态词表 → 同一套视觉），只补分组与筛选 */
+
+#health-groups { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+#health-groups .card header { flex-wrap: wrap; }
+
+.h-note {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  padding: 10px 14px; border-top: 1px solid var(--line);
+  font-size: 12.5px; color: var(--fg-dim);
+}
+.h-filter {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 14px; border-top: 1px solid var(--line);
+  font-size: 12px; color: var(--fg-dim); cursor: pointer;
+}
+.h-filter input { accent-color: var(--accent); }
+
 /* ---------------------------------------------------------------- toasts */
 
 .toasts {
