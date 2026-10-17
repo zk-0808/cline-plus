@@ -373,12 +373,19 @@ export async function readHealth(repo, opts = {}) {
       });
       push({
         id: 'L3-ORPHAN', layer: 'L3', title: '没有无分发者的 Capability 目录',
-        ruleRef: '.governance/capabilities/ ＋ 分发器的导入与 config 读取点',
+        ruleRef: '.governance/capabilities/ ＋ 分发器导入 ＋ config 读取点 ＋ scripts/governance-capability.mjs 登记表',
         status: contract.orphans.length ? 'warn' : 'pass',
-        observed: contract.orphans.length ? `无分发路径：${contract.orphans.join('、')}` : `${contract.capDirs.length} 个目录都有分发路径`,
-        expected: '每个目录都能被某条分发路径用到；否则它不会被调用',
-        fix: contract.orphans.length ? '删除该目录，或在 types.ts 声明 + 在 hooks/*.ts 接线。留着会被误认为已生效。' : null,
-        detail: { orphans: contract.orphans, dirs: contract.capDirs },
+        observed: contract.orphans.length
+          ? contract.orphans.map((d) => (contract.manualBrokenDirs.includes(d)
+            ? `${d}（登记了手动入口但标为不可执行：${contract.manualEntries.find((e) => e.dir === d)?.reason ?? '原因未登记'}）`
+            : `${d}（完全没有调用路径）`)).join('；')
+          : `${contract.capDirs.length} 个目录都有调用路径` +
+            (contract.manualEntries.length ? `（其中 ${contract.manualEntries.filter((e) => e.runnable).length} 个走手动入口）` : ''),
+        expected: '每个目录都能被某条调用路径用到；否则它不会被调用',
+        fix: contract.orphans.length
+          ? '登记进 scripts/governance-capability.mjs 并让它真的可执行（或用 hook 分发），否则删掉。留着会被误认为已生效。'
+          : null,
+        detail: { orphans: contract.orphans, dirs: contract.capDirs, manual: contract.manualEntries },
       });
     }
   }

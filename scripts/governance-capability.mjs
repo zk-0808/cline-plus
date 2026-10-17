@@ -46,10 +46,8 @@ export const REGISTRY = {
     module: '.governance/capabilities/staleness-sweeper/index.ts',
     exportName: 'stalenessSweeper',
     runnable: false,
-    reason:
-      "该模块用值导入 `../../plugin/staleness-utils.js`，而磁盘上只有 .ts；"
-      + 'Node 的原生类型剥离只擦除类型，不会把 .js 说明符改写成 .ts，所以在没有构建步骤时加载即失败。'
-      + '要启用它，二选一：把该导入改成 .ts 并让构建侧用 rewriteRelativeImportExtensions，或补一个 tsc 构建产物。',
+    // 必须是单行字符串字面量：控制台的契约推导逐个字段正则解析登记表，拼接会截断
+    reason: "该模块用值导入 `../../plugin/staleness-utils.js`，而磁盘上只有 .ts；Node 的原生类型剥离只擦除类型、不会把 .js 说明符改写成 .ts，所以在没有构建步骤时加载即失败。要启用它：把该导入改成 .ts 并让构建侧开 rewriteRelativeImportExtensions，或补一个 tsc 构建产物。",
     writable: ['HANDOFF.md'],
     requires: [],
     ruleRef: 'docs/developer-guide/staleness-internals.md',

@@ -29,6 +29,38 @@ export const CAPS_DIR_REL = '.governance/capabilities';
 /** 分发器源码：排除 verify-governance.ts（它是验证脚本，不是分发器） */
 const DISPATCHER_EXCLUDE = new Set(['verify-governance.ts']);
 
+/** 手动入口脚本：它登记过的模块也算「有调用路径」，否则面板会把已接线的模块误报成孤儿 */
+export const MANUAL_ENTRY_REL = 'scripts/governance-capability.mjs';
+
+/**
+ * 从手动入口的 REGISTRY 里摘出登记项。
+ * 只认这个文件自己的固定写法（`'<id>': { … module: '…/capabilities/<dir>/index.ts' … }`）。
+ * 解析不出就返回空数组：宁可少认一条入口，也不编造"已接线"。
+ */
+function parseManualEntries(repo) {
+  let text = null;
+  try { text = fs.readFileSync(path.join(repo, MANUAL_ENTRY_REL), 'utf8'); } catch { return []; }
+  const out = [];
+  const re = /'([a-z0-9-]+)':\s*\{([\s\S]*?)\n  \},/g;
+  for (const m of text.matchAll(re)) {
+    const body = m[2];
+    const mod = body.match(/module:\s*'([^']+)'/)?.[1] ?? null;
+    if (!mod) continue;
+    const dir = mod.match(/capabilities\/([^/]+)\/index\.(?:ts|js)/)?.[1] ?? null;
+    if (!dir) continue;
+    out.push({
+      id: m[1],
+      dir,
+      module: mod,
+      runnable: /runnable:\s*true/.test(body),
+      reason: body.match(/reason:\s*\n?\s*'([^']*)'/)?.[1]
+        ?? body.match(/reason:\s*"([^"]*)"/)?.[1]
+        ?? null,
+    });
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------- 微型扫描器
 // 只需要处理本仓库这两种固定写法：TS 对象字面量（键可带引号/不带引号）与 import 语句。
 // 不引第三方解析器，也不假装是通用 TS 解析器 —— 解析失败就返回 null，让上层报 unknown。
@@ -249,7 +281,13 @@ export function deriveContract(repo) {
   // --- 孤儿：既没有被静态导入，也不对应任何已声明的 Capability 键
   const declaredDirs = new Set(Object.values(declared).flatMap((caps) => Object.keys(caps)).map(kebab));
   const importedDirs = new Set(imports.map((i) => i.capDir).filter(Boolean));
-  const orphans = capDirs.filter((d) => !importedDirs.has(d) && !declaredDirs.has(d));
+
+  // 手动入口登记的模块也算"有调用路径"，但只有 runnable 的才算真能跑
+  const manualEntries = parseManualEntries(repo);
+  const manualRunnableDirs = new Set(manualEntries.filter((e) => e.runnable).map((e) => e.dir));
+  const manualBrokenDirs = new Set(manualEntries.filter((e) => !e.runnable).map((e) => e.dir));
+
+  const orphans = capDirs.filter((d) => !importedDirs.has(d) && !declaredDirs.has(d) && !manualRunnableDirs.has(d));
 
   return {
     ok: problems.length === 0,
@@ -267,6 +305,8 @@ export function deriveContract(repo) {
     imports,
     capDirs,
     orphans,
+    manualEntries,
+    manualBrokenDirs: [...manualBrokenDirs],
     toolNames: {
       skipDefaults: defaultSkipTools,
       writeTools,
