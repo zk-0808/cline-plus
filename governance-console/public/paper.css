@@ -89,13 +89,24 @@ body {
 /* ---------------------------------------------------------------- 报头 */
 
 .topbar {
-  background: rgba(250, 248, 244, 0.94);
+  background: rgba(250, 248, 244, 0.96);
   backdrop-filter: none;
   border-bottom: 1px solid var(--p-ink);
   padding: 0 28px;
-  height: 52px;
+  min-height: 56px;
   gap: 22px;
+  flex-wrap: wrap;
+  overflow: visible;
 }
+.topbar > .searchbox { margin-left: auto; flex: 0 1 230px; min-width: 120px; }
+
+/* 状态条：不吸附，随页面滚走 */
+.statusbar {
+  background: var(--p-bg-2);
+  border-bottom: 1px solid var(--p-rule);
+  padding: 8px 28px;
+}
+.statusbar .chips { max-width: 1120px; margin: 0 auto; }
 
 .brand {
   font-family: var(--p-sans);
@@ -475,7 +486,8 @@ button:disabled { opacity: 0.4; }
   padding: 14px 32px 0;
   grid-template-columns: 268px minmax(0, 1fr) 196px;
   gap: 0;
-  height: calc(100vh - 176px);
+  height: calc(100vh - 196px);
+  min-height: 420px;
 }
 
 .docs-rail, .doc-toc {

@@ -18,15 +18,19 @@
     <button class="tab" data-view="docs" type="button">规则视图</button>
     <button class="tab" data-view="clauses" type="button">条款索引</button>
   </nav>
-  <div class="chips" id="chips">
-    <span class="chip" id="c-repo">读取中…</span>
-  </div>
   <div class="searchbox">
     <input id="search" type="search" placeholder="检索规则文档…  ( / 聚焦 )" autocomplete="off">
   </div>
   <button class="ghost sm" id="btn-theme" title="在「石墨」与「纸本」之间切换（原样保留功能，只换设计系统）">纸本 / 石墨</button>
   <button class="ghost sm" id="btn-refresh">刷新</button>
 </header>
+
+<!-- 状态条：不吸附在顶部。放进来会让 sticky 顶栏在窄窗口换行、遮住正文 -->
+<div class="statusbar">
+  <div class="chips" id="chips">
+    <span class="chip" id="c-repo">读取中…</span>
+  </div>
+</div>
 
 <!-- ============================ 视图 1：控制台 ============================ -->
 <main id="view-console" class="view">

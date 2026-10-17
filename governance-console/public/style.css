@@ -32,6 +32,10 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* 顶栏是 sticky 的，锚点跳转（本文目录 / 条款定位）要给顶栏留出高度，
+   否则跳过去的标题会被压在顶栏下面 */
+html { scroll-padding-top: 64px; }
+
 body {
   background-image:
     radial-gradient(900px 500px at 15% -10%, rgba(45, 212, 191, 0.07), transparent 60%),
@@ -43,6 +47,8 @@ code, .mono { font-family: var(--mono); font-size: 12.5px; }
 
 /* ---------------------------------------------------------------- topbar */
 
+/* 顶栏只放导航与操作，始终保持单行；状态 chips 移到下方 .statusbar（非吸附）。
+   曾经把 chips 放进 .topbar：窄窗口一换行，粘性顶栏就变高并盖住正文。 */
 .topbar {
   position: sticky;
   top: 0;
@@ -51,9 +57,20 @@ code, .mono { font-family: var(--mono); font-size: 12.5px; }
   align-items: center;
   gap: 14px;
   padding: 10px 20px;
-  background: rgba(10, 14, 19, 0.88);
+  min-height: 46px;
+  background: rgba(10, 14, 19, 0.94);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+  overflow: visible;
+}
+.topbar > .tabs { flex: 0 0 auto; }
+.topbar > .searchbox { margin-left: auto; flex: 0 1 220px; min-width: 120px; }
+.topbar > button { flex: 0 0 auto; }
+
+/* 窄屏优先保住按钮，搜索框收起（否则顶栏换行变高） */
+@media (max-width: 760px) {
+  .topbar > .searchbox { display: none; }
 }
 
 .brand {
@@ -62,8 +79,20 @@ code, .mono { font-family: var(--mono); font-size: 12.5px; }
   letter-spacing: 0.06em;
   color: var(--fg);
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 .brand span { color: var(--accent); }
+
+/* 状态条：正常文档流，会随页面滚走 —— 不遮挡任何内容 */
+.statusbar {
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+  padding: 7px 20px;
+}
+.statusbar .chips {
+  max-width: 1180px;
+  margin: 0 auto;
+}
 
 .chips { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
 
