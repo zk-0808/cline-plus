@@ -21,6 +21,12 @@
 - 草案 issue：`draft-issue-<主题>.md`（待提交 GitHub 的 issue 草稿，提交后归档）
 - 观察记录：`observation-<主题>.md`（单一观察现象记录，未形成完整调查链）
 
+## 复查队列
+
+过期但未完成复查的 ADR 登记在 [`adr/REVIEW-QUEUE.md`](adr/REVIEW-QUEUE.md)：逐条写明该决策的结论、需要什么证据、谁能提供、卡在哪一步。
+
+它不是结论 —— 状态为 `blocked` 只表示**该决策目前不得作为新决策的依据**（`dev-rules.md §1.13`），不表示它错了。复查完成后更新 ADR 自身的 `Evidence as of` / `Expires if unchanged` 并从队列删除。
+
 ## 索引表
 
 | ID | 日期 | 主题 | 状态 | 标题 |
