@@ -17,8 +17,10 @@
 | ADR-001 | `docs/decisions/adr/` | Handoff / Compact / Memory 架构方向 | 2026-07-23 | 86 天 | 16 个文件 | 官方文档/版本号类：Cline CLI 当前版本对 handoff/compact 的机制是否仍如当时所述 | 需 CLI 实测或官方文档；本机 `cline` 不在 PATH | blocked |
 | ADR-002 | `docs/decisions/adr/` | 项目承载形态与分层架构 | 2026-07-27 | 82 天 | 20 个文件 | VS Code 扩展 plugin 可用性结论是否被后续版本推翻；SDK 迁移 issue #11944 进展 | 上游 issue + 官方文档 | blocked |
 | ADR-005 | `docs/decisions/adr/` | 拆分 Compaction 与 Handoff | 2026-07-28 | 81 天 | 29 个文件 | 依赖 ADR-001 / ADR-004 的时效；两者未复查前无法独立判定 | 上游 ADR 先复查 | blocked |
-| ADR-006 | `docs/decisions/adr/` | Native Mechanism First Principle（原生机制优先） | 2026-08-03 | 75 天 | 13 个文件 | ①原则是否仍成立（需外部事实：cline 原生 condense 是否仍在）；②**本地已查出**：实现侧用自研比例启发式检测压缩，未见"原生信号不可用"的论证 | ①上游文档；②本仓库代码（已查） | blocked |
+
 | ADR-007 | `docs/decisions/adr/`（正文） | snapshot 走 registerRule 静态注入，不迁 messageBuilder | 2026-08-04 | 74 天 | 18 个文件 | registerRule 静态注入在**当前** CLI 版本下是否仍只在 session 启动求值一次 | 需 CLI 实测 | blocked |
+
+> **ADR-006 已于 2026-10-17 完成复查**（本地可证部分），`Evidence as of` 与 `Expires if unchanged` 已更新为 2026-10-17 / 2026-11-16，故不在上表。复查记录见该 ADR 文末「Update 2026-10-17」。
 
 ## 不需复查（列出是为了让"7 份"这个数字对得上）
 

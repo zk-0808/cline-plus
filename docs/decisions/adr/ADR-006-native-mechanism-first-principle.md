@@ -5,8 +5,8 @@
 - **Deciders**: 项目所有者
 - **Supersedes**: ADR-005 中关于 compact-observer 实现方式的部分（保留 ADR-005 拆分原则，砍掉其默认的"plugin 自己判断 token 阈值"实现路径）
 - **Related**: [ADR-001](ADR-001-handoff-compact-memory.md)、[ADR-005](ADR-005-split-compact-from-handoff.md)、[schema-semantic-object-model.md](../schema-semantic-object-model.md)、[mechanism-candidates.md](../../mechanism-candidates.md)
-- **Evidence as of**: 2026-07-03
-- **Expires if unchanged**: 2026-08-03（项目原则类，30 天后复查执行情况）
+- **Evidence as of**: 2026-10-17（复查：见文末「Update 2026-10-17」）
+- **Expires if unchanged**: 2026-11-16（项目原则类，30 天后复查执行情况）
 
 ---
 
@@ -231,3 +231,36 @@ handoff.md 同步未完成项调整（§5.3）
         ↓
 handoff-schema 子项目正式收口（分支 A 已完成）
 ```
+
+---
+
+## Update 2026-10-17：过期复查（本地可证部分）
+
+**复查范围**：只复查能在本机取证的部分。依赖"未来版本是否仍如此"的那部分，交给新的期限（2026-11-16）。
+
+### 复查结论
+
+| §   | 原文结论 | 复查结果 | 证据 |
+|---|---|---|---|
+| §0  | 元原则：先证明原生不可用，才能造新轮子 | **成立** | 无新事实推翻它 |
+| §1.2 | cline 原生确有 `ContextManager` auto-condense | **成立，且证据升级** | 本机 `@cline/core@0.0.95` 的 `dist/extensions/context/compaction.d.ts` 里就有 `createContextCompactionPrepareTurn()`，由 agent runtime 在每次模型请求前执行压缩 |
+| §2  | 当时违反点：自研 `estimateTokens` / `COMPACT_AT_RATIO = 0.75` | **已消失** | 本仓库 `.governance/plugin/hooks/pre-compact.ts` 的 `detectCompaction()` 里没有 token 估算、也没有比例阈值常量 |
+
+### 新发现：`beforeModel` 拿不到原生压缩信号（有出处）
+
+同一条注释原文：
+
+> Known gap: compactions performed via plugin `registerMessageBuilder()` or via the `beforeModel` runtime hook **bypass this wrapper entirely**, so they do not emit compaction telemetry.
+
+也就是说：`.governance/plugin` 用的 `beforeModel` 钩子与原生 `prepareTurn` 管线**是两条路**，原生信号（`overflowRecovery`、`previousRequestInputTokens`）不会出现在钩子上下文里。
+
+**对本条原则的影响**：现有 `detectCompaction()` 用消息条数比例推断压缩，在"钩子上没有原生信号"这个前提下**不构成违规** —— 它不是放着原生机制不用，而是这条路径上原生机制没有暴露信号。
+
+**但有一个前提要固定下来**：这是 `@cline/core@0.0.95` 的行为。若上游把 compaction 事件透出给 `beforeModel`，本条更新即失效 —— 期限到 2026-11-16 时优先复查这一点。
+
+### 未复查的部分（明确留白）
+
+- 原生机制在**未来版本**是否仍存在（本次只核到 0.0.95）
+- 版本口径尚未判定：`cline --version` → 3.0.46；npm 包 `cline` → 3.0.73；`@cline/*` → 0.0.95。三个数字互不一致，引用时必须写清是哪个包的哪个版本
+
+**依据**：`docs/evidence-governance.md` §15 超期处置第 2 条（复查通过 → 更新 `evidence_as_of` 与 `expires_if_unchanged`）。
