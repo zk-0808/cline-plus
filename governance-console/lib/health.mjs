@@ -117,7 +117,7 @@ function pickField(text, key) {
 
 const DATE_RE = /(\d{4}-\d{2}-\d{2})/;
 
-function parseAdr(repo, abs) {
+function parseAdr(repo, abs, sourceDir) {
   const rel = path.relative(repo, abs).split(path.sep).join('/');
   let text = '';
   try { text = fs.readFileSync(abs, 'utf8'); } catch { /* 留空 */ }
@@ -183,7 +183,7 @@ function parseAdr(repo, abs) {
   const title = (text.match(/^#\s+(.+)$/m)?.[1] ?? path.basename(rel)).replace(/^ADR-\d{3}:\s*/, '');
 
   return {
-    id, title, rel,
+    id, title, rel, sourceDir,
     expiry, supersession, review,
     asOf, expires, ageDays, remainDays,
     sourceKind: rawKind,
@@ -228,6 +228,15 @@ function finalizeAdrStates(adrs) {
   return adrs;
 }
 
+/**
+ * ADR 分散在两棵目录树里，而且**编号序列是共享的**：
+ * `.governance/decisions/adr/README.md` 原文——「Numbering is shared across both directories
+ * — do not count per-directory … Any ADR count or cross-reference must therefore name its
+ * source directory（2026-10-14 实测）」。
+ * 只扫一棵树会得出错误的份数与错误的时效结论（例如漏掉只在 .governance 下存在的 ADR-008）。
+ */
+export const ADR_DIRS = ['docs/decisions/adr', '.governance/decisions/adr'];
+
 const ADR_STATE_TEXT = {
   superseded: '已被整体取代',
   expired: '已过期，待复查',
@@ -253,6 +262,8 @@ function adrCheck(adr) {
     `取代：${adr.supersession}${adr.supersededBy ? `（被 ${adr.supersededBy} 取代）` : ''}`,
     `复查义务：${adr.review}`,
     adr.upstream?.length ? `上游变动：${adr.upstream.map((u) => `${u.id}(${ADR_STATE_TEXT[u.baseState]})`).join('、')}` : '',
+    // 编号序列跨目录共享，所以每份都必须写明来源目录（.governance/decisions/adr/README.md 的要求）
+    `来源：${adr.sourceDir}`,
   ].filter(Boolean).join(' · ');
 
   const fix = {
@@ -614,12 +625,41 @@ export async function readHealth(repo, opts = {}) {
 
   // ============================== DR 决策记录
   {
-    const adrDir = p(repo, 'docs/decisions/adr');
-    let files = [];
-    try { files = fs.readdirSync(adrDir).filter((f) => f.endsWith('.md')).sort(); } catch { /* 无 */ }
-    const adrs = finalizeAdrStates(files.map((f) => parseAdr(repo, path.join(adrDir, f))));
+    // 两棵树都要扫（编号共享、各自只放一部分），并且每份都要带上是哪个目录来的
+    const perDir = [];
+    const all = [];
+    for (const dirRel of ADR_DIRS) {
+      const dirAbs = p(repo, dirRel);
+      let files = [];
+      try { files = fs.readdirSync(dirAbs).filter((f) => f.endsWith('.md') && f !== 'README.md').sort(); } catch { /* 该树不存在 */ }
+      perDir.push({ dir: dirRel, count: files.length });
+      for (const f of files) all.push(parseAdr(repo, path.join(dirAbs, f), dirRel));
+    }
 
+    // 同一个编号出现在多个目录 → 两份"同一决策"，是真相维护的隐患
+    const byIdAll = new Map();
+    for (const a of all) {
+      if (!byIdAll.has(a.id)) byIdAll.set(a.id, { first: a, dups: [] });
+      else byIdAll.get(a.id).dups.push(a);
+    }
+    const dups = [...byIdAll.entries()].filter(([, v]) => v.dups.length).map(([id, v]) => ({
+      id, copies: [v.first, ...v.dups].map((a) => a.rel),
+    }));
+
+    const adrs = finalizeAdrStates([...byIdAll.values()].map((v) => v.first));
     for (const adr of adrs) push(adrCheck(adr));
+
+    if (dups.length) {
+      push({
+        id: 'DR-DUPLICATE', layer: 'DR', title: '同一编号的 ADR 只存一份',
+        ruleRef: '.governance/decisions/adr/README.md · Numbering is shared across both directories',
+        status: 'warn',
+        observed: dups.map((d) => `${d.id} 有 ${d.copies.length} 份：${d.copies.join(' ／ ')}`).join('；'),
+        expected: '一个编号对应一份文件；两棵目录树的编号序列共享，但不该重复',
+        fix: '留一份、另一份删除或改为指针。两份只差相对链接深度时更要合并——改一份另一份不会跟着变。',
+        detail: { dups },
+      });
+    }
 
     if (adrs.length) {
       const noKind = adrs.filter((a) => !a.sourceKind);
@@ -642,8 +682,10 @@ export async function readHealth(repo, opts = {}) {
           : (counts.reverify ?? 0) > 0 ? 'warn'
           : (counts.due ?? 0) > 0 ? 'warn'
           : (counts.unknown ?? 0) > 0 ? 'unknown' : 'pass',
-        observed: `${adrs.length} 份 ADR：` + ['current', 'due', 'reverify', 'expired', 'superseded', 'unknown']
-          .filter((k) => counts[k]).map((k) => `${ADR_STATE_TEXT[k]} ${counts[k]}`).join('，'),
+        observed: `${adrs.length} 份 ADR（去重后）：` + ['current', 'due', 'reverify', 'expired', 'superseded', 'unknown']
+          .filter((k) => counts[k]).map((k) => `${ADR_STATE_TEXT[k]} ${counts[k]}`).join('，')
+          + `；按目录：${perDir.map((d) => `${d.dir} ${d.count} 份`).join('、')}`
+          + (dups.length ? `（${dups.map((d) => d.id).join('、')} 重复）` : ''),
         expected: '没有过期的仍在效决策；被取代的单独归类，不占用复查义务',
         fix: (counts.expired ?? 0) > 0
           ? `今天 ${today}：${adrs.filter((a) => a.state === 'expired').map((a) => a.id).join('、')} 已过复查期，复查前其结论不得作为新决策论据（dev-rules §1.13）。`

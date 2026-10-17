@@ -164,7 +164,45 @@ test('H06 上游已过期的 ADR 不会因为"整体被取代"而豁免复查', 
   eq(a501.detail.review, 'pending', '部分取代后仍需复查');
 });
 
-test('H07 每条检查都有可落地的 ruleRef，且状态在五态之内', async () => {
+test('H15 ADR 分散在两棵目录树：都要扫、要标来源、重复要报', async () => {
+  const dupBody = adr({ id: 'ADR-101', title: '同时存在于两棵树', status: 'Accepted', asOf: day(-5), expires: day(25) });
+  const repo = makeFixture({
+    [`${ADR_DIR}/ADR-101-both.md`]: dupBody,
+    '.governance/decisions/adr/ADR-101-both.md': dupBody,
+    '.governance/decisions/adr/ADR-102-only-here.md': adr({ id: 'ADR-102', title: '只在第二棵树', status: 'Accepted', asOf: day(-2), expires: day(20) }),
+  });
+  const h = await readHealth(repo);
+
+  // 只扫 docs/ 一棵树会漏掉 ADR-102（真实仓库的 ADR-008 就是这样被漏掉的）
+  const a102 = byId(h, 'ADR-102');
+  eq(a102.status, 'pass', '第二棵树里的 ADR 必须被发现且判 pass');
+  eq(a102.detail.sourceDir, '.governance/decisions/adr', '必须标出它来自哪棵树');
+
+  const a101 = byId(h, 'ADR-101');
+  ok(a101.observed.includes('来源：docs/decisions/adr'), `每份都要写明来源目录，实际：${a101.observed}`);
+
+  const dup = byId(h, 'DR-DUPLICATE');
+  eq(dup.status, 'warn', '同一编号两份 → 告警');
+  ok(dup.observed.includes('ADR-101'), '要指出是哪个编号重复了');
+
+  const summary = byId(h, 'DR-SUMMARY');
+  ok(summary.observed.includes('按目录'), `汇总要按目录拆分，实际：${summary.observed}`);
+  ok(summary.observed.includes('ADR-101 重复'), '汇总要点出重复的编号');
+});
+
+test('H16 只在第二棵树里的 ADR 也参与时效判定（ADR-008 那种情况）', async () => {
+  const repo = makeFixture({
+    '.governance/decisions/adr/ADR-201-fresh.md': adr({ id: 'ADR-201', title: '有效期到明年', status: 'Accepted', asOf: day(-30), expires: day(90) }),
+  });
+  const h = await readHealth(repo);
+  const c = byId(h, 'ADR-201');
+  eq(c.detail.state, 'current', '未过期 → current');
+  eq(c.status, 'pass', '不该判 fail');
+  const summary = byId(h, 'DR-SUMMARY');
+  eq(summary.status, 'pass', '只有一份未过期的 ADR 时，汇总应 pass');
+});
+
+test('H17 每条检查都有可落地的 ruleRef，且状态在五态之内', async () => {
   const repo = adrFixture();
   const h = await readHealth(repo);
   const ALLOWED = new Set(['pass', 'fail', 'warn', 'unknown', 'not_applicable']);

@@ -17,7 +17,7 @@ governance-console/
 ├── lib/health.mjs         健康面板：L1–L5 分层检查 + ADR 生命周期 + 记录型门禁
 ├── lib/docs.mjs           规则文档索引 / 单篇读取 / 条款抽取 / 全文检索（只读）
 ├── lib/runner.mjs         白名单脚本执行（6 个任务，客户端不能传命令）
-├── test/                  48 个用例：门禁 16 + 批次 8 + 契约/UI 3 + 健康 14 + 手动入口 7
+├── test/                  50 个用例：门禁 16 + 批次 8 + 契约/UI 3 + 健康 16 + 手动入口 7
 └── public/                index.html · app.js · md.js · style.css · paper.css · favicon.svg
 ```
 
@@ -193,6 +193,20 @@ http://127.0.0.1:7717/?t=<token>&theme=paper
 
 两者共用同一套状态词表（`pass / fail / warn / unknown / not_applicable`），所以同一件事在两个地方的颜色含义一致。
 
+### ADR 分散在两棵目录树（先说这个，否则下面的数字都会读错）
+
+ADR 不在一个目录里：
+
+| 目录 | 内容 |
+|---|---|
+| `docs/decisions/adr/` | 项目决策：ADR-001 / 002 / 004 / 005 / 006 / 007 |
+| `.governance/decisions/adr/` | 框架决策：ADR-007（另一份副本）、ADR-008 |
+| `docs/archive/decisions/` | ADR-003（rolled-back）、第二个 ADR-002 |
+
+而 `.governance/decisions/adr/README.md` 已经把这件事写死了：**编号序列跨两目录共享，不许按目录分别计数，任何 ADR 计数或交叉引用都必须写明来源目录**（2026-10-14 实测）。
+
+面板最初只扫 `docs/decisions/adr/`，于是报出「6 份 ADR」——**正是仓库明令禁止的那种数法**，还漏掉了唯一没过期的 ADR-008。现在两棵树都扫，每条检查都带 `来源：<目录>`，汇总按目录拆分，并新增 `DR-DUPLICATE` 报同编号多副本。
+
 ### ADR 生命周期：三个正交维度 + 一个派生显示态
 
 ADR 的「该不该复查」不是一个枚举能表达清的，所以拆成三个互相独立的维度：
@@ -260,7 +274,7 @@ ADR 的「该不该复查」不是一个枚举能表达清的，所以拆成三�
 | L4 | `L4-CLINERULES` / `L4-CONFIG` / `L4-DISPATCH` | 加载入口有效；`config.json` 可解析；启用的 Capability 有人读取 |
 | L4 | `L4-PLUGIN` / `L4-MARKER` | 插件已装到 Cline 发现路径；`plugin-loaded.marker` ≤7 天 |
 | L5 | `L5-TRACES` / `L5-SNAPSHOT` | 轨迹有近期记录；`snapshot.json` 是**实例**而不是 schema |
-| DR | `ADR-*` / `DR-SOURCE-KIND` / `DR-SUMMARY` | 每份 ADR 的生命周期；时效类别字段；总体时效状况 |
+| DR | `ADR-*` / `DR-DUPLICATE` / `DR-SOURCE-KIND` / `DR-SUMMARY` | 每份 ADR 的生命周期（**两棵目录树都扫，并标明来源目录**）；同编号重复；时效类别字段；总体时效状况（按目录拆分） |
 | GATE | `GATE-LINKS` / `GATE-VERIFY` | 链接锚点门控、插件逻辑自检的上次运行结果（各读各的记录，互不顶替） |
 
 每条检查都带 `ruleRef`（仓库里的文件 + 章节），写不出出处的检查不该存在——否则面板就在发明标准。
