@@ -85,6 +85,33 @@ ADR-006 §0 元规则自检第 1 条问的是：「是不是又在造原生已�
 > 它给的最大风险是「**把未经验证的不可用写成事实**」，依据是 `detectCompaction()` 按消息数比例猜测、`beforeModel()` 每次模型调用前执行、以及 ADR-006 §0 明确阻塞未经论证的自研压缩逻辑。
 > 这条风险与我写 A 的理由正好对上：A 的唯一风险就是那半个证据 —— 所以 **A 的前置动作就是去取证，而不是直接写 Update**。
 
+#### 取证结果（2026-10-17，本地读上游类型定义，零成本）
+
+不需要跑会话：`cline` 已安装，`@cline/*` 包就在磁盘上，直接读它自己的 `.d.ts` 就够了。
+
+| 事实 | 来源 |
+|---|---|
+| 原生压缩机制**确实存在**：`createContextCompactionPrepareTurn()` 构造 `prepareTurn` 回调，由 agent runtime 在**每次模型请求前**执行压缩 | `@cline/core@0.0.95` · `dist/extensions/context/compaction.d.ts` |
+| 原生管线能拿到"为什么压缩"的信号：`overflowRecovery?: boolean`（provider 报上下文超限，强制压缩）、`previousRequestInputTokens?: number`（上一请求的真实输入 token 数，用作下界） | 同上 · `ContextPipelinePrepareTurnInput` |
+| **但 `beforeModel` 这条路径被原生 wrapper 明确排除在外**：原文「Known gap: compactions performed via plugin `registerMessageBuilder()` or via the `beforeModel` runtime hook **bypass this wrapper entirely**, so they do not emit compaction telemetry」 | 同上 · 函数注释 |
+
+**结论**：ADR-006 那个悬着的问题有答案了 —— **在 `beforeModel` 这个插件钩子上，拿不到原生压缩事件/信号**，不是"我猜拿不到"，而是上游类型文档明写这条路径 bypass 了 native wrapper，连 telemetry 都没有。
+
+于是：
+- 当前用消息条数比例推断压缩，**在"没有原生信号"这个前提下是合理的**（A 选项成立）
+- 但它仍然要写进 ADR 的 Update：写清"上游哪一版、哪个文件、哪句注释"证明不可得 —— 这正是 GPT 说的"别把未经验证的不可用写成事实"的反面做法（**带出处的不算猜测**）
+- **B 选项（改读原生事件）在 `beforeModel` 上不可行**，除非改成走原生 `prepareTurn` 管线（那是另一种架构，不是小改）
+
+#### 顺带发现：CLI 版本号有三个不同的数字
+
+| 读数 | 值 | 出处 |
+|---|---|---|
+| `cline --version` | **3.0.46** | 命令行 |
+| npm 包 `cline` | **3.0.73** | `E:\node-global\node_modules\cline\package.json` |
+| `@cline/*` 依赖 | **0.0.95** | 同上 `dependencies` |
+
+三个数字互不一致。**这影响所有 ADR 的"版本号类"证据口径** —— 说"在 CLI 3.0.46 上成立"和"在 3.0.73 上成立"是两件事。引用 ADR 时必须写清是哪个包的哪个版本，不能只写"当前 CLI"。此事尚未判定哪个才该被当作口径。
+
 **这条决策的取证方式**（需要在能跑 cline 的环境执行）：在 `beforeModel` 里临时 `console.log(Object.keys(context))` 与 `typeof context.messages`，跑一次触发压缩的会话，看原生是否暴露 condense 事件。取证后把键名清单写进 ADR-006 的 Update，再回来选 A/B/C。
 
 ### 咨询侧的操作记录（为了下次少走弯路）
