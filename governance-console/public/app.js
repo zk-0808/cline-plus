@@ -554,9 +554,270 @@ async function applyPlan() {
   }
 }
 
-// ---------------------------------------------------------------- 绑定
+// ================================================================ 视图切换
 
-$('btn-refresh').addEventListener('click', load);
+let VIEW = 'console';
+let DOCS_INDEX = null;
+let CLAUSES = null;
+let CURRENT_DOC = null;
+let SEARCHING = false;
+
+function switchView(name) {
+  VIEW = name;
+  for (const t of document.querySelectorAll('.tab')) t.classList.toggle('active', t.dataset.view === name);
+  $('view-console').hidden = name !== 'console';
+  $('view-docs').hidden = name !== 'docs';
+  $('view-clauses').hidden = name !== 'clauses';
+
+  if (name === 'docs' && !DOCS_INDEX) loadDocs();
+  if (name === 'clauses' && !CLAUSES) loadClauses();
+}
+
+// ================================================================ 规则视图
+
+async function loadDocs() {
+  const rail = $('docs-rail');
+  rail.innerHTML = '<div class="empty">索引中…</div>';
+  try {
+    DOCS_INDEX = await api('/api/docs');
+  } catch (e) {
+    rail.innerHTML = '';
+    rail.appendChild(el('div', { class: 'empty', text: `索引失败：${e.message}` }));
+    return;
+  }
+  renderDocsStats();
+  renderRail($('search').value.trim());
+}
+
+function renderDocsStats() {
+  const s = DOCS_INDEX.stats;
+  const box = $('docs-stats');
+  box.innerHTML = '';
+  const chip = (label, val, cls = '') => el('span', { class: `chip ${cls}` }, `${label} `, el('b', { text: String(val) }));
+  box.appendChild(chip('文档', s.total));
+  box.appendChild(chip('分组', s.groups));
+  box.appendChild(chip('总字节', (s.bytes / 1024 / 1024).toFixed(2) + ' MB'));
+  box.appendChild(chip('孤儿文档', s.orphans, s.orphans ? 'warn' : 'ok'));
+  box.appendChild(chip('缺生命周期标注', s.missingLifespan, s.missingLifespan ? 'warn' : 'ok'));
+  box.appendChild(el('span', { class: 'hint-inline', text: '孤儿 = 没有任何其它文档链接到它；缺生命周期 = 文件头没有「生命周期」标注' }));
+}
+
+function renderRail(filterText) {
+  const rail = $('docs-rail');
+  rail.innerHTML = '';
+  $('rail-clear').hidden = !filterText;
+  const q = (filterText || '').toLowerCase();
+
+  let shown = 0;
+  for (const g of DOCS_INDEX.groups) {
+    const docs = q ? g.docs.filter((d) => d.rel.toLowerCase().includes(q) || d.title.toLowerCase().includes(q)) : g.docs;
+    if (!docs.length) continue;
+    shown += docs.length;
+    rail.appendChild(el('div', { class: 'rail-group' },
+      el('div', { class: 'rail-group-label' }, g.label, el('span', { class: 'rail-count', text: String(docs.length) })),
+      el('div', { class: 'rail-group-note', text: g.note }),
+      ...docs.map((d) => railDocItem(d)),
+    ));
+  }
+  $('rail-count').textContent = String(shown);
+  if (!shown) rail.appendChild(el('div', { class: 'empty', text: '没有匹配的文档。' }));
+}
+
+function railDocItem(d) {
+  const isOrphan = DOCS_INDEX.orphans.includes(d.rel);
+  const noLife = DOCS_INDEX.missingLifespan.includes(d.rel);
+  return el('button', {
+    class: `rail-doc ${CURRENT_DOC === d.rel ? 'active' : ''}`,
+    type: 'button',
+    title: d.rel,
+    onclick: () => loadDoc(d.rel),
+  },
+    el('div', { class: 'rd-title', text: d.title }),
+    el('div', { class: 'rd-meta' },
+      el('span', { class: 'rd-path', text: d.rel }),
+      el('span', { class: 'rd-ref', title: `被 ${d.inboundFrom} 个文档引用 ${d.inboundCount} 次` }, `←${d.inboundCount}`),
+      `${(d.bytes / 1024).toFixed(1)}K`,
+      isOrphan ? el('span', { class: 'tag must', text: '孤儿' }) : null,
+      noLife ? el('span', { class: 'tag must', text: '无生命周期' }) : null,
+    ),
+  );
+}
+
+// ---------------------------------------------------------------- 渲染器绑定
+// 渲染器在 public/md.js（无 DOM 副作用、可在 Node 里单测）。这里只做绑定。
+
+const mdToHtml = (t, r) => MD.mdToHtml(t, r);
+const slugify = (t) => MD.slugify(t);
+
+// ---------------------------------------------------------------- 单篇
+
+async function loadDoc(rel, anchor) {
+  const body = $('doc-body');
+  body.innerHTML = '<div class="empty">读取中…</div>';
+  try {
+    const d = await api('/api/doc?p=' + encodeURIComponent(rel));
+    if (d.error) { body.innerHTML = ''; body.appendChild(el('div', { class: 'empty', text: d.message })); return; }
+    CURRENT_DOC = d.rel;
+
+    $('doc-title').textContent = d.title;
+    const meta = $('doc-meta');
+    meta.innerHTML = '';
+    meta.appendChild(el('span', { class: 'mono', text: d.rel }));
+    meta.appendChild(el('span', { text: `${d.lines} 行 · ${(d.bytes / 1024).toFixed(1)} KB` }));
+    if (d.lifespan) meta.appendChild(el('span', { class: 'tag', text: `生命周期：${d.lifespan}` }));
+    else meta.appendChild(el('span', { class: 'tag must', text: '未标注生命周期' }));
+
+    body.innerHTML = mdToHtml(d.text, d.rel);
+    renderToc(d.headings);
+    renderRail($('search').value.trim());
+    if (anchor) {
+      const target = document.getElementById(anchor);
+      if (target) target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    } else {
+      body.scrollTop = 0;
+    }
+  } catch (e) {
+    body.innerHTML = '';
+    body.appendChild(el('div', { class: 'empty', text: `读取失败：${e.message}` }));
+  }
+}
+
+function renderToc(headings) {
+  const box = $('doc-toc');
+  box.innerHTML = '';
+  const usable = headings.filter((h) => h.level <= 4);
+  if (!usable.length) { box.appendChild(el('div', { class: 'empty', text: '无章节标题' })); return; }
+  for (const h of usable) {
+    const id = slugify(h.text);
+    box.appendChild(el('a', {
+      class: `toc-item lv${h.level}`,
+      href: '#' + id,
+      text: h.text,
+      onclick: (e) => {
+        e.preventDefault();
+        const t = document.getElementById(id);
+        if (t) t.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      },
+    }));
+  }
+}
+
+// ---------------------------------------------------------------- 检索
+
+let searchTimer = null;
+function onSearchInput(v) {
+  clearTimeout(searchTimer);
+  const q = v.trim();
+  if (!q) {
+    SEARCHING = false;
+    $('rail-clear').hidden = true;
+    if (DOCS_INDEX) renderRail();
+    return;
+  }
+  searchTimer = setTimeout(() => {
+    switchView('docs');
+    if (!DOCS_INDEX) { loadDocs().then(() => renderRail(q)); return; }
+    SEARCHING = true;
+    renderRail(q);
+    $('rail-clear').hidden = false;
+  }, 200);
+}
+
+// ---------------------------------------------------------------- 条款索引
+
+async function loadClauses() {
+  const box = $('clause-rows');
+  box.innerHTML = '<div class="empty">抽取中…</div>';
+  try {
+    CLAUSES = await api('/api/rules');
+  } catch (e) {
+    box.innerHTML = '';
+    box.appendChild(el('div', { class: 'empty', text: `抽取失败：${e.message}` }));
+    return;
+  }
+  $('clause-filter').value = '';
+  renderClauses('');
+}
+
+function renderClauses(filter) {
+  const box = $('clause-rows');
+  box.innerHTML = '';
+  const q = (filter || '').toLowerCase();
+  const list = CLAUSES.clauses.filter((c) =>
+    !q || `${c.id} ${c.title} ${c.summary} ${c.file}`.toLowerCase().includes(q));
+  if (!list.length) { box.appendChild(el('div', { class: 'empty', text: '无匹配条款。' })); return; }
+
+  for (const c of list) {
+    const labelKeys = Object.keys(c.labels);
+    box.appendChild(el('div', { class: 'row clause-row' },
+      el('div', {},
+        el('div', { class: 'name' },
+          el('span', { class: 'clause-id', text: c.id || '—' }),
+          c.title,
+          el('span', { class: 'tag', text: c.kind }),
+        ),
+        el('div', { class: 'desc', text: c.summary }),
+        labelKeys.length > 1
+          ? el('div', { class: 'clause-labels' }, ...labelKeys.map((k) =>
+              el('span', { class: `clause-label ${c.summaryFrom === k ? 'hi' : ''}`, text: k })))
+          : null,
+        el('div', { class: 'meta', text: c.loc }),
+      ),
+      el('button', {
+        class: 'sm ghost', text: '定位',
+        onclick: () => {
+          switchView('docs');
+          const heading = c.id ? `${c.id} ${c.id.includes('.') ? '子条款：' : ''}${c.title}` : c.title;
+          const go = () => loadDoc(c.file, MD.slugify(heading));
+          if (DOCS_INDEX) go(); else loadDocs().then(go);
+        },
+      }),
+    ));
+  }
+}
+
+// ---------------------------------------------------------------- 视图绑定
+
+for (const t of document.querySelectorAll('.tab')) {
+  t.addEventListener('click', () => switchView(t.dataset.view));
+}
+
+$('rail-clear').addEventListener('click', () => {
+  SEARCHING = false;
+  $('search').value = '';
+  $('rail-clear').hidden = true;
+  if (DOCS_INDEX) renderRail();
+});
+
+$('search').addEventListener('input', (e) => onSearchInput(e.target.value));
+$('search').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { clearTimeout(searchTimer); onSearchInput(e.target.value); }
+  if (e.key === 'Escape') { $('search').value = ''; onSearchInput(''); $('search').blur(); }
+});
+
+$('clause-filter').addEventListener('input', (e) => renderClauses(e.target.value));
+
+$('doc-body').addEventListener('click', (e) => {
+  const a = e.target.closest('a.doclink');
+  if (!a) return;
+  e.preventDefault();
+  loadDoc(a.dataset.doc);
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) {
+    e.preventDefault();
+    $('search').focus();
+  }
+});
+
+// ================================================================ 绑定
+
+$('btn-refresh').addEventListener('click', () => {
+  load();
+  if (DOCS_INDEX) loadDocs();
+  if (CLAUSES) loadClauses();
+});
 $('btn-batches').addEventListener('click', loadBatches);
 $('d-close').addEventListener('click', closeDrawer);
 $('d-cancel').addEventListener('click', closeDrawer);

@@ -11,13 +11,22 @@
 
 <header class="topbar">
   <div class="brand">governance<span>·</span>console</div>
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-view="console" type="button">控制台</button>
+    <button class="tab" data-view="docs" type="button">规则视图</button>
+    <button class="tab" data-view="clauses" type="button">条款索引</button>
+  </nav>
   <div class="chips" id="chips">
     <span class="chip" id="c-repo">读取中…</span>
   </div>
-  <button class="ghost sm" id="btn-refresh">刷新状态</button>
+  <div class="searchbox">
+    <input id="search" type="search" placeholder="检索规则文档…  ( / 聚焦 )" autocomplete="off">
+  </div>
+  <button class="ghost sm" id="btn-refresh">刷新</button>
 </header>
 
-<main>
+<!-- ============================ 视图 1：控制台 ============================ -->
+<main id="view-console" class="view">
 
   <!-- 告警：状态不一致、缺件、陈旧 marker -->
   <section id="sec-warn" hidden>
@@ -94,12 +103,53 @@
 
 </main>
 
+<!-- ============================ 视图 2：规则视图 ============================ -->
+<div id="view-docs" class="view" hidden>
+  <div class="docs-stats" id="docs-stats"></div>
+  <div class="docs-layout">
+    <aside class="docs-rail">
+      <div class="rail-head">
+        <span>规则文档 <b id="rail-count"></b></span>
+        <button class="ghost sm" id="rail-clear" hidden>清除检索</button>
+      </div>
+      <div class="rail-scroll" id="docs-rail"><div class="empty">加载中…</div></div>
+    </aside>
+    <section class="doc-reader">
+      <header class="doc-head">
+        <div style="flex:1;min-width:0">
+          <h1 id="doc-title">选择一份文档</h1>
+          <div class="doc-meta" id="doc-meta"></div>
+        </div>
+      </header>
+      <div class="doc-body" id="doc-body"><div class="empty">左侧按治理层级列出全部规则文档、章节与被引用次数。</div></div>
+    </section>
+    <aside class="doc-toc">
+      <div class="rail-head"><span>本文目录</span></div>
+      <div class="rail-scroll" id="doc-toc"><div class="empty">—</div></div>
+    </aside>
+  </div>
+</div>
+
+<!-- ============================ 视图 3：条款索引 ============================ -->
+<main id="view-clauses" class="view" hidden>
+  <section class="card">
+    <header>
+      <h2>条款索引</h2>
+      <span class="sub">从宪法 / 执行门控 / 证据治理 / 工程纪律里机械抽取，不改写原文</span>
+      <span class="spacer"></span>
+      <input id="clause-filter" type="search" placeholder="过滤条款…" autocomplete="off">
+    </header>
+    <div class="body" id="clause-rows"><div class="empty">加载中…</div></div>
+  </section>
+</main>
+
 <div class="footnote">
   <b>这个控制台不持有任何状态。</b>每个开关背后都是一个你随时可以用编辑器手改的文件：
   <code>.governance/hooks/config.json</code>、<code>.governance/core/constitution.md</code>。
   这里只是给它们加了一层带 diff 预览和安全备份的操作面。<br>
   所有写操作先出计划 → 你确认 → 才落盘；落盘前把原文件/原目录移入
   <code>.governance/runtime/console-batches/</code>，可整批还原。
+  <br><b>规则视图只读</b>：它把散在各目录的文档聚合、渲染、标注被引用次数，不改一个字。
 </div>
 
 <!-- 计划预览抽屉 -->
@@ -123,6 +173,7 @@
 <div class="toasts" id="toasts"></div>
 
 <script>window.__CONSOLE_TOKEN__ = "__TOKEN_VALUE__";</script>
+<script src="/md.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>

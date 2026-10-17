@@ -24,6 +24,7 @@ import {
   HOOKS, LAYERS, PRESETS, CONFIG_REL, CONSTITUTION_REL,
 } from './lib/governance.mjs';
 import { listTasks, runTask } from './lib/runner.mjs';
+import { buildIndex, readDoc, extractClauses, searchDocs } from './lib/docs.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -122,6 +123,7 @@ function readBody(req, limit = 256 * 1024) {
 
 const STATIC = {
   '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
+  '/md.js': ['md.js', 'text/javascript; charset=utf-8'],
   '/style.css': ['style.css', 'text/css; charset=utf-8'],
   '/favicon.svg': ['favicon.svg', 'image/svg+xml'],
 };
@@ -215,6 +217,34 @@ const server = http.createServer(async (req, res) => {
       if (!body?.taskId) return json(res, 400, { error: 'BAD_REQUEST', message: '缺少 taskId。' });
       const out = await runTask(REPO, String(body.taskId));
       return json(res, 200, out);
+    }
+
+    // ---------------- GET /api/docs （规则文档索引）
+    if (p === '/api/docs' && req.method === 'GET') {
+      return json(res, 200, await buildIndex(REPO));
+    }
+
+    // ---------------- GET /api/doc?p=<rel> （单篇正文）
+    if (p === '/api/doc' && req.method === 'GET') {
+      const doc = await readDoc(REPO, url.searchParams.get('p') || '');
+      return json(res, doc.error === 'NOT_FOUND' ? 404 : 200, doc);
+    }
+
+    // ---------------- GET /api/rules （条款索引）
+    if (p === '/api/rules' && req.method === 'GET') {
+      const clauses = await extractClauses(REPO);
+      return json(res, 200, {
+        clauses,
+        stats: {
+          total: clauses.length,
+          byKind: clauses.reduce((a, c) => { a[c.kind] = (a[c.kind] || 0) + 1; return a; }, {}),
+        },
+      });
+    }
+
+    // ---------------- GET /api/search?q=
+    if (p === '/api/search' && req.method === 'GET') {
+      return json(res, 200, await searchDocs(REPO, url.searchParams.get('q') || ''));
     }
 
     return json(res, 404, { error: 'NOT_FOUND', message: `${req.method} ${p} 无此接口。` });
