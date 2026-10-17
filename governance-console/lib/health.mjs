@@ -631,7 +631,7 @@ export async function readHealth(repo, opts = {}) {
     for (const dirRel of ADR_DIRS) {
       const dirAbs = p(repo, dirRel);
       let files = [];
-      try { files = fs.readdirSync(dirAbs).filter((f) => f.endsWith('.md') && f !== 'README.md').sort(); } catch { /* 该树不存在 */ }
+      try { files = fs.readdirSync(dirAbs).filter((f) => /^ADR-\d{3}.*\.md$/i.test(f)).sort(); } catch { /* 该树不存在 */ }
       perDir.push({ dir: dirRel, count: files.length });
       for (const f of files) all.push(parseAdr(repo, path.join(dirAbs, f), dirRel));
     }
@@ -675,6 +675,43 @@ export async function readHealth(repo, opts = {}) {
       });
 
       const counts = adrs.reduce((a, x) => { a[x.state] = (a[x.state] ?? 0) + 1; return a; }, {});
+
+      // 过期决策必须有去处：光在面板上变红不算行动，要求它们出现在复查队列里
+      {
+        const queueRel = 'docs/decisions/adr/REVIEW-QUEUE.md';
+        const queueText = await readRel(repo, queueRel);
+        const expiredIds = adrs.filter((a) => a.state === 'expired').map((a) => a.id);
+        if (!queueText) {
+          push({
+            id: 'DR-QUEUE', layer: 'DR', title: '过期决策有复查去处',
+            ruleRef: 'docs/dev-rules.md §1.13 结论时效性门控 · docs/evidence-governance.md §15 超期处置',
+            status: expiredIds.length ? 'warn' : 'pass',
+            observed: expiredIds.length
+              ? `${expiredIds.length} 份已过期（${expiredIds.join('、')}）但没有复查队列文件`
+              : '没有过期决策，无需队列',
+            expected: '每份过期 ADR 都登记在复查队列里，写明需要什么证据、卡在哪',
+            fix: expiredIds.length ? `建 ${queueRel}：逐条列出「结论 / 需要什么证据 / 谁能给 / 状态 blocked」。不伪造复查，也不让过期结论无声漂着。` : null,
+          });
+        } else {
+          // 「不需复查」段里的 ADR（如已被整体取代的）不算入队
+          const blockedPart = queueText.split('## 不需复查')[0];
+          const queued = new Set([...blockedPart.matchAll(/\|\s*(ADR-\d{3})\s*\|/g)].map((m) => m[1]));
+          const missing = expiredIds.filter((id) => !queued.has(id));
+          const extra = [...queued].filter((id) => !expiredIds.includes(id));
+          push({
+            id: 'DR-QUEUE', layer: 'DR', title: '过期决策有复查去处',
+            ruleRef: 'docs/dev-rules.md §1.13 结论时效性门控 · docs/evidence-governance.md §15 超期处置',
+            status: (missing.length || extra.length) ? 'warn' : 'pass',
+            observed: (missing.length || extra.length)
+              ? [missing.length ? `队列里缺：${missing.join('、')}` : '', extra.length ? `队列里有但并未过期：${extra.join('、')}` : ''].filter(Boolean).join('；')
+              : `${expiredIds.length} 份过期决策都已登记，状态 blocked`,
+            expected: '队列与面板的过期集合一致：不漏、不多',
+            fix: (missing.length || extra.length) ? `更新 ${queueRel}，让它和面板的过期集合对齐（完成复查的行要删掉）。` : null,
+            detail: { expiredIds, queued: [...queued], missing, extra },
+          });
+        }
+      }
+
       push({
         id: 'DR-SUMMARY', layer: 'DR', title: '决策记录总体时效状况',
         ruleRef: 'docs/evidence-governance.md §15 · docs/dev-rules.md §1.13 结论时效性门控',

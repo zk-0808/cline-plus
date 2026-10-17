@@ -202,6 +202,47 @@ test('H16 只在第二棵树里的 ADR 也参与时效判定（ADR-008 那种情
   eq(summary.status, 'pass', '只有一份未过期的 ADR 时，汇总应 pass');
 });
 
+test('H18 过期决策必须有复查去处：队列漏登记/多登记都要报', async () => {
+  const expired = adr({ id: 'ADR-301', title: '已过期', status: 'Accepted', asOf: day(-70), expires: day(-40) });
+  const valid = adr({ id: 'ADR-302', title: '仍有效', status: 'Accepted', asOf: day(-5), expires: day(25) });
+
+  // 没有队列文件
+  const noQueue = await readHealth(makeFixture({ [`${ADR_DIR}/ADR-301-x.md`]: expired }));
+  const q1 = byId(noQueue, 'DR-QUEUE');
+  eq(q1.status, 'warn', '有过期决策却没有队列 → 必须告警');
+  ok(q1.observed.includes('ADR-301'), '要指名是哪份过期');
+  ok(q1.fix.includes('REVIEW-QUEUE'), 'fix 要给出去处');
+
+  // 队列覆盖了过期项 → pass
+  const withQueue = await readHealth(makeFixture({
+    [`${ADR_DIR}/ADR-301-x.md`]: expired,
+    [`${ADR_DIR}/ADR-302-y.md`]: valid,
+    [`${ADR_DIR}/REVIEW-QUEUE.md`]: [
+      '# 复查队列', '', '## 待复查（blocked）', '',
+      '| ADR | 结论 | 状态 |', '|---|---|---|',
+      '| ADR-301 | 某结论 | blocked |', '',
+      '## 不需复查', '', '| ADR | 原因 |', '|---|---|', '| ADR-302 | 未过期 |', '',
+    ].join('\n'),
+  }));
+  const q2 = byId(withQueue, 'DR-QUEUE');
+  eq(q2.status, 'pass', '队列与过期集合一致 → pass');
+
+  // 队列里塞了未过期的 → 也要报（否则队列会长期留陈旧行）
+  const stale = await readHealth(makeFixture({
+    [`${ADR_DIR}/ADR-301-x.md`]: expired,
+    [`${ADR_DIR}/ADR-302-y.md`]: valid,
+    [`${ADR_DIR}/REVIEW-QUEUE.md`]: [
+      '# 复查队列', '', '## 待复查（blocked）', '',
+      '| ADR | 结论 | 状态 |', '|---|---|---|',
+      '| ADR-301 | 某结论 | blocked |',
+      '| ADR-302 | 其实没过期 | blocked |', '',
+    ].join('\n'),
+  }));
+  const q3 = byId(stale, 'DR-QUEUE');
+  eq(q3.status, 'warn', '队列里有多余项也要告警');
+  ok(q3.observed.includes('并未过期'), `要指出多出来的是哪份，实际：${q3.observed}`);
+});
+
 test('H17 每条检查都有可落地的 ruleRef，且状态在五态之内', async () => {
   const repo = adrFixture();
   const h = await readHealth(repo);

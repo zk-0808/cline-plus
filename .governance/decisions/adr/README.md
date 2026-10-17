@@ -12,8 +12,23 @@
 
 | ADR | Date | Decision | Status |
 |-----|------|----------|--------|
-| [ADR-007](ADR-007-registerRule-static-injection.md) | 2026-07-04 | registerRule static injection (not messageBuilder) | Accepted |
+| [ADR-007](../../../docs/decisions/adr/ADR-007-snapshot-registerRule-static-injection.md) | 2026-07-04 | registerRule static injection (not messageBuilder) — **正文在 `docs/decisions/adr/`** | Accepted |
 | [ADR-008](ADR-008-cli-discovery-path-fix.md) | 2026-07-09 | CLI plugin discovery path fix (sync script) | Accepted |
+
+---
+
+## 变更记录：ADR-007 的重复副本已清除（2026-10-17）
+
+此前 ADR-007 在两棵树各有一份。用 git 历史判定原件：
+
+- `09cf010`（2026-07-04）**创建** `docs/decisions/adr/ADR-007-snapshot-registerRule-static-injection.md`
+- `94447e6`（2026-07-09）在本目录**新增**（`A`，不是 rename）`ADR-007-registerRule-static-injection.md` —— 这是复制件
+
+两份逐行比对：94 行差异全部落在相对链接前缀上，**去掉链接目标后正文完全相同**。两份正文并存意味着改一份另一份不会跟着变。
+
+处理：保留 `docs/decisions/adr/` 那份作为唯一正文（原件，也是其他 ADR 引用链指向的那份），删除本目录复制件。恢复方式：`git show 94447e6:.governance/decisions/adr/ADR-007-registerRule-static-injection.md`。
+
+**尚未定的事**：本目录开头写「framework-level decisions that travel with the governance framework」，按这个定义 ADR-007（讲框架的 hook/snapshot 机制）更像框架级；但它的原件一直在 `docs/`，且是其他 ADR 的引用目标。「哪棵树是权威」需要一次正式判定，不宜由一次清理顺手决定 —— 现在只保证**一份正文**。
 
 ---
 
