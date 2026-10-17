@@ -921,7 +921,12 @@ export async function readGate(repo) {
 // ---------------------------------------------------------------- 环境
 
 export async function readEnv(repo) {
-  const cline = await run('cline', ['--version'], repo, 20000);
+  // ⚠️ Windows 上 npm 装的 cline 是 .ps1/.cmd 垫片，execFile 不开 shell 时执行不了它
+  //    （会以 ENOENT 失败，面板就误报"cline 不可用"）。所以显式交给 pwsh 跑这条固定命令。
+  //    命令写死、无用户输入，不构成注入面。
+  const cline = process.platform === 'win32'
+    ? await run('pwsh', ['-NoProfile', '-Command', 'cline --version'], repo, 20000)
+    : await run('cline', ['--version'], repo, 20000);
   const node = process.version;
   return {
     node,
