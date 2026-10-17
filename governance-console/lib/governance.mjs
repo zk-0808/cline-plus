@@ -16,6 +16,9 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFile } from 'node:child_process';
 
+import { deriveContract } from './contract.mjs';
+import { validateState, PARAM_RULES } from './validate.mjs';
+
 // ---------------------------------------------------------------- 常量
 
 export const CONFIG_REL = '.governance/hooks/config.json';
@@ -99,17 +102,8 @@ export const PRESETS = [
     result: '一页纸治理（.clinerules + core/constitution.md）', sideEffect: '除宪法外全部停用；同「不用 Hook」的副作用，并失去 rules/ 门控。' },
 ];
 
-/** 宪法参数：语义约束（下界由参数含义决定，不是本控制台发明的策略） */
-const PARAM_RULES = {
-  independent_evidence_count: { min: 1, integer: true, why: '「≥N 类独立证据」的 N，为 0 则任何结论自动成立' },
-  negative_conclusion_evidence_count: { min: 1, integer: true, why: '「无 X」结论的 N，为 0 则阴性结论无需证据' },
-  uncommitted_file_threshold: { min: 1, integer: true, why: '触发器 b 的阻断阈值，为 0 则永远阻断' },
-  long_session_turns: { min: 1, integer: true, why: '触发器 c 的轮次阈值，为 0 则任何会话都算「过长」' },
-  context_pressure_ratio: { min: 0.01, max: 0.99, integer: false, why: '上下文占用比例，须落在 (0,1) 开区间' },
-  proposition_flip_threshold: { min: 1, integer: true, why: '翻转审查阈值，为 0 则每次都触发' },
-  rule_stale_months: { min: 1, integer: true, why: '退役判据月数，为 0 则规则立即过期' },
-  rule_retire_keep_days: { min: 0, integer: true, why: '退役保留期，允许 0（立即物理删除）' },
-};
+// 宪法参数的语义边界集中在 lib/validate.mjs 的 PARAM_RULES —— 门禁与计划生成读同一份，
+// 避免"计划放行了、门禁却不认"这类两处取值分叉。
 
 // ---------------------------------------------------------------- 小工具
 
@@ -134,6 +128,39 @@ function countFiles(abs) {
     walk(abs);
     return n;
   } catch { return 0; }
+}
+
+/**
+ * 目录/文件内容指纹：相对路径 + 内容一起哈希。
+ * 用途是"计划生成后源目录有没有被改过"，所以必须覆盖内容，不能只看文件数。
+ * 跳过 node_modules / dist（同步进插件时它们的变动与我们无关）。
+ */
+function dirDigest(abs) {
+  try {
+    const st = fs.statSync(abs);
+    if (st.isFile()) {
+      return { kind: 'file', fileCount: 1, digest: sha(fs.readFileSync(abs).toString('base64')), bytes: st.size };
+    }
+    const files = [];
+    let bytes = 0;
+    const walk = (d, rel) => {
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        if (e.name === 'node_modules' || e.name === 'dist') continue;
+        const p = path.join(d, e.name);
+        const r = rel ? `${rel}/${e.name}` : e.name;
+        if (e.isDirectory()) walk(p, r);
+        else if (e.isFile()) { files.push(r); bytes += fs.statSync(p).size; }
+      }
+    };
+    walk(abs, '');
+    files.sort();
+    const h = crypto.createHash('sha256');
+    for (const r of files) {
+      h.update(r).update('\0');
+      h.update(fs.readFileSync(path.join(abs, ...r.split('/')))).update('\0');
+    }
+    return { kind: 'dir', fileCount: files.length, digest: h.digest('hex').slice(0, 16), bytes };
+  } catch { return null; }
 }
 
 /** 行级 LCS diff —— 文件都不大（<200 行），DP 足够 */
@@ -381,6 +408,12 @@ export async function buildPlan(repo, op) {
   const changes = [];
   const warnings = [];
 
+  // 一个批次只对应一个目录：文本备份与目录移动都落在 console-disabled/<batch>/ 下。
+  // 早先移动用的是另一个名字（preset-<id>-<ts>），导致 listBatches 拼出的路径与
+  // restoreBatch 实际用的路径不是同一个 —— 还原按钮被误禁用。此处统一基址。
+  const batchId = `batch-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  const pendingMoves = [];
+
   const configAbs = path.join(repo, CONFIG_REL);
   const configText = await readText(configAbs);
 
@@ -497,40 +530,77 @@ export async function buildPlan(repo, op) {
     warnings.push({ level: 'info', code: 'GIT_EFFECT',
       msg: `本次会移动 ${dirs.length} 个目录（共 ${dirs.reduce((a, d) => a + d.entries, 0)} 个文件）到 ${DISABLED_REL}/，git 会把这些文件记为删除，未提交变更数将增加。`,
       fix: '应用后建议立即提交，否则 handoff 触发器 b（未提交文件堆积）会被触发。' });
-    op._moveDirs = dirs; // 内部传递
+    pendingMoves.push(...dirs);
   }
 
   if (configDirty && newConfigText !== configText) {
     changes.push(textChange(repo, CONFIG_REL, configText, newConfigText));
   }
 
-  if (op.op === 'preset.apply' && op._moveDirs) {
-    const batch = `preset-${op.preset}-${Date.now().toString(36)}`;
-    for (const d of op._moveDirs) {
-      changes.push({
-        kind: 'move',
-        rel: d.layer.path,
-        toRel: path.posix.join(DISABLED_REL, batch, path.posix.basename(d.layer.path)),
-        batch,
-        entries: d.entries,
-        label: `${d.layer.label} 停用 → ${DISABLED_REL}/${batch}/${path.posix.basename(d.layer.path)}`,
-      });
-    }
+  for (const d of pendingMoves) {
+    const from = path.join(repo, d.layer.path);
+    changes.push({
+      kind: 'move',
+      rel: d.layer.path,
+      toRel: path.posix.join(DISABLED_REL, batchId, path.posix.basename(d.layer.path)),
+      batch: batchId,
+      entries: d.entries,
+      // 计划生成时的源目录指纹；应用前要复核，防止"计划期间目录被改过还照搬"
+      digest: dirDigest(from),
+      label: `${d.layer.label} 停用 → ${DISABLED_REL}/${batchId}/${path.posix.basename(d.layer.path)}`,
+    });
   }
 
   if (!changes.length) return { error: 'NOOP', message: '该操作不产生任何文件变更。' };
 
+  // ---------------------------------------------------- 配置门禁：校验拟议状态
+  // 注意校验对象是"应用之后的样子"，不是单个输入值：预设会同时改文本和搬目录，
+  // 只看单个值的校验会漏掉"目录没了但配置还声称有"这类组合故障。
+  const proposed = await proposeState(repo, changes);
+  const contract = deriveContract(repo);
+  const validation = validateState({
+    opKind: op.op,
+    opSummary: summarize(op),
+    configText: proposed.configText,
+    constText: proposed.constText,
+    presence: proposed.presence,
+    layers: LAYERS,
+    presets: PRESETS,
+    presetId: op.op === 'preset.apply' ? op.preset : null,
+  }, contract);
+
   const plan = {
     id: slug(JSON.stringify(op) + Date.now() + Math.random()),
-    batch: `batch-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    batch: batchId,
     op,
     createdAt: Date.now(),
     summary: summarize(op),
     changes,
     warnings,
+    validation,
   };
   planStore.set(plan.id, plan);
   return plan;
+}
+
+/**
+ * 从计划推出"应用之后的完整状态"。文本取每条变更的 _after；层存在性 = 现状 − 被移走的层。
+ * buildPlan 与 applyPlan 共用它，保证"生成计划时校验的"和"落盘前复核的"是同一件事。
+ */
+export async function proposeState(repo, changes) {
+  const afterOf = (rel) => changes.find((c) => c.kind === 'text' && c.rel === rel)?._after;
+  const movedRels = new Set(changes.filter((c) => c.kind === 'move').map((c) => c.rel));
+  const presence = {};
+  for (const l of LAYERS) {
+    presence[l.id] = !movedRels.has(l.path) && fs.existsSync(path.join(repo, l.path));
+  }
+  const configAfter = afterOf(CONFIG_REL);
+  const constAfter = afterOf(CONSTITUTION_REL);
+  return {
+    configText: configAfter !== undefined ? configAfter : await readText(path.join(repo, CONFIG_REL)),
+    constText: constAfter !== undefined ? constAfter : await readText(path.join(repo, CONSTITUTION_REL)),
+    presence,
+  };
 }
 
 function summarize(op) {
@@ -565,19 +635,83 @@ function stringifyConfig(obj, originalText) {
 export function publicPlan(plan) {
   return {
     ...plan,
-    op: { ...plan.op, _moveDirs: undefined },
     changes: plan.changes.map((c) => ({ ...c, _after: undefined })),
   };
 }
 
 // ---------------------------------------------------------------- 应用 / 还原
 
+/** 批次清单里"备份基线"的位置：新清单显式记 backupRoot，老清单回落到 batch 名 */
+function backupRootOf(m) {
+  return m.backupRoot ?? path.posix.join(DISABLED_REL, m.batch);
+}
+
+/**
+ * 删掉空的运行期目录（自下而上），只往上清到 console-disabled/ 为止。
+ * 目的：不留下"批次目录还在、里面什么都没有"的假象。
+ */
+async function pruneEmptyDirs(startAbs, stopAtAbs) {
+  let cur = path.resolve(startAbs);
+  const stop = path.resolve(stopAtAbs);
+  const removed = [];
+  while (cur.startsWith(stop) && cur !== path.dirname(cur)) {
+    try {
+      const left = await fsp.readdir(cur);
+      if (left.length) break;
+      await fsp.rmdir(cur);
+      removed.push(path.relative(stopAtAbs, cur).split(path.sep).join('/') || '.');
+      if (cur === stop) break;
+      cur = path.dirname(cur);
+    } catch { break; }
+  }
+  return removed;
+}
+
+/**
+ * 自下而上删掉一棵子树里的空目录（含根自身）。
+ * 备份目录按仓库相对路径镜像（如 <batch>/.governance/hooks/config.json），
+ * 删掉备份文件后会留下多层空目录，只往上 prune 是够不着的。
+ */
+async function pruneEmptyTree(rootAbs) {
+  const walk = async (d) => {
+    let ents;
+    try { ents = await fsp.readdir(d, { withFileTypes: true }); } catch { return; }
+    for (const e of ents) if (e.isDirectory()) await walk(path.join(d, e.name));
+    try {
+      if ((await fsp.readdir(d)).length === 0) await fsp.rmdir(d);
+    } catch { /* 非空或不可删，忽略 */ }
+  };
+  await walk(rootAbs);
+}
+
 export async function applyPlan(repo, planId) {
   prune();
   const plan = planStore.get(planId);
   if (!plan) return { error: 'PLAN_GONE', message: '计划不存在或已超时（10 分钟），请重新生成。' };
 
-  // 乐观并发：确认磁盘内容仍是生成计划时的样子
+  // ---- 1. 配置门禁：在**任何写操作之前**复核拟议状态。
+  //     被阻断时必须零副作用：这里返回时磁盘、目录、批次清单都还没被碰过。
+  const proposed = await proposeState(repo, plan.changes);
+  const validation = validateState({
+    opKind: plan.op?.op,
+    opSummary: plan.summary,
+    configText: proposed.configText,
+    constText: proposed.constText,
+    presence: proposed.presence,
+    layers: LAYERS,
+    presets: PRESETS,
+    presetId: plan.op?.op === 'preset.apply' ? plan.op.preset : null,
+  }, deriveContract(repo));
+  plan.validation = validation;
+  if (validation.blocking) {
+    return {
+      error: 'BLOCKED',
+      message: '配置门禁阻断：拟议状态不满足硬约束，未写入任何文件、未移动任何目录。',
+      validation,
+    };
+  }
+
+  // ---- 2. 文本乐观并发：确认磁盘内容仍是生成计划时的样子
   for (const c of plan.changes) {
     if (c.kind !== 'text') continue;
     const cur = await readText(path.join(repo, c.rel));
@@ -585,7 +719,25 @@ export async function applyPlan(repo, planId) {
       return { error: 'STALE_PLAN', message: `${c.rel} 在生成计划后被改动过，计划作废。请重新生成。` };
     }
   }
-  // 目标路径冲突检查
+
+  // ---- 3. 目录移动也要复核：源不存在、或内容在计划后被改过，都不能照搬
+  for (const c of plan.changes) {
+    if (c.kind !== 'move') continue;
+    const from = path.join(repo, c.rel);
+    if (!fs.existsSync(from)) {
+      return { error: 'STALE_PLAN_MOVE', message: `${c.rel} 在生成计划后已被移走或删除，计划作废。请重新生成。` };
+    }
+    const now = dirDigest(from);
+    if (c.digest && now && now.digest !== c.digest.digest) {
+      return {
+        error: 'STALE_PLAN_MOVE',
+        message: `${c.rel} 的内容在生成计划后发生变化（计划时 ${c.digest.fileCount} 个文件 / ${c.digest.bytes} 字节，现在 ${now.fileCount} 个 / ${now.bytes} 字节），计划作废。请重新生成。`,
+        detail: { planned: c.digest, now },
+      };
+    }
+  }
+
+  // ---- 4. 目标路径冲突
   for (const c of plan.changes) {
     if (c.kind !== 'move') continue;
     if (fs.existsSync(path.join(repo, c.toRel))) {
@@ -593,15 +745,32 @@ export async function applyPlan(repo, planId) {
     }
   }
 
-  const batchRoot = path.join(repo, DISABLED_REL, plan.batch);
-  await fsp.mkdir(batchRoot, { recursive: true });
+  // ---- 5. 落盘。批次目录按需创建：纯目录移动不需要（也不该）留下空备份目录。
+  const batchRootAbs = path.join(repo, DISABLED_REL, plan.batch);
+  let batchRootMade = false;
+  const ensureBatchRoot = async () => {
+    if (!batchRootMade) { await fsp.mkdir(batchRootAbs, { recursive: true }); batchRootMade = true; }
+    return batchRootAbs;
+  };
 
-  const manifest = { batch: plan.batch, at: new Date().toISOString(), summary: plan.summary, ops: [] };
+  const manifest = {
+    batch: plan.batch,
+    at: new Date().toISOString(),
+    summary: plan.summary,
+    opKind: plan.op?.op ?? null,
+    preset: plan.op?.op === 'preset.apply' ? (plan.op.preset ?? null) : null,
+    backupRoot: path.posix.join(DISABLED_REL, plan.batch),
+    layersBefore: Object.fromEntries(LAYERS.map((l) => [l.id, fs.existsSync(path.join(repo, l.path))])),
+    layersAfter: Object.fromEntries(LAYERS.map((l) => [l.id, proposed.presence[l.id]])),
+    validation: { blocking: validation.blocking, at: validation.generatedAt, counts: validation.counts },
+    ops: [],
+  };
 
   for (const c of plan.changes) {
     if (c.kind === 'text') {
+      const root = await ensureBatchRoot();
       const abs = path.join(repo, c.rel);
-      const bakAbs = path.join(batchRoot, c.rel);
+      const bakAbs = path.join(root, c.rel);
       await fsp.mkdir(path.dirname(bakAbs), { recursive: true });
       await fsp.copyFile(abs, bakAbs);
       const bakText = await readText(bakAbs);
@@ -613,7 +782,7 @@ export async function applyPlan(repo, planId) {
       const to = path.join(repo, c.toRel);
       await fsp.mkdir(path.dirname(to), { recursive: true });
       await fsp.rename(from, to);
-      manifest.ops.push({ kind: 'move', rel: c.rel, movedTo: c.toRel });
+      manifest.ops.push({ kind: 'move', rel: c.rel, movedTo: c.toRel, fileCount: c.digest?.fileCount ?? null });
     }
   }
 
@@ -622,7 +791,38 @@ export async function applyPlan(repo, planId) {
   await fsp.writeFile(path.join(batchesDir, `${plan.batch}.json`), JSON.stringify(manifest, null, 2), 'utf8');
   planStore.delete(planId);
 
-  return { ok: true, batch: plan.batch, summary: plan.summary, ops: manifest.ops.length, backupDir: path.posix.join(DISABLED_REL, plan.batch) };
+  return {
+    ok: true,
+    batch: plan.batch,
+    summary: plan.summary,
+    ops: manifest.ops.length,
+    backupDir: path.posix.join(DISABLED_REL, plan.batch),
+    validation,
+  };
+}
+
+/**
+ * 批次可还原性判定。`restoreBatch` 与这里用**同一个**路径来源（每条 op 自己的 movedTo /
+ * manifest 的 backupRoot），不再用 `batch 名 + basename` 去猜 —— 那正是之前还原按钮被误禁用的原因。
+ */
+function batchStatus(repo, m) {
+  const root = backupRootOf(m);
+  const moves = m.ops.filter((o) => o.kind === 'move');
+  const texts = m.ops.filter((o) => o.kind === 'text');
+  const moveSource = moves.filter((o) => o.movedTo && fs.existsSync(path.join(repo, o.movedTo)));
+  const moveTargetPresent = moves.filter((o) => fs.existsSync(path.join(repo, o.rel)));
+  const textBackup = texts.filter((o) => fs.existsSync(path.join(repo, root, o.backup)));
+  const restored = m.ops.length > 0 && moveSource.length === 0 && textBackup.length === 0 && moveTargetPresent.length === moves.length;
+  return {
+    ops: m.ops.length,
+    moves: moves.length,
+    texts: texts.length,
+    // 只要还有可移回的东西就算可还原；已还原的单独标 restored
+    restorable: !restored && (moveSource.length > 0 || textBackup.length > 0),
+    restored,
+    missingBackup: [...moves.filter((o) => !moveSource.includes(o)).map((o) => o.rel),
+      ...texts.filter((o) => !textBackup.includes(o)).map((o) => o.rel)],
+  };
 }
 
 export async function listBatches(repo) {
@@ -633,8 +833,15 @@ export async function listBatches(repo) {
     if (!f.endsWith('.json')) continue;
     try {
       const m = JSON.parse(await readText(path.join(dir, f)));
-      out.push({ batch: m.batch, at: m.at, summary: m.summary, ops: m.ops.length,
-        restorable: m.ops.every((o) => o.kind !== 'move' || fs.existsSync(path.join(repo, DISABLED_REL, m.batch, path.posix.basename(o.rel)))) });
+      out.push({
+        batch: m.batch, at: m.at, summary: m.summary,
+        opKind: m.opKind ?? null,
+        preset: m.preset ?? null,
+        layersBefore: m.layersBefore ?? null,
+        layersAfter: m.layersAfter ?? null,
+        backupRoot: backupRootOf(m),
+        ...batchStatus(repo, m),
+      });
     } catch { /* 忽略坏文件 */ }
   }
   return out.sort((a, b) => (a.at < b.at ? 1 : -1));
@@ -646,7 +853,7 @@ export async function restoreBatch(repo, batch) {
   const txt = await readText(manPath);
   if (!txt) return { error: 'BATCH_NOT_FOUND', message: `找不到批次 ${batch} 的清单。` };
   const m = JSON.parse(txt);
-  const batchRoot = path.join(repo, DISABLED_REL, batch);
+  const batchRoot = path.join(repo, backupRootOf(m));
   const done = [], skipped = [];
 
   // 顺序很重要：先移回目录，再覆盖文本。
@@ -663,6 +870,8 @@ export async function restoreBatch(repo, batch) {
     await fsp.mkdir(path.dirname(to), { recursive: true });
     await fsp.rename(from, to);
     done.push(`恢复 ${o.rel}`);
+    // 移回后清掉留下的空目录（含 console-disabled/<batch> 与 console-disabled 本身）
+    await pruneEmptyDirs(path.dirname(from), path.join(repo, DISABLED_REL));
   }
 
   for (const o of texts) {
@@ -674,7 +883,38 @@ export async function restoreBatch(repo, batch) {
     done.push(`还原 ${o.rel}`);
   }
 
-  return { ok: true, done, skipped };
+  // 全部还原成功 = 这一轮已经走完闭环：文本备份与空目录一并清掉。
+  // 有跳过时保留一切，避免"备份被删、故障还在"。
+  if (!skipped.length) {
+    for (const o of texts) {
+      try { await fsp.rm(path.join(batchRoot, o.backup), { force: true }); } catch { /* 忽略 */ }
+    }
+    await pruneEmptyTree(batchRoot);
+    const disabledAbs = path.join(repo, DISABLED_REL);
+    await pruneEmptyDirs(disabledAbs, disabledAbs);
+  }
+  const emptied = !fs.existsSync(batchRoot) ? path.posix.join(DISABLED_REL, path.basename(batchRoot)) : null;
+
+  return { ok: true, done, skipped, emptiedDirs: emptied ? [emptied] : [] };
+}
+
+/**
+ * 只读门禁：校验"此刻磁盘上的状态"。
+ * 与 buildPlan 里那次校验共用 proposeState + validateState，避免出现"计划说能过、
+ * 状态页说不能过"两份判断。
+ */
+export async function readGate(repo) {
+  const proposed = await proposeState(repo, []);
+  return validateState({
+    opKind: 'readonly',
+    opSummary: '校验当前状态',
+    configText: proposed.configText,
+    constText: proposed.constText,
+    presence: proposed.presence,
+    layers: LAYERS,
+    presets: PRESETS,
+    presetId: null,
+  }, deriveContract(repo));
 }
 
 // ---------------------------------------------------------------- 环境

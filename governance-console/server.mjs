@@ -20,7 +20,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 import {
-  readState, buildPlan, publicPlan, applyPlan, listBatches, restoreBatch, readEnv,
+  readState, readGate, buildPlan, publicPlan, applyPlan, listBatches, restoreBatch, readEnv,
   HOOKS, LAYERS, PRESETS, CONFIG_REL, CONSTITUTION_REL,
 } from './lib/governance.mjs';
 import { listTasks, runTask } from './lib/runner.mjs';
@@ -163,8 +163,11 @@ const server = http.createServer(async (req, res) => {
     // ---------------- GET /api/state
     if (p === '/api/state' && req.method === 'GET') {
       const state = await readState(REPO);
+      // 门禁结果一起下发：前端只显示，不自己判断"算不算通过"
+      const gate = await readGate(REPO);
       return json(res, 200, {
         ...state,
+        gate,
         meta: {
           hooks: HOOKS.map(({ id, label, when }) => ({ id, label, when })),
           layers: LAYERS.map(({ id, label, layer, path: lp, mustKeep, note }) => ({ id, label, layer, path: lp, mustKeep, note })),

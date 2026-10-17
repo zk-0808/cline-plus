@@ -10,11 +10,20 @@ node governance-console/server.mjs
 
 ```
 governance-console/
-├── server.mjs            零依赖 HTTP 服务：token/Origin 防护、静态服务、路由
-├── lib/governance.mjs    状态采集 + 变更计划（行级 diff）+ 应用 / 批次 / 还原
-├── lib/docs.mjs          规则文档索引 / 单篇读取 / 条款抽取 / 全文检索（只读）
-├── lib/runner.mjs        白名单脚本执行（4 个任务，客户端不能传命令）
-└── public/               index.html · app.js · md.js · style.css · favicon.svg
+├── server.mjs             零依赖 HTTP 服务：token/Origin 防护、静态服务、路由
+├── lib/governance.mjs     状态采集 + 变更计划（行级 diff）+ 应用 / 批次 / 还原
+├── lib/contract.mjs       从插件源码推导分发给定的 Hook / Capability / 实现文件契约
+├── lib/validate.mjs       配置门禁：15 项检查 + 每项独立的阻断策略
+├── lib/docs.mjs           规则文档索引 / 单篇读取 / 条款抽取 / 全文检索（只读）
+├── lib/runner.mjs         白名单脚本执行（4 个任务，客户端不能传命令）
+├── test/                  26 个用例：门禁 16 + 批次往返 8 + 真实仓库锚定 2
+└── public/                index.html · app.js · md.js · style.css · paper.css · favicon.svg
+```
+
+跑测试（纯 Node，无依赖，每个用例在独立临时 git 仓库里跑）：
+
+```
+node governance-console/test/run.mjs
 ```
 
 ---
@@ -74,16 +83,119 @@ http://127.0.0.1:7717/?t=<token>&theme=paper
 
 ---
 
-## 三条与仓库治理纪律一致的设计约束
+## 四条与仓库治理纪律一致的设计约束
 
 **1. 先出计划，再落盘。**
-点任何开关都不会立刻改文件——先生成一份计划，抽屉里给出**行级 diff**、副作用提示与可选还原批次，确认后才写。
+点任何开关都不会立刻改文件——先生成一份计划，抽屉里给出**行级 diff**、**门禁结论**、副作用提示与可选还原批次，确认后才写。
 
 **2. 「删除矩阵」实现为可逆的停用。**
 `§五` 原文是「删什么」，但不可逆的删除不该由一次误点触发。所以预设的实际动作是**把目录移进 `runtime/console-disabled/<batch>/`**，并在 `runtime/console-batches/<batch>.json` 留清单；「变更批次 → 还原」把它整体移回去。停用区与备份区是同一个机制。
 
 **3. 计划带乐观并发控制。**
-计划里记录每个被改文件的 `before` 哈希。应用时若磁盘内容已变（你手改了、或另一个终端改了），计划**作废并要求重新生成**，绝不静默覆盖。
+计划里记录每个被改文件的 `before` 哈希，**以及每个待移动目录的内容指纹**（相对路径＋内容一起哈希）。应用时若磁盘状态已变（你手改了、或另一个终端改了、或往待搬的目录里加了文件），计划**作废并要求重新生成**，绝不静默覆盖、绝不照搬已过期的目录。
+
+**4. 落盘前必须过配置门禁，而且门禁在服务端。**
+计划自带校验结论；`applyPlan` 会**在写第一个字节之前重新校验一遍**，`blocking` 时直接拒绝。前端禁用按钮只是体验，不构成约束——绕过 UI 直接打 API 也过不去。见下一节。
+
+---
+
+## 配置门禁（`lib/validate.mjs`）
+
+### 它判定什么
+
+判定对象是**拟议的完整状态**，不是单个输入值：先在内存里算出「应用之后的样子」（配置文本 + 各层是否还在 + 各 Capability 是否还有实现），再整体校验。因为一次预设会同时改文本、搬目录，只看单个值的校验会漏掉「目录没了但配置还声称有」这类组合故障。
+
+### 状态与阻断是两件事
+
+`status` 说的是**事实**，`blocking` 说的是**策略**，两者分开定义、逐条登记在 `POLICY` 表里：
+
+| status | 含义 |
+|---|---|
+| `pass` | 满足 |
+| `fail` | 违反硬约束 |
+| `warn` | 可疑但合法 |
+| `unknown` | **读不出来**，不是「通过」 |
+| `not_applicable` | 该检查在当前装配下不适用（例如 `capabilities/` 已停用时，静态导入检查自然不适用） |
+
+`unknown` 与 `not_applicable` **永远不会被折成 `pass`**。是否阻断取决于该项的安全要求，而不是它的状态名：
+
+- 读不出**拟议的 `config.json`** → 阻断。理由是 `.governance/plugin/config-loader.ts` 的 `loadConfig` **在解析失败时不报错**，而是 `console.warn` 后静默回落到 `DEFAULT_CONFIG`——也就是「你以为关掉的，其实全按默认开着」。这种失败模式必须在上游拦住。
+- 读不出 **ADR 的复查日期** → 不阻断与它无关的操作。（该项检查放在健康面板，不在配置门禁里。）
+- 读不出**分发契约**（`types.ts` 缺失）→ 改 Hook/Capability 时阻断，只改宪法参数时不阻断。
+
+### 契约从源码推导，不维护名字白名单
+
+框架明确允许用户新增 Capability（`delivery-framework-design.md` 契约表：capabilities 一层「可删除 ❌／可扩展 ✅」）。因此校验器里**不能存一份 Capability 名称白名单**——那会把「加了自己的 Capability」判成配置错误，属于把扩展性误判成缺陷。
+
+契约的唯一来源是分发器自己：
+
+| 来源 | 得到什么 |
+|---|---|
+| `.governance/plugin/types.ts` · `interface HooksConfig` | 有哪些合法顶层 Hook 键 |
+| `.governance/plugin/types.ts` · `DEFAULT_CONFIG` | 每个 Hook 声明了哪些 Capability、各自声明了哪些参数 |
+| `.governance/plugin/**/*.ts` · `*.capabilities.<key>` 读取点 | 哪些键**真的会被执行**（排除 `verify-governance.ts`，它是验证脚本不是分发器） |
+| `.governance/plugin/**/*.ts` · `from "../capabilities/<dir>/index.js"` | 哪些实现文件**必须存在于磁盘**（静态导入解析不了 = 插件加载直接失败） |
+| `.governance/capabilities/*/` | 磁盘上的实现目录（用于发现无分发者的孤儿模块） |
+
+所以「新增一个 Capability」的完整动作是**三件事**：建目录 + 在 `DEFAULT_CONFIG` 声明 + 在 `hooks/*.ts` 里读取。只建目录不算——本框架的分发是静态导入，不是运行期扫目录。校验器把这个事实如实报告，并给出一条可执行的 fix，而不是假装目录存在就等于接线完成。
+
+### 15 项检查
+
+| 检查 | 判什么 | 状态即策略 |
+|---|---|---|
+| `CONFIG_PARSE` | `config.json` 可解析、顶层是对象 | fail→**阻断**；`hooks/` 已停用时为 n/a |
+| `HOOK_KEY_UNDECLARED` | 顶层键在 `HooksConfig` 里有出处 | warn |
+| `CAP_KEY_UNDISPATCHED` | 启用的 Capability 能被分发器解析 | 启用中→**阻断**；已关闭→warn |
+| `CAP_DECLARED_NOT_CONSUMED` | `DEFAULT_CONFIG` 的声明有对应读取点 | warn |
+| `CAP_ARGS_UNDECLARED` | 参数键在 `DEFAULT_CONFIG.args` 里声明 | warn |
+| `CAP_SHARED_ARGS_DIVERGE` | 同一 Capability 跨 Hook 取值一致 | warn |
+| `HOOK_NO_CAPABILITY` | 启用的 Hook 有可执行的 Capability | warn |
+| `SKIPTOOLS_UNKNOWN` | `skipTools` 每个名字都能在仓库自有清单里找到出处 | warn |
+| `CAP_IMPL_BROKEN` | 分发器的静态导入都能解析到文件 | fail→**阻断**（有 Hook 启用时） |
+| `CAP_ORPHAN` | 没有「谁都不调」的 Capability 目录 | warn |
+| `MUST_KEEP_MISSING` | 必需层（`.clinerules` / `core` / `runtime`）在拟议状态中仍存在 | fail→**阻断** |
+| `PRESET_CONTRACT` | 预设履行它自己的删除契约（该停用的停了、该留的留了） | fail→**阻断** |
+| `PARAM_RANGE` | 8 个宪法参数落在语义边界内 | fail→**阻断** |
+| `PARAM_MISSING` | 参数表包含全部已知参数 | warn |
+| `PARAM_DIVERGENCE` | 同一事实的两处取值一致（宪法阈值 ↔ `gitChecker.threshold`） | warn |
+
+**`PRESET_CONTRACT` 判的是「预设有没有履行它自己的契约」，不是「是否符合最全配置」。** 「不用 Hook」和「只用宪法」是 `§五` 写明的合法装配，必须判 `pass`。把合法预设判成非法，比漏判更糟——那会让用户不敢用预设。
+
+### 阻断时零副作用
+
+`applyPlan` 的顺序是：门禁复核 → 文本并发检查 → 目录指纹复核 → 目标冲突检查 → 才开始写。`blocking` 时直接返回 `{ error: 'BLOCKED', validation }`，**磁盘、目录、批次清单、备份目录都没有被碰过**。`T22` 用整棵仓库树的哈希快照验证这一点，不只看某一个文件。
+
+### 门禁在真实仓库上立刻发现了 3 件事
+
+不是测试造出来的，是跑一遍当前状态就出来的：
+
+1. `config.json` 里有个 `tracing` 块，但 `HooksConfig` 没有这个键，`index.ts` 也没读它——追踪路径与开关其实是写死在 `index.ts` 常量里的，这个块目前**不产生任何效果**。
+2. `skipTools` 里的 `glob_file_search` 既不在 `DEFAULT_CONFIG.skipTools` 也不在 `WRITE_TOOL_NAMES`，`docs/handoff.md §3` 的工具名变更记录里也没有它（其余 7 个都在）。要么是漏同步，要么是拼写错误——写错的名字不会匹配任何工具，等于白名单没生效。
+3. `capabilities/rule-appender/` 与 `capabilities/staleness-sweeper/` 没有任何分发路径：前者无人导入，后者的逻辑被内联复制进了 `plugin/staleness-utils.ts`（同名函数 `calcStalenessWeight` / `processStaleness`）。留着会被误认为「已经生效」。
+
+这三条都是 `warn`，不阻断——它们不构成落盘风险，但不该继续隐身。
+
+---
+
+## 变更批次与还原
+
+每次应用产生**一个批次目录**：`.governance/runtime/console-disabled/<batch>/`，文本备份与目录移动都落在同一个基址下，清单写在 `.governance/runtime/console-batches/<batch>.json`。
+
+清单记录：`batch` / `at` / `opKind` / `preset` / `backupRoot` / `layersBefore` / `layersAfter` / `validation`（门禁结论与各项计数）/ `ops`（每项操作的类型、原路径、移动目标、文件数）。
+
+**还原顺序是先移回目录、再覆盖文本**：停用 `hooks/` 时 `config.json` 是被改过之后才随目录搬走的，先移回会把「改过的」带回来，随后由文本还原覆盖成原始内容。
+
+路径解析只有一处事实来源：每项操作自己的 `movedTo`（文本备份用清单里的 `backupRoot`）。`listBatches` 与 `restoreBatch` 用同一套解析——早先它们一个用 `batch` 名拼路径、一个用 `movedTo`，导致 UI 把可还原的批次显示成不可还原（按钮禁用、实际能还原）。这是最不该出错的地方，`T24` 专门盯老清单的兼容。
+
+还原成功后：目录回原位、文件内容回到应用前、`console-disabled/` 清空并删除（不留空目录）、清单保留但标 `restored: true`。有跳过项时**保留全部备份**，避免「备份被删、故障还在」。
+
+---
+
+## 这个控制台证明了什么，没证明什么
+
+它证明：**配置变更可审计、可还原、落盘前有门禁**。每一条都有对应的自动化用例。
+
+它**没有**证明：「这套治理框架提升了 agent 的成功率」。那是另一个问题，需要单独的对照实验（有框架 / 无框架，同一批任务，同一套判据）。控制台的测试只能证明控制台自己是对的，不能替框架背书——把这两件事混成一件，是这类项目最常见的过度声明。
 
 ---
 
@@ -114,8 +226,12 @@ http://127.0.0.1:7717/?t=<token>&theme=paper
 ## 已知局限
 
 - **它是把现有契约做成界面，不是新的权威源。** 页面上的中文说明与阈值理由若与 `dev-rules.md` / `constitution.md` 冲突，以文件为准。
+- **门禁证明的是「配置可靠」，不是「治理有效」。** 见上一节。这两件事不能互相替代。
+- **门禁只覆盖配置层，不覆盖运行期。** 它不会去探测 Cline 实际有没有调到你开的 Hook——那要读 `runtime/traces.jsonl` 与 `plugin-loaded.marker`，属于健康面板的范围。
+- **契约推导依赖源码的书写形式。** 它认的是 `types.ts` 的 `interface HooksConfig` / `DEFAULT_CONFIG` 对象字面量，以及 `*.capabilities.<key>` 与相对 import 这两种写法。若把配置读取重构成变量间接引用（如 `caps[key].enabled`），推导会读不到——那时该项退化成「未声明」，仍是 warn 级提示，不会静默判通过。
+- **目录内容指纹算的是「路径＋内容」**，能发现「计划生成后目录被改过」，但不告诉你改的是什么。
 - **不校验 Cline 端实际行为。** 它读 `.governance/runtime/plugin-loaded.marker` 判断 SessionStart 是否跑过，但 marker 陈旧只说明"没刷新"，不定位原因；真正定位要按 `plugin-dev-sop.md §2` 读源码。
-- **单用户本地工具**，没有多会话隔离与权限模型。多人共用一台机器时不要开。
+- **单用户本地工具**，没有多会话隔离与权限模型。多人共用一台机器时不要开。批次清单里只有「某次操作及其时间」，**没有操作人身份**——不要把它当成能追责到人的审计日志。
 - **装配预设只处理 `§五` 列出的 5 种组合**，更细的裁剪请直接删目录——那时 Git 就是你的还原机制。
 - **条款抽取是机械规则，会有误读。** 摘要取「判据 / 执行门控 / 违反时」等标签字段的第一条，取不到才退回首段；它给的是**入口**，不是条款全文。看条款请看原文（每条都带 `文件:行号`）。
 - **「被引用次数」只统计仓内相对链接**，不含外部引用，也不区分「引用」与「反向引用同一个无关段落」。

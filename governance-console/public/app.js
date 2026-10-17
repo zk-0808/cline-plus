@@ -181,6 +181,83 @@ function renderChips() {
 
   $('chip-exec').className = `chip ${s.meta.exec ? 'ok' : 'warn'}`;
   $('chip-exec').textContent = s.meta.exec ? '脚本执行：启用' : '脚本执行：已禁用';
+
+  renderGateChip();
+}
+
+// ---------------------------------------------------------------- 配置门禁
+
+/**
+ * 门禁结果来自服务端 /api/state 的 gate 字段（lib/validate.mjs 算出来的）。
+ * 前端只负责显示，不自己判断"算不算通过" —— 否则同一个标准出现两份实现。
+ */
+function gateTone(v) {
+  if (!v) return ['warn', '未知'];
+  if (v.blocking) return ['err', '阻断'];
+  if ((v.counts.warn ?? 0) > 0) return ['warn', `${v.counts.warn} 告警`];
+  if ((v.counts.unknown ?? 0) > 0) return ['warn', `${v.counts.unknown} 待定`];
+  return ['ok', '通过'];
+}
+
+function renderGateChip() {
+  const v = STATE.gate;
+  const [tone, label] = gateTone(v);
+  const bad = v ? v.checks.filter((c) => c.status === 'fail' || c.status === 'warn' || c.status === 'unknown') : [];
+  $('chips').appendChild(el('span', {
+    class: `chip ${tone}`,
+    title: bad.length ? bad.map((c) => `${c.status.toUpperCase()} ${c.id}：${c.observed ?? ''}`).join('\n') : '配置门禁：拟议状态可安全落盘',
+    onclick: () => {
+      if (!v) return toast('门禁结果未取到', 'err');
+      toast(bad.length ? bad.map((c) => `${c.id}：${c.observed ?? ''}`).slice(0, 3).join('；') : '配置门禁通过：关键项都有出处', bad.length ? 'err' : 'ok');
+    },
+  }, '门禁 ', el('b', { text: label }), v ? ` · ${v.checks.length} 项` : ''));
+}
+
+/**
+ * 计划抽屉里的门禁面板。
+ * pass 合并成一行，fail / warn / unknown 逐条展开 —— "通过"不需要占版面，
+ * 但"为什么不通"必须能直接读到，而不是去翻文档。
+ */
+function renderGate(v) {
+  const wrap = el('div', { class: 'gate' });
+  if (!v) {
+    wrap.appendChild(el('div', { class: 'gate-head warn' },
+      el('b', { text: '门禁结果缺失' }),
+      el('span', { class: 'gate-note', text: '本次计划没有带校验结果，不能视为通过。' })));
+    return wrap;
+  }
+
+  const [tone, label] = gateTone(v);
+  const failures = v.checks.filter((c) => c.status === 'fail');
+  wrap.appendChild(el('div', { class: `gate-head ${tone}` },
+    el('b', { text: v.blocking ? `被拦住：${failures.length} 项硬约束未满足` : `门禁${label === '通过' ? '通过' : '：' + label}` }),
+    el('span', { class: 'gate-note', text: v.blocking ? '服务端会拒绝落盘，不会产生任何文件变更。' : '可以应用；下面标黄的是提示，不阻断。' })));
+
+  const list = el('div', { class: 'gate-list' });
+  const norm = (c) => el('div', { class: `gate-item ${c.status}` },
+    el('span', { class: 'gate-st', text: c.status.toUpperCase() }),
+    el('span', { class: 'gate-id', text: c.id }),
+    el('span', { class: 'gate-body' },
+      el('span', { class: 'gate-title', text: c.title }),
+      c.observed ? el('span', { class: 'gate-ob', text: c.observed }) : null,
+      c.expected ? el('span', { class: 'gate-exp', text: `应满足：${c.expected}` }) : null,
+      c.fix ? el('span', { class: 'gate-fix', text: `→ ${c.fix}` }) : null,
+      el('span', { class: 'gate-ref', text: `依据：${c.ruleRef}` }),
+    ));
+
+  for (const c of v.checks) if (c.status === 'fail') list.appendChild(norm(c));
+  for (const c of v.checks) if (c.status === 'warn') list.appendChild(norm(c));
+  for (const c of v.checks) if (c.status === 'unknown') list.appendChild(norm(c));
+
+  const pass = v.checks.filter((c) => c.status === 'pass');
+  const na = v.checks.filter((c) => c.status === 'not_applicable');
+  wrap.appendChild(list);
+  wrap.appendChild(el('div', { class: 'gate-foot' },
+    el('span', { text: `${pass.length} 项通过` }),
+    na.length ? el('span', { text: ` · ${na.length} 项不适用：${na.map((c) => c.id).join('、')}` }) : null,
+    el('span', { class: 'gate-ref', text: `${pass.map((c) => c.id).join('、')}` }),
+  ));
+  return wrap;
 }
 
 // ---------------------------------------------------------------- 告警
@@ -478,6 +555,8 @@ function openDrawer(plan) {
   const box = $('d-content');
   box.innerHTML = '';
 
+  box.appendChild(renderGate(plan.validation));
+
   for (const w of plan.warnings || []) {
     box.appendChild(el('div', { class: `w-item ${w.level === 'info' ? '' : w.level}` },
       el('div', { class: 'dot' }),
@@ -501,8 +580,12 @@ function openDrawer(plan) {
     }
   }
 
-  $('d-hint').textContent = '应用前会把原文件原样备份到批次目录，可用「变更批次 → 还原」撤回。';
-  $('d-apply').disabled = false;
+  const blocked = plan.validation?.blocking === true;
+  $('d-hint').textContent = blocked
+    ? '门禁未通过：应用按钮已禁用。按上面列的 fix 改完再重新生成计划。'
+    : '应用前会把原文件原样备份到批次目录，可用「变更批次 → 还原」撤回。';
+  $('d-apply').disabled = blocked;
+  $('d-apply').textContent = blocked ? '门禁未通过' : '应用变更';
   $('mask').classList.add('open');
   $('drawer').classList.add('open');
   $('drawer').setAttribute('aria-hidden', 'false');
@@ -567,7 +650,20 @@ async function applyPlan() {
     const r = await api('/api/apply', { method: 'POST', body: JSON.stringify({ planId: PLAN.id }) });
     if (r.error) {
       toast(r.message || r.error, 'err');
-      if (r.error === 'STALE_PLAN' || r.error === 'PLAN_GONE') { closeDrawer(); await load(); }
+      // 服务端再次校验后拒绝：把最新的校验结果换进抽屉，而不是只说一句"失败"
+      if (r.error === 'BLOCKED' && r.validation) {
+        PLAN.validation = r.validation;
+        const box = $('d-content');
+        box.replaceChild(renderGate(r.validation), box.firstChild);
+        $('d-hint').textContent = '门禁未通过：服务端拒绝落盘，未写入任何文件。';
+        $('d-apply').textContent = '门禁未通过';
+        await load();
+        return;
+      }
+      if (r.error === 'STALE_PLAN' || r.error === 'STALE_PLAN_MOVE' || r.error === 'PLAN_GONE') {
+        closeDrawer();
+        await load();
+      }
       return;
     }
     toast(`已应用：${r.summary}`, 'ok');
@@ -576,8 +672,14 @@ async function applyPlan() {
   } catch (e) {
     toast(e.message, 'err');
   } finally {
-    $('d-apply').disabled = false;
-    $('d-apply').textContent = '应用变更';
+    if (PLAN) {
+      const blocked = PLAN.validation?.blocking === true;
+      $('d-apply').disabled = blocked;
+      $('d-apply').textContent = blocked ? '门禁未通过' : '应用变更';
+    } else {
+      $('d-apply').disabled = false;
+      $('d-apply').textContent = '应用变更';
+    }
   }
 }
 
