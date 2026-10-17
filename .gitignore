@@ -45,6 +45,10 @@ handoff/auto-*.md
 .governance/runtime/*.marker
 .governance/runtime/*.jsonl
 
+# governance-console 的变更备份与停用区（都是可还原的运行期产物，不入库）
+.governance/runtime/console-batches/
+.governance/runtime/console-disabled/
+
 # Experiments (P5 plugin sandbox lives in its own repo)
 experiments/
 !docs/search/search-orchestrator/experiments/

@@ -79,6 +79,7 @@ ADR-001（2026-06-23）原本判定「复用 Cline 原生 compact」，依据是
 | 插件实现 | `context-snapshot/`（子模块 → [cline-plugin-install](https://github.com/zk-0808/cline-plugin-install)） | 独立可分发的 snapshot 插件 |
 | 薄 wrapper | `search-mcp-wrapper/` | 节流 + 熔断（1h 窗口 3 次失败）+ 指数退避，11/11 集成测试 |
 | 搜索 skill | `skills/search-orchestrator/` | Phase 0 门控、fanout、Goggles、Gap Ledger |
+| **本地控制台** | [`governance-console/`](governance-console/README.md) | 零依赖 Node：Hook/Capability 启停、宪法参数、装配预设、一键安装 |
 | **项目复盘（故事线）** | [`docs/RETROSPECTIVE.md`](docs/RETROSPECTIVE.md) | 从起点问题到转折、阻塞、自我纠错的完整叙事 |
 | **审计方法与纠错** | [`docs/RETROSPECTIVE-AUDIT.md`](docs/RETROSPECTIVE-AUDIT.md) | 204 个文档的取证方法、186 处失效链接（范围盲区见该文「口径边界」）、5 条被证伪的自身结论 |
 
@@ -211,6 +212,25 @@ bash scripts/sync-governance-plugin.sh
 配置 `.governance/hooks/config.json` → `cline -i` 验证 `.governance/runtime/plugin-loaded.marker` 是否创建。
 触发时的动作：**SessionStart** 注入上下文 / **PreToolUse** 未 commit 堆积达阈值则阻断 / **PreCompact** 写 snapshot / **PostToolUse** 占位。
 不用 Hook 时，上述动作由人工触发。详见 [开发者指南](docs/developer-guide/development-guide.md)。
+
+### 本地控制台（可选）
+
+不想手改 JSON 的话，用一个页面管这些开关：
+
+```bash
+node governance-console/server.mjs        # 默认 127.0.0.1:7717
+```
+
+终端会打印带 token 的地址，用那个地址打开（token 是必须的，见下）。
+
+| 区块 | 写入目标 |
+|---|---|
+| Hook 启停 / Capability 启停与参数 | `.governance/hooks/config.json` |
+| 宪法可调参数（8 项） | `.governance/core/constitution.md` 底部表格 |
+| 装配预设（§五 删除矩阵的 5 种组合） | 目录移入 `runtime/console-disabled/`，可整批还原 |
+| 一键安装 / 重置安装 | `scripts/sync-governance-plugin.ps1` 等 4 个白名单脚本 |
+
+**它不持有状态，也不绕过治理**：每次改动先出计划（行级 diff + 副作用提示），确认后才落盘；落盘前把原文件/原目录移入 `runtime/console-batches/`，可一键还原。计划里记录 `before` 哈希，磁盘内容变了计划即作废，不会静默覆盖。服务只绑 `127.0.0.1`、全部 API 校验 token 与 `Origin`、脚本执行只认白名单。详见 [governance-console/README.md](governance-console/README.md)。
 
 ---
 

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>governance-console</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">governance<span>·</span>console</div>
+  <div class="chips" id="chips">
+    <span class="chip" id="c-repo">读取中…</span>
+  </div>
+  <button class="ghost sm" id="btn-refresh">刷新状态</button>
+</header>
+
+<main>
+
+  <!-- 告警：状态不一致、缺件、陈旧 marker -->
+  <section id="sec-warn" hidden>
+    <div class="warn-list" id="warn-list"></div>
+  </section>
+
+  <!-- 一键安装 -->
+  <section class="card" id="sec-install">
+    <header>
+      <h2>一键安装</h2>
+      <span class="sub">白名单脚本，客户端不能传任意命令</span>
+      <span class="spacer"></span>
+      <span class="chip" id="chip-exec"></span>
+    </header>
+    <div class="task-grid" id="task-grid"></div>
+    <pre class="log" id="task-log"></pre>
+  </section>
+
+  <!-- Hook 开关 -->
+  <section class="card" id="sec-hooks">
+    <header>
+      <h2>Hook 启停</h2>
+      <span class="sub">写入 .governance/hooks/config.json · 点开关先出计划</span>
+    </header>
+    <div class="body" id="hook-rows"></div>
+  </section>
+
+  <!-- Capability 开关与参数 -->
+  <section class="card" id="sec-caps">
+    <header>
+      <h2>Capability 启停与参数</h2>
+      <span class="sub">同一份 config.json 的 capabilities.* · 改动立刻影响下次会话</span>
+    </header>
+    <div class="body" id="cap-rows"></div>
+  </section>
+
+  <!-- 宪法参数 -->
+  <section class="card" id="sec-params">
+    <header>
+      <h2>宪法可调参数</h2>
+      <span class="sub">.governance/core/constitution.md 底部表格 · 只改取值，不动判定动作</span>
+    </header>
+    <div class="body" id="param-rows"></div>
+  </section>
+
+  <!-- 装配预设 -->
+  <section class="card" id="sec-presets">
+    <header>
+      <h2>装配预设</h2>
+      <span class="sub">delivery-framework-design.md §五 删除矩阵 · 停用 = 移入可还原目录，不物理删除</span>
+    </header>
+    <div class="preset-grid" id="preset-grid"></div>
+  </section>
+
+  <!-- 层状态 -->
+  <section class="card" id="sec-layers">
+    <header>
+      <h2>目录层现状</h2>
+      <span class="sub">目录契约的实际落位</span>
+    </header>
+    <div class="body" id="layer-rows"></div>
+  </section>
+
+  <!-- 变更批次 -->
+  <section class="card" id="sec-batches">
+    <header>
+      <h2>变更批次</h2>
+      <span class="sub">每次应用都会留一份可还原的批次</span>
+      <span class="spacer"></span>
+      <button class="ghost sm" id="btn-batches">刷新</button>
+    </header>
+    <div class="body" id="batch-rows"><div class="empty">加载中…</div></div>
+  </section>
+
+</main>
+
+<div class="footnote">
+  <b>这个控制台不持有任何状态。</b>每个开关背后都是一个你随时可以用编辑器手改的文件：
+  <code>.governance/hooks/config.json</code>、<code>.governance/core/constitution.md</code>。
+  这里只是给它们加了一层带 diff 预览和安全备份的操作面。<br>
+  所有写操作先出计划 → 你确认 → 才落盘；落盘前把原文件/原目录移入
+  <code>.governance/runtime/console-batches/</code>，可整批还原。
+</div>
+
+<!-- 计划预览抽屉 -->
+<div class="drawer-mask" id="mask"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <header>
+    <div style="flex:1">
+      <h2 id="d-title">变更计划</h2>
+      <div class="sub" id="d-sub"></div>
+    </div>
+    <button class="ghost sm" id="d-close">关闭</button>
+  </header>
+  <div class="content" id="d-content"></div>
+  <footer>
+    <span class="hint" id="d-hint"></span>
+    <button class="ghost" id="d-cancel">取消</button>
+    <button class="primary" id="d-apply">应用变更</button>
+  </footer>
+</aside>
+
+<div class="toasts" id="toasts"></div>
+
+<script>window.__CONSOLE_TOKEN__ = "__TOKEN_VALUE__";</script>
+<script src="/app.js"></script>
+</body>
+</html>
