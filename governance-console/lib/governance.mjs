@@ -99,7 +99,8 @@ export const PRESETS = [
   { id: 'no-hooks', label: '不用 Hook', disable: ['hooks', 'capabilities'],
     result: '纯文档治理，无自动化', sideEffect: 'rule-appender 随 capabilities/ 消失，HANDOFF.md 待沉淀区退化为纯手工表格；同时会把 config.json 里 5 个 hook 全部置为 enabled:false。' },
   { id: 'constitution-only', label: '只用宪法', disable: ['rules', 'examples', 'capabilities', 'hooks'],
-    result: '一页纸治理（.clinerules + core/constitution.md）', sideEffect: '除宪法外全部停用；同「不用 Hook」的副作用，并失去 rules/ 门控。' },
+    result: '一页纸治理：.clinerules + core/constitution.md（runtime/ 是必需层，随附保留）',
+    sideEffect: '除宪法外全部停用；同「不用 Hook」的副作用，并失去 rules/ 门控。' },
 ];
 
 // 宪法参数的语义边界集中在 lib/validate.mjs 的 PARAM_RULES —— 门禁与计划生成读同一份，
