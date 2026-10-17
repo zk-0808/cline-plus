@@ -39,17 +39,25 @@ export const REGISTRY = {
     runnable: true,
     writable: ['HANDOFF.md'],
     requires: ['experience'],
+    // 输入：{ handoffPath, experience:{id,content,source} }
+    buildArgs: ({ abs, exp }) => ({ handoffPath: abs, experience: exp }),
+    changed: (r) => r?.data?.appended === true,
+    duplicate: (r) => r?.data?.duplicateId ?? null,
     ruleRef: '.governance/capabilities/README.md §五；.governance/core/constitution.md §5',
   },
   'staleness-sweeper': {
     label: '更新待沉淀区权重列（可选物理删除过期项）',
     module: '.governance/capabilities/staleness-sweeper/index.ts',
     exportName: 'stalenessSweeper',
-    runnable: false,
-    // 必须是单行字符串字面量：控制台的契约推导逐个字段正则解析登记表，拼接会截断
-    reason: "该模块用值导入 `../../plugin/staleness-utils.js`，而磁盘上只有 .ts；Node 的原生类型剥离只擦除类型、不会把 .js 说明符改写成 .ts，所以在没有构建步骤时加载即失败。要启用它：把该导入改成 .ts 并让构建侧开 rewriteRelativeImportExtensions，或补一个 tsc 构建产物。",
+    runnable: true,
+    needsLoader: true, // 值导入写的是 .js，需要进程内开启 TS 解析钩子
     writable: ['HANDOFF.md'],
     requires: [],
+    // 输入：{ handoffPath, ruleBlock }
+    buildArgs: ({ abs, opts }) => ({ handoffPath: abs, ruleBlock: !!opts.ruleBlock }),
+    changed: (r) => r?.data?.sweeped === true,
+    duplicate: () => null,
+    note: '只能手动运行：没有任何 hook 分发它；ruleBlock=true 会物理删除已过期条目，属不可逆操作，默认关闭。',
     ruleRef: 'docs/developer-guide/staleness-internals.md',
   },
 };
@@ -59,6 +67,8 @@ export function listCapabilities() {
     id,
     label: r.label,
     runnable: !!r.runnable,
+    needsLoader: !!r.needsLoader,
+    note: r.note ?? null,
     reason: r.reason ?? null,
     writable: r.writable,
     module: r.module,
@@ -108,13 +118,13 @@ function todayStr() {
  *   result?:any, error?:string}>}
  */
 export async function runCapability(opts) {
-  const { repoRoot = DEFAULT_REPO, name, experience, source = 'manual', id, apply = false } = opts;
+  const { repoRoot = DEFAULT_REPO, name, experience, source = 'manual', id, apply = false, ruleBlock = false } = opts;
   const entry = REGISTRY[name];
   if (!entry) {
     return { ok: false, error: `未知 Capability：${name}。可用：${Object.keys(REGISTRY).join('、')}` };
   }
   if (!entry.runnable) {
-    return { ok: false, error: `${name} 当前不可直接执行：${entry.reason}` };
+    return { ok: false, error: `${name} 当前不可直接执行：${entry.reason ?? '未登记原因'}` };
   }
   if (entry.requires.includes('experience')) {
     const text = String(experience ?? '').trim();
@@ -129,6 +139,12 @@ export async function runCapability(opts) {
   const targetRel = entry.writable[0];
   const guard = guardTarget(repoRoot, targetRel);
   if (!guard.ok) return { ok: false, error: guard.message };
+
+  // 需要 TS 解析钩子的模块：在当前进程开启，调用方不必额外加 --import
+  if (entry.needsLoader) {
+    const { ensureTsLoader } = await import('./ts-js-resolve.mjs');
+    ensureTsLoader();
+  }
 
   const mod = await import(pathToFileURL(path.join(repoRoot, entry.module)).href);
   const fn = mod[entry.exportName];
@@ -150,6 +166,10 @@ export async function runCapability(opts) {
   const event = { type: 'PostToolUse', timestamp: new Date().toISOString(), toolName: 'governance-capability.mjs' };
 
   const before = fs.existsSync(guard.abs) ? await fsp.readFile(guard.abs, 'utf8') : null;
+  const callModule = async (handoffAbs) => {
+    const args = entry.buildArgs({ abs: handoffAbs, exp, opts: { ruleBlock } });
+    return fn({ ctx, event, args });
+  };
 
   // ---- dry-run：在临时副本上跑，完全不碰仓库
   if (!apply) {
@@ -157,11 +177,11 @@ export async function runCapability(opts) {
     const tmpPath = path.join(tmpDir, 'HANDOFF.md');
     try {
       if (before != null) await fsp.writeFile(tmpPath, before, 'utf8');
-      const result = await fn({ ctx, event, args: { handoffPath: tmpPath, experience: exp } });
+      const result = await callModule(tmpPath);
       const after = fs.existsSync(tmpPath) ? await fsp.readFile(tmpPath, 'utf8') : null;
       return {
-        ok: true, mode: 'dry-run', target: guard.rel, appended: !!result?.data?.appended,
-        backupDir: null, before, after, result,
+        ok: true, mode: 'dry-run', target: guard.rel, changed: entry.changed(result),
+        duplicateId: entry.duplicate(result), backupDir: null, before, after, result,
       };
     } finally {
       await fsp.rm(tmpDir, { recursive: true, force: true });
@@ -176,13 +196,13 @@ export async function runCapability(opts) {
     await fsp.mkdir(path.dirname(bakAbs), { recursive: true });
     await fsp.writeFile(bakAbs, before, 'utf8');
   }
-  const result = await fn({ ctx, event, args: { handoffPath: guard.abs, experience: exp } });
+  const result = await callModule(guard.abs);
   const after = await fsp.readFile(guard.abs, 'utf8');
 
   return {
     ok: !result?.metadata?.writeError,
-    mode: 'apply', target: guard.rel, appended: !!result?.data?.appended,
-    backupDir, before, after, result,
+    mode: 'apply', target: guard.rel, changed: entry.changed(result),
+    duplicateId: entry.duplicate(result), backupDir, before, after, result,
     error: result?.metadata?.writeError ? String(result.metadata.writeError) : undefined,
   };
 }
@@ -230,8 +250,9 @@ async function main(argv) {
   if (cmd === 'list') {
     for (const c of listCapabilities()) {
       console.log(`${c.runnable ? '✓ 可执行' : '✗ 不可执行'}  ${c.id}  —  ${c.label}`);
-      console.log(`           模块：${c.module}`);
+      console.log(`           模块：${c.module}${c.needsLoader ? '（需 TS loader，入口会自动开启）' : ''}`);
       if (!c.runnable) console.log(`           原因：${c.reason}`);
+      if (c.note) console.log(`           注意：${c.note}`);
       console.log(`           可写：${c.writable.join('、')}`);
     }
     return 0;
@@ -243,6 +264,7 @@ async function main(argv) {
     source: args.source,
     id: args.id,
     apply: !!args.apply,
+    ruleBlock: !!args['rule-block'],
   });
 
   if (!r.ok) {
@@ -250,9 +272,8 @@ async function main(argv) {
     return 1;
   }
 
-  if (!r.appended) {
-    const dup = r.result?.data?.duplicateId;
-    console.error(dup ? `[跳过] 该经验已存在（重复 id：${dup}）` : '[跳过] 未追加（人工 review 后重试）');
+  if (!r.changed) {
+    console.error(r.duplicateId ? `[跳过] 该经验已存在（重复 id：${r.duplicateId}）` : '[跳过] 没有产生变更（内容无需更新或未达阈值）');
     return 2;
   }
 

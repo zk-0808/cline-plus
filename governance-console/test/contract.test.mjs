@@ -21,14 +21,12 @@ test('T30 真实仓库的分发契约能从源码推出来（不是手写白名�
   eq(c.hookKeys, ['session-start', 'pre-tool', 'post-tool', 'pre-compact'], 'HooksConfig 声明的 Hook 键');
   eq(Object.keys(c.consumed).sort(), ['gitChecker', 'handoffProvider', 'snapshotWriter'], '分发器真正读取的 Capability 键');
   eq(c.imports.every((i) => i.target), true, '每处静态导入都应能解析到实现文件');
-  // tracer 由分发器导入；rule-appender 走手动入口（scripts/governance-capability.mjs）；
-  // staleness-sweeper 登记了但标为不可执行 → 仍算没有可用调用路径
-  ok(!c.orphans.includes('rule-appender'), 'rule-appender 已有手动入口，不该再算孤儿');
-  ok(c.orphans.includes('staleness-sweeper'), 'staleness-sweeper 登记为不可执行，仍应算无可用调用路径');
-  const ra = c.manualEntries.find((e) => e.id === 'rule-appender');
-  ok(ra && ra.runnable === true, '手动入口登记表里 rule-appender 应可执行');
-  const ss = c.manualEntries.find((e) => e.id === 'staleness-sweeper');
-  ok(ss && ss.runnable === false, 'staleness-sweeper 应被登记为不可执行');
+  // 两条手动入口都可用（sweeper 需要 TS loader，入口会自动开启）→ 不再有孤儿
+  eq(c.orphans, [], '所有 capability 目录都应有调用路径');
+  for (const id of ['rule-appender', 'staleness-sweeper']) {
+    const e = c.manualEntries.find((x) => x.id === id);
+    ok(e && e.runnable === true, `手动入口登记表里 ${id} 应可执行`);
+  }
 });
 
 test('T31 真实仓库当前状态通过门禁，且已知的 3 个问题以 warn 形式露出', async () => {
@@ -56,9 +54,7 @@ test('T31 真实仓库当前状态通过门禁，且已知的 3 个问题以 war
   // 这三条是真实存在的待办，不是测试造出来的
   eq(byId('HOOK_KEY_UNDECLARED').status, 'warn', 'config.json 的 tracing 块不在 HooksConfig 里');
   ok(byId('HOOK_KEY_UNDECLARED').observed.includes('tracing'), 'observed 应点出 tracing');
-  ok(byId('CAP_ORPHAN').observed.includes('staleness-sweeper'), '无可用调用路径的模块里应有 staleness-sweeper');
-  ok(!byId('CAP_ORPHAN').observed.includes('rule-appender'), 'rule-appender 已有手动入口，不该再报孤儿');
-  eq(byId('CAP_ORPHAN').status, 'warn', '孤儿模块只告警，不阻断');
+  eq(byId('CAP_ORPHAN').status, 'pass', '两条手动入口都可用后，不该再有孤儿');
 });
 
 test('T32 前端消费的字段，服务端必须都提供（UI 契约）', async () => {

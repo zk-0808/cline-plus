@@ -16,8 +16,8 @@ governance-console/
 ├── lib/validate.mjs       配置门禁：15 项检查 + 每项独立的阻断策略
 ├── lib/health.mjs         健康面板：L1–L5 分层检查 + ADR 生命周期 + 记录型门禁
 ├── lib/docs.mjs           规则文档索引 / 单篇读取 / 条款抽取 / 全文检索（只读）
-├── lib/runner.mjs         白名单脚本执行（5 个任务，客户端不能传命令）
-├── test/                  45 个用例：门禁 16 + 批次 8 + 契约/UI 3 + 健康 11 + 手动入口 7
+├── lib/runner.mjs         白名单脚本执行（6 个任务，客户端不能传命令）
+├── test/                  48 个用例：门禁 16 + 批次 8 + 契约/UI 3 + 健康 14 + 手动入口 7
 └── public/                index.html · app.js · md.js · style.css · paper.css · favicon.svg
 ```
 
@@ -228,6 +228,26 @@ ADR 的「该不该复查」不是一个枚举能表达清的，所以拆成三�
 
 点健康页的「运行链接门控」即可跑一次并留下记录。
 
+### 记录型门禁现在有两条
+
+| 门禁 | 跑什么 | 跑通证明了什么 | 不证明什么 |
+|---|---|---|---|
+| `GATE-LINKS` | `python scripts/check_links_anchors.py` | 全仓 Markdown 的相对链接与标题锚点零失效（归档区按 §1.17 豁免） | 不检查外部 URL 是否可达 |
+| `GATE-VERIFY` | `node --import ./scripts/ts-js-resolve.mjs .governance/plugin/verify-governance.ts` | 插件分发逻辑 50 项断言全过：config 加载与深合并、handoff 注入、git-checker、pre-tool 阻断与 skip、compaction 检测、snapshot 写入、分发聚合 | **它直接调 Capability 函数，不经过 Cline**；通过 ≠ Cline 真的触发了 hook |
+
+两条**各读各的记录**：只有 `GATE-LINKS` 的记录时，`GATE-VERIFY` 仍显示「未运行」——不会因为"隔壁绿了"就变绿。`H14` 专门盯这条。
+
+### 为什么要一个 TS loader
+
+仓库的 TS 源码按 tsc 习惯写 `.js` 说明符（`from "./types.js"`），而 Node 的原生类型剥离**只擦除类型、不改写说明符**。结果 `verify-governance.ts` 的文档写着 `node --experimental-strip-types …`，实际一跑就 `ERR_MODULE_NOT_FOUND` —— 又一处"文档写的比能力多"。
+
+`scripts/ts-js-resolve.mjs` 只做一件事：解析失败时把 `./x.js` 换 `./x.ts` 再试一次。不改变语义、不注入全局。两种用法：`node --import ./scripts/ts-js-resolve.mjs <file.ts>`，或在入口里 `ensureTsLoader()` 后再动态 import（手动入口用后者，所以调用方不必记旗标）。
+
+顺带修掉的两处：
+
+- `verify-governance.ts` 的 T4 原先跑在"当前工作区"上，**未提交文件数一变它就挂**——门禁变成了环境的函数。现改为在独立临时 git 仓库里构造确定的 dirty 数，并补上此前从未测过的**阻断分支**（dirty ≥ 阈值 → skip=true）。
+- `rule-appender/test.ts`（33 项断言）同样从"跑不起来"变成可执行。
+
 ### 检查清单
 
 | 层 | 检查 | 判什么 |
@@ -241,7 +261,7 @@ ADR 的「该不该复查」不是一个枚举能表达清的，所以拆成三�
 | L4 | `L4-PLUGIN` / `L4-MARKER` | 插件已装到 Cline 发现路径；`plugin-loaded.marker` ≤7 天 |
 | L5 | `L5-TRACES` / `L5-SNAPSHOT` | 轨迹有近期记录；`snapshot.json` 是**实例**而不是 schema |
 | DR | `ADR-*` / `DR-SOURCE-KIND` / `DR-SUMMARY` | 每份 ADR 的生命周期；时效类别字段；总体时效状况 |
-| GATE | `GATE-LINKS` | 链接锚点门控的上次运行结果 |
+| GATE | `GATE-LINKS` / `GATE-VERIFY` | 链接锚点门控、插件逻辑自检的上次运行结果（各读各的记录，互不顶替） |
 
 每条检查都带 `ruleRef`（仓库里的文件 + 章节），写不出出处的检查不该存在——否则面板就在发明标准。
 
@@ -291,7 +311,7 @@ ADR 的「该不该复查」不是一个枚举能表达清的，所以拆成三�
 - **跨站防护**：校验 `Origin` 与 `Sec-Fetch-Site`，挡住其它网页对你本机服务的调用（DNS rebinding / CSRF）
 - **静态文件白名单**：只服务 5 个文件名，无目录穿越
 - **文档读取白名单**：`/api/doc` 只接受 `.governance/` / `docs/` / `governance-console/` 前缀与三个根文件，解析后再次校验必须落在仓库根内（`../../etc/passwd`、`C:\...`、`.git/config` 一律拒绝）
-- **脚本执行只认白名单**：`lib/runner.mjs` 里 5 个任务，客户端只能传 `taskId`，不能传命令；`--no-exec` 可整体关闭
+- **脚本执行只认白名单**：`lib/runner.mjs` 里 6 个任务，客户端只能传 `taskId`，不能传命令；`--no-exec` 可整体关闭
 - **破坏性任务二次确认**：重置安装会删掉本地插件副本再重建，前端强制 `confirm`
 - **渲染不执行原始 HTML**：`public/md.js` 先把整段文本转义再套标签，文档里写 `<script>` 只会显示成文字
 

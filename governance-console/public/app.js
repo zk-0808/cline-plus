@@ -756,13 +756,14 @@ function renderHealth() {
     el('b', { text: v.head }),
     el('span', { class: 'gate-note', text: `${v.parts} · 检查于 ${new Date(h.at).toLocaleString()}${h.commit ? ` · commit ${h.commit}` : ''}` })));
 
-  // 「没有记录不能显示成通过」：把记录型门禁单独点出来
-  const gate = h.checks.find((c) => c.layer === 'GATE');
-  if (gate) {
+  // 「没有记录不能显示成通过」：把记录型门禁的状态逐条点出来（可能不止一条）
+  const gates = h.checks.filter((c) => c.layer === 'GATE');
+  for (const gate of gates) {
     box.appendChild(el('div', { class: 'h-note' },
       el('span', { class: `chip ${gate.status === 'pass' ? 'ok' : gate.status === 'unknown' ? 'warn' : 'err'}` },
-        '记录型门禁 ', el('b', { text: HEALTH_STATUS_TEXT[gate.status] })),
-      el('span', { class: 'gate-ob', text: gate.observed })));
+        `${gate.id} `, el('b', { text: HEALTH_STATUS_TEXT[gate.status] })),
+      el('span', { class: 'gate-ob', text: gate.observed }),
+      gate.detail?.limitation ? el('span', { class: 'gate-exp', text: `范围限制：${gate.detail.limitation}` }) : null));
   }
 
   box.appendChild(el('label', { class: 'h-filter' },
@@ -816,24 +817,27 @@ function renderHealth() {
 }
 
 /** 运行记录型门禁：结论写进 runtime/gate-log.jsonl，之后面板才显示"上次运行结果" */
-async function runLinkGate() {
-  const btn = $('btn-run-gate');
+async function runGateTask(taskId, btn, label) {
+  const original = label;
   btn.disabled = true;
   btn.textContent = '运行中…';
   try {
-    const r = await api('/api/run', { method: 'POST', body: JSON.stringify({ taskId: 'gate-links' }) });
+    const r = await api('/api/run', { method: 'POST', body: JSON.stringify({ taskId }) });
     if (r.error) { toast(r.message || r.error, 'err'); return; }
     const exit = r.gateRecord?.exit ?? r.exitCode;
     const summary = r.gateRecord?.summary ?? '';
-    toast(`链接门控退出码 ${exit}${summary ? `：${summary}` : ''}`, exit === 0 ? 'ok' : 'err');
+    toast(`${original}：退出码 ${exit}${summary ? ` · ${summary}` : ''}`, exit === 0 ? 'ok' : 'err');
     await loadHealth(true);
   } catch (e) {
     toast(e.message, 'err');
   } finally {
     btn.disabled = false;
-    btn.textContent = '运行链接门控';
+    btn.textContent = original;
   }
 }
+
+const runLinkGate = () => runGateTask('gate-links', $('btn-run-gate'), '运行链接门控');
+const runPluginVerify = () => runGateTask('verify-plugin', $('btn-run-verify'), '运行插件自检');
 
 // ================================================================ 规则视图
 
@@ -1089,6 +1093,7 @@ $('btn-refresh').addEventListener('click', () => {
 });
 $('btn-health').addEventListener('click', () => loadHealth(true));
 $('btn-run-gate').addEventListener('click', runLinkGate);
+$('btn-run-verify').addEventListener('click', runPluginVerify);
 $('btn-batches').addEventListener('click', loadBatches);
 $('d-close').addEventListener('click', closeDrawer);
 $('d-cancel').addEventListener('click', closeDrawer);

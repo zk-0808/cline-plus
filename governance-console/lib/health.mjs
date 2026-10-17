@@ -31,6 +31,37 @@ export const HEALTH_LAYERS = [
   { id: 'GATE', label: 'GATE 记录型门禁', note: '需要"实际跑过一次"才有结论的检查' },
 ];
 
+/**
+ * 记录型门禁清单。每条都要写清**范围**：跑通它证明了什么、没证明什么。
+ * 没有记录 → unknown；有记录 → 只看退出码。中间的"我觉得应该没问题"不算证据。
+ */
+export const RECORDED_GATES = [
+  {
+    task: 'gate-links',
+    id: 'GATE-LINKS',
+    title: '链接与锚点门控（scripts/check_links_anchors.py）',
+    ruleRef: 'docs/dev-rules.md §1.17 规范性引用完整性门控',
+    expected: '最近一次运行退出码为 0（非归档树零失效链接/锚点）',
+    scope: '全仓 Markdown 的相对链接与标题锚点',
+    action: '运行链接门控',
+    cli: 'python scripts/check_links_anchors.py',
+    fixOnFail: '按输出里的 must_fix 清单逐条修；归档区残留按 §1.17 不适用范围豁免。',
+    limitation: null,
+  },
+  {
+    task: 'verify-plugin',
+    id: 'GATE-VERIFY',
+    title: '插件逻辑自检（.governance/plugin/verify-governance.ts）',
+    ruleRef: '.governance/plugin/verify-governance.ts 自带断言集（50 项）',
+    expected: '最近一次运行退出码为 0',
+    scope: '插件分发逻辑：config 加载与深合并、handoff 注入、git-checker、pre-tool skip、compaction 检测、snapshot 写入、分发聚合',
+    action: '运行插件自检',
+    cli: 'node --import ./scripts/ts-js-resolve.mjs .governance/plugin/verify-governance.ts',
+    fixOnFail: '按输出里 ✗ 的断言逐条修；它们对应真实的分发行为，不是笔误。',
+    limitation: '它直接调 Capability 函数，**不经过 Cline**；通过 ≠ Cline 真的触发了 hook，那需要 CLI 集成测试。',
+  },
+];
+
 const read = async (abs) => { try { return await fsp.readFile(abs, 'utf8'); } catch { return null; } };
 const exists = (abs) => fs.existsSync(abs);
 const p = (repo, rel) => path.join(repo, ...rel.split('/'));
@@ -630,20 +661,25 @@ export async function readHealth(repo, opts = {}) {
   }
 
   // ============================== GATE 记录型门禁
+  // 这些检查的结论**无法由面板重算**：只能证明"某个时刻真的跑过一次"。
+  // 所以一律读 gate-log.jsonl 的最后一条；没有记录就是 unknown，绝不显示成通过。
   const gateLog = await readGateLog(repo);
-  {
-    const last = gateLog.at(-1) ?? null;
+  for (const g of RECORDED_GATES) {
+    const runs = gateLog.filter((r) => r.task === g.task);
+    const last = runs.at(-1) ?? null;
     push({
-      id: 'GATE-LINKS', layer: 'GATE', title: '链接与锚点门控（scripts/check_links_anchors.py）',
-      ruleRef: 'docs/dev-rules.md §1.17 规范性引用完整性门控',
+      id: g.id, layer: 'GATE', title: g.title,
+      ruleRef: g.ruleRef,
       status: !last ? 'unknown' : last.exit === 0 ? 'pass' : 'fail',
       observed: !last
-        ? '没有运行记录 —— 未运行不等于通过'
-        : `上次运行 ${last.at}（commit ${last.commit ?? '?'}）退出码 ${last.exit}${last.summary ? ` · ${last.summary}` : ''}`,
-      expected: '最近一次运行退出码为 0',
-      fix: !last ? '点「运行门控」跑一次，结果会记进 .governance/runtime/gate-log.jsonl。'
-        : last.exit !== 0 ? '按输出里的 must_fix 清单逐条修。' : null,
-      detail: { last, runs: gateLog.length },
+        ? `没有运行记录 —— 未运行不等于通过。范围：${g.scope}`
+        : `上次运行 ${last.at}（commit ${last.commit ?? '?'}）退出码 ${last.exit}`
+          + `${last.summary ? ` · ${last.summary}` : ''}。范围：${g.scope}`,
+      expected: g.expected,
+      fix: !last
+        ? `在健康页点「${g.action}」，或命令行 \`${g.cli}\`；结果会记进 .governance/runtime/gate-log.jsonl。`
+        : last.exit !== 0 ? g.fixOnFail : g.limitation,
+      detail: { last, runs: runs.length, scope: g.scope, limitation: g.limitation },
     });
   }
 

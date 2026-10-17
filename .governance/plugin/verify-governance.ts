@@ -4,7 +4,7 @@
  * 不依赖 Cline CLI,直接测试 Capability + Hook dispatcher 逻辑。
  * 借鉴 context-snapshot/verify-hook-injection.cjs 模式。
  *
- * Run: node --experimental-strip-types .governance/plugin/verify-governance.ts
+ * Run: node --import ./scripts/ts-js-resolve.mjs .governance/plugin/verify-governance.ts
  */
 
 import { loadConfig } from "./config-loader.ts";
@@ -18,6 +18,7 @@ import type { SessionContext, HookEvent } from "./types.ts";
 import { existsSync, readFileSync, rmSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { execSync } from "node:child_process";
 
 const WORKSPACE = process.argv[2] ?? process.cwd();
 let pass = 0;
@@ -130,18 +131,31 @@ const skipResult = await dispatchPreTool(
 );
 assert(skipResult.skip === false, "readFile 在白名单 → skip = false");
 
-// write_to_file 不在白名单,dirty count < 5 → 不 skip (假设当前 dirty < 5)
-const writeResult = await dispatchPreTool(
-  makeCtx(), preToolConfig, "write_to_file",
-);
-assert(writeResult.skip === false, `write_to_file → skip = ${writeResult.skip} (当前 dirty < 5 时不阻断)`);
+// write_to_file 不在白名单 → 是否阻断取决于 dirty 数与阈值。
+// ⚠️ 必须用**独立临时 git 仓库**构造确定的 dirty 数，不能读当前工作区：
+//    早先这条断言直接跑在仓库里，结果随"有没有未提交改动"变化 ——
+//    工作区干净时过、脏时挂，等于把门禁做成了环境的函数。
+const dirtyRepo = join(tmpdir(), `gov-dirty-${Date.now()}`);
+mkdirSync(dirtyRepo, { recursive: true });
+execSync("git init -q", { cwd: dirtyRepo });
+execSync("git config user.email t@example.invalid", { cwd: dirtyRepo });
+execSync("git config user.name test", { cwd: dirtyRepo });
+for (let i = 0; i < 10; i++) writeFileSync(join(dirtyRepo, `f${i}.txt`), "x");
 
-// 高阈值测试:threshold=999 → 永不阻断
+// 10 个未跟踪文件 ≥ 阈值 5 → 应阻断
+const blockedResult = await dispatchPreTool(
+  makeCtx({ cwd: dirtyRepo }), preToolConfig, "write_to_file",
+);
+assert(blockedResult.skip === true, `dirty(10) ≥ threshold(5) → skip = true (实际 ${blockedResult.skip})`);
+
+// 同一份 dirty，阈值拉到 999 → 不阻断
 const highThresholdConfig = { ...preToolConfig, capabilities: { gitChecker: { enabled: true, args: { threshold: 999 } } } };
 const highResult = await dispatchPreTool(
-  makeCtx(), highThresholdConfig, "write_to_file",
+  makeCtx({ cwd: dirtyRepo }), highThresholdConfig, "write_to_file",
 );
 assert(highResult.skip === false, "threshold=999 → skip = false (永不阻断)");
+
+rmSync(dirtyRepo, { recursive: true, force: true });
 
 // ─────────────────────────────────────────────────────────
 // T5: detectCompaction — 纯函数,多种场景

@@ -40,15 +40,16 @@ const HANDOFF = [
   '',
 ].join('\n');
 
-test('C01 登记表：rule-appender 可执行，staleness-sweeper 如实报不可执行', async () => {
+test('C01 登记表：两条手动入口都可执行，sweeper 标出需 loader 且只能手动跑', async () => {
   const list = listCapabilities();
   const ra = list.find((c) => c.id === 'rule-appender');
   const ss = list.find((c) => c.id === 'staleness-sweeper');
   ok(ra, '登记表里应有 rule-appender');
   eq(ra.runnable, true, 'rule-appender 应可执行');
   eq(ra.writable, ['HANDOFF.md'], '可写目标应只有 HANDOFF.md');
-  eq(ss.runnable, false, 'staleness-sweeper 当前不可执行');
-  ok(ss.reason && ss.reason.includes('.js'), `应说明真实原因（.js 值导入），实际：${ss.reason}`);
+  eq(ss.runnable, true, 'staleness-sweeper 现在可执行（入口会自己开启 TS loader）');
+  eq(ss.needsLoader, true, '应标明它需要 TS loader');
+  ok(ss.note && ss.note.includes('只能手动'), `应说明它没有 hook 分发，实际：${ss.note}`);
   ok(ra.ruleRef.includes('constitution'), '每条登记应能指回规则出处');
 });
 
@@ -73,9 +74,9 @@ test('C03 未知 Capability 与空经验都被参数校验挡住', async () => {
   eq(r2.ok, false, '过短的经验内容应被拒');
   ok(r2.error.includes('至少要 4 个字符'), `应说明长度下限，实际：${r2.error}`);
 
-  const r3 = await runCapability({ repoRoot: repo, name: 'staleness-sweeper' });
-  eq(r3.ok, false, '不可执行的模块必须失败');
-  ok(r3.error.includes('不可直接执行'), `应说明不可执行，实际：${r3.error}`);
+  const r3 = await runCapability({ repoRoot: repo, name: 'rule-appender', experience: '内容里有\n\n连续空行应被拒' });
+  eq(r3.ok, false, '含连续空行的经验应被拒');
+  ok(r3.error.includes('连续空行'), `应说明原因，实际：${r3.error}`);
 });
 
 test('C04 默认干跑：给出差异预览，但绝不落盘', async () => {
@@ -85,7 +86,7 @@ test('C04 默认干跑：给出差异预览，但绝不落盘', async () => {
   const r = await runCapability({ repoRoot: repo, name: 'rule-appender', experience: '健康面板的 not_applicable 必须带生成链路证据', id: 'exp-t1' });
   ok(r.ok, `干跑应成功：${r.error ?? ''}`);
   eq(r.mode, 'dry-run', '默认必须是干跑');
-  eq(r.appended, true, '干跑也应算出"会追加"');
+  eq(r.changed, true, '干跑也应算出会追加');
   ok(r.after.includes('not_applicable 必须带生成链路证据'), '预览里应能看到经验文本');
   eq(fs.readFileSync(abs(repo, 'HANDOFF.md'), 'utf8'), before, '干跑之后 HANDOFF.md 必须一字不动');
   ok(!fs.existsSync(abs(repo, '.governance/runtime/console-batches')), '干跑不该创建备份目录');
@@ -112,12 +113,12 @@ test('C05 --apply：落盘 + 写前备份，且备份就是原内容', async () 
 test('C06 重复 id 不重复追加（appended=false 且报出 duplicateId）', async () => {
   const repo = capFixture(HANDOFF);
   const first = await runCapability({ repoRoot: repo, name: 'rule-appender', experience: '第一次追加这条经验', id: 'exp-dup', apply: true });
-  ok(first.ok && first.appended, '第一次应追加成功');
+  ok(first.ok && first.changed, '第一次应追加成功');
 
   const second = await runCapability({ repoRoot: repo, name: 'rule-appender', experience: '第二次用同一个 id', id: 'exp-dup', apply: true });
   ok(second.ok, '第二次不该报错');
-  eq(second.appended, false, '第二次应判重复、不追加');
-  eq(second.result?.data?.duplicateId, 'exp-dup', '应报出重复的 id');
+  eq(second.changed, false, '第二次应判重复、不追加');
+  eq(second.duplicateId, 'exp-dup', '应报出重复的 id');
 });
 
 test('C07 真实仓库：HANDOFF.md 是唯一可写目标，登记表与磁盘一致', async () => {

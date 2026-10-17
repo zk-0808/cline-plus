@@ -1,5 +1,5 @@
 // rule-appender 自测——使用临时文件,不污染仓库根 HANDOFF.md
-// 运行: node --experimental-strip-types test.ts
+// 运行: node --import ../../scripts/ts-js-resolve.mjs test.ts
 
 import { ruleAppender } from "./index.ts";
 import { promises as fs, existsSync } from "node:fs";

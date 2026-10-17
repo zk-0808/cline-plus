@@ -285,3 +285,49 @@ test('H11 结论行不会被 JSON 里的字段名带偏', async () => {
   ok(out.gateRecord.summary.includes('FAIL'), `摘要不该是 "must_fix": 2 那一行，实际：${out.gateRecord.summary}`);
   eq(out.gateRecord.counts.must_fix, 2, '数值仍应取到');
 });
+
+// ────────────────────────────────────────────────────────────── 记录型门禁（多条）
+
+test('H12 loader 只把"相对路径 + .js"改成 .ts，不碰包名与真 .js', async () => {
+  const { rewriteSpecifier } = await import('../../scripts/ts-js-resolve.mjs');
+  eq(rewriteSpecifier('./types.js'), './types.ts', '相对 .js 应改写');
+  eq(rewriteSpecifier('../../plugin/staleness-utils.js'), '../../plugin/staleness-utils.ts', '多级相对路径应改写');
+  eq(rewriteSpecifier('node:fs'), 'node:fs', 'node: 前缀不动');
+  eq(rewriteSpecifier('chalk'), 'chalk', '包名不动');
+  eq(rewriteSpecifier('./styles.css'), './styles.css', '非 .js 不动');
+  eq(rewriteSpecifier('./index.js'), './index.ts', '相对 .js 一律改写（解析失败时才真正生效）');
+});
+
+test('H13 verify-plugin 任务在真实仓库上跑通，并把结果记进 gate-log', async () => {
+  const { DEFAULT_REPO } = await import('../../scripts/governance-capability.mjs');
+  const out = await runTask(DEFAULT_REPO, 'verify-plugin');
+  eq(out.ok, true, `插件自检应通过：${(out.stderr || '').slice(0, 300)}`);
+  eq(out.exitCode, 0, '退出码应为 0');
+  ok(out.gateRecord, '应产生 gate 记录');
+  eq(out.gateRecord.task, 'verify-plugin', '记录应标明任务名');
+  ok(out.gateRecord.summary.includes('PASSED'), `摘要应取到 OVERALL 行，实际：${out.gateRecord.summary}`);
+  const log = await readGateLog(DEFAULT_REPO);
+  ok(log.some((r) => r.task === 'verify-plugin'), 'gate-log 里应有 verify-plugin 记录');
+});
+
+test('H14 GATE-VERIFY 与 GATE-LINKS 各自独立判定，互不顶替', async () => {
+  // 只有 verify 的记录、没有 links 的记录
+  const repo = makeFixture({
+    '.governance/runtime/gate-log.jsonl': JSON.stringify({
+      at: new Date().toISOString(), task: 'verify-plugin', exit: 0, commit: 'abc1234',
+      summary: 'OVERALL: ✅ ALL PASSED',
+    }) + '\n',
+  });
+  const h = await readHealth(repo);
+  const verify = h.checks.find((c) => c.id === 'GATE-VERIFY');
+  const links = h.checks.find((c) => c.id === 'GATE-LINKS');
+  eq(verify.status, 'pass', '有 exit 0 记录 → pass');
+  ok(verify.observed.includes('abc1234'), 'observed 应带 commit');
+  eq(links.status, 'unknown', '没有 links 记录 → 仍是 unknown，不能被另一条记录顶替');
+  ok(verify.detail.limitation.includes('不经过 Cline'), '必须写明"通过 ≠ Cline 真的触发"这条边界');
+
+  // 再追加一条失败的 verify 记录 → 以最后一条为准
+  await appendGateLog(repo, { at: new Date().toISOString(), task: 'verify-plugin', exit: 1, summary: 'HAS FAILURES' });
+  const h2 = await readHealth(repo);
+  eq(h2.checks.find((c) => c.id === 'GATE-VERIFY').status, 'fail', '最后一条是失败 → fail');
+});

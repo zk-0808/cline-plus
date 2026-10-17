@@ -26,5 +26,5 @@ await ruleAppender({
 
 ## 测试
 ```bash
-node --experimental-strip-types test.ts  # Node 22.6+ type stripping
+node --import ../../scripts/ts-js-resolve.mjs test.ts  # 需要 loader：本文件用 .js 说明符导入 .ts 源码
 ```

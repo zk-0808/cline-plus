@@ -10,6 +10,7 @@
  */
 import { execFile } from 'node:child_process';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import fs from 'node:fs';
 import { appendGateLog } from './health.mjs';
 
@@ -42,6 +43,18 @@ export const TASKS = {
     confirm: null,
     recordsGate: true,
     gateRef: 'docs/dev-rules.md §1.17 规范性引用完整性门控',
+  },
+  'verify-plugin': {
+    label: '插件逻辑自检（50 项断言）',
+    hint: '跑 .governance/plugin/verify-governance.ts：config 加载、handoff 注入、git-checker、pre-tool skip 逻辑、compaction 检测、snapshot 写入、分发聚合。**只验证插件逻辑**，不等于 Cline 真的触发了 hook（那要 CLI 集成测试）。结果记进 gate-log.jsonl。',
+    file: '.governance/plugin/verify-governance.ts',
+    shell: 'node',
+    nodeFlags: ['--import', 'scripts/ts-js-resolve.mjs'],
+    timeoutMs: 120000,
+    destructive: false,
+    confirm: null,
+    recordsGate: true,
+    gateRef: '.governance/plugin/verify-governance.ts（脚本自带断言集）',
   },
   'capability-list': {
     label: '列出手动可调用的 Capability',
@@ -80,9 +93,9 @@ export function listTasks() {
 /** 从脚本输出里摘一行摘要，别把整段塞进日志 */
 function summarizeRun(stdout, exitCode) {
   const lines = String(stdout ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
-  // 先找结论行（PASS / FAIL），不要被 JSON 里的 "must_fix" 字段名带偏
-  const verdict = [...lines].reverse().find((l) => /\bPASS\b|\bFAIL\b|通过|失败/.test(l));
-  if (verdict) return verdict.slice(0, 200);
+  // 先找结论行（PASS / FAIL / ALL PASSED / HAS FAILURES），不要被 JSON 里的 "must_fix" 字段名带偏
+  const verdict = [...lines].reverse().find((l) => /\bPASS(ED)?\b|\bFAIL(URES?)?\b|通过|失败/.test(l));
+  if (verdict) return verdict.replace(/\s+/g, ' ').slice(0, 200);
   return exitCode === 0 ? '退出码 0' : `退出码 ${exitCode}`;
 }
 
@@ -114,9 +127,15 @@ export function runTask(repo, taskId) {
   }
 
   const started = Date.now();
+  // node 任务要支持前置旗标（如 --import loader）：它们必须排在脚本路径之前。
+  // Windows 上 `--import` 的取值必须是 file:// URL，裸绝对路径会报 ERR_UNSUPPORTED_ESM_URL_SCHEME。
   const argv = t.shell === 'pwsh'
     ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', abs]
-    : [abs, ...(t.args ?? [])];
+    : [
+      ...(t.nodeFlags ?? []).flatMap((f) => (f.startsWith('scripts/') ? [pathToFileURL(path.join(repo, f)).href] : [f])),
+      abs,
+      ...(t.args ?? []),
+    ];
 
   // Windows 上 Python 把中文打进管道时默认用区域代码页（简中机器是 GBK），
   // 而 Node 按 UTF-8 解码 —— 结论行会变成乱码。强制子进程用 UTF-8，从源头对齐编码。
