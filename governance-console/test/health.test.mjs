@@ -220,7 +220,7 @@ test('H09 记录型门禁：没有记录是 unknown，跑过之后才按结果�
   ok(g3.observed.includes('FAIL'), 'observed 应带脚本结论');
 });
 
-test('H10 运行 gate-links 会把结论写进 gate-log.jsonl', async () => {
+test('H10 运行 gate-links 会把结论写进 gate-log.jsonl（含中文不乱码）', async () => {
   const repo = makeFixture({
     'scripts/check_links_anchors.py': [
       'import json',
@@ -237,6 +237,9 @@ test('H10 运行 gate-links 会把结论写进 gate-log.jsonl', async () => {
   eq(out.gateRecord.counts.must_fix, 0, '应从脚本的 JSON 摘要里取到 must_fix');
   eq(out.gateRecord.counts.files, 12, '应取到扫描文件数');
   ok(out.gateRecord.summary.includes('PASS'), `摘要应是结论行，实际：${out.gateRecord.summary}`);
+  // 编码回归：Windows 上 Python 默认按区域代码页输出，节点按 UTF-8 解码就会成乱码
+  ok(out.gateRecord.summary.includes('失效'), `中文不该乱码，实际摘要：${out.gateRecord.summary}`);
+  ok(!/\uFFFD/.test(out.gateRecord.summary), '摘要里不该出现替换字符 U+FFFD');
 
   const log = await readGateLog(repo);
   eq(log.length, 1, 'gate-log 应有一条记录');

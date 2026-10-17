@@ -108,11 +108,17 @@ export function runTask(repo, taskId) {
     ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', abs]
     : [abs];
 
+  // Windows 上 Python 把中文打进管道时默认用区域代码页（简中机器是 GBK），
+  // 而 Node 按 UTF-8 解码 —— 结论行会变成乱码。强制子进程用 UTF-8，从源头对齐编码。
+  const env = t.shell === 'python'
+    ? { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1' }
+    : process.env;
+
   return new Promise((resolve) => {
     execFile(
       t.shell,
       argv,
-      { cwd: repo, timeout: t.timeoutMs, windowsHide: true, maxBuffer: 8 * 1024 * 1024, shell: false },
+      { cwd: repo, env, timeout: t.timeoutMs, windowsHide: true, maxBuffer: 8 * 1024 * 1024, shell: false },
       async (err, stdout, stderr) => {
         const exitCode = err?.code ?? 0;
         const out = {
