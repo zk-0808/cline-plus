@@ -66,3 +66,15 @@ ADR-006 §0 元规则自检第 1 条问的是：「是不是又在造原生已�
 
 **为什么不现在就改**：改 `detectCompaction` 会直接改变 hook 的运行时判定（写不写 snapshot），属于行为变更，且"原生信号是否可得"这一前提我没法在本机取证（`cline` 不在 PATH）。所以本轮只把缺口显性化，代码里加了指向本节的注释，不改行为。
 
+### 待决策：`detectCompaction` 怎么处置（三选一，尚未定）
+
+| 选项 | 做法 | 需要什么证据才能定 | 主要风险 |
+|---|---|---|---|
+| **A** 保持启发式，把理由写实 | 不改逻辑；在 ADR-006 补一次 Update：证明「`beforeModel` 上下文里拿不到原生 condense 事件」，附版本与取证方式 | 一次 CLI 探查：打印 `beforeModel(context)` 的入参键名，看有没有 condense 相关字段 | 若结论写错（其实能拿到），等于用一份自证材料把违规固化下来 |
+| **B** 改读原生 condense 事件 | `detectCompaction` 改为读原生字段/事件，删掉比例启发式 | 同 A 的探查，且要确认该字段在 hook 触发时**有值**（不是恒为 undefined） | 判据读不到时会**不再写 snapshot**，PreCompact 机制静默失效；而这个失效恰好是"不报错"的那一类 |
+| **C** 删掉检测，PreCompact 触发即写 | 不判断是否压缩，只要 `beforeModel` 被调到就写 snapshot | 需要确认 `beforeModel` 的调用频率与语义（是否只在压缩后调） | 语义变化最大：若 `beforeModel` 每次模型调用都触发，会写成高频覆盖，snapshot 变成"最近一次模型调用"而非"压缩点" |
+
+**倾向 A**，理由：A 不改变运行时行为（零回归风险），且它要求的证据（探查入参键名）恰好也是 B/C 的前置证据 —— 先把事实取到，再谈改法。**在拿到那份探查结果之前，B 和 C 都不该动。**
+
+**这条决策的取证方式**（需要在能跑 cline 的环境执行）：在 `beforeModel` 里临时 `console.log(Object.keys(context))` 与 `typeof context.messages`，跑一次触发压缩的会话，看原生是否暴露 condense 事件。取证后把键名清单写进 ADR-006 的 Update，再回来选 A/B/C。
+
