@@ -141,3 +141,27 @@ async function kb(i){let k=ri(i.pluginId).handlers.rules.get(i.contributionId);
 | 下一步取证 | 读 runtime 侧调用 `resolveRuleContent` 的位置与频次（在 `@cline/core` dist 里可查） |
 
 **注意**：本次只降级与登记，**未改 ADR 的 Decision 正文**。按 §6「冲突时记录，不裁决」，裁决需等下一步取证。
+### 冲突裁决依据补记（2026-10-17）
+
+继续读 `@cline/core@0.0.95` 的 dist，`resolveRuleContent` 的调用点如下：
+
+```js
+// 宿主侧把注册的 rule 包装成惰性 content thunk
+content: s.hasContentHandler === true
+  ? async () => { try { return await t.call("resolveRuleContent", { pluginId: n.pluginId, contributionId: s.id }, { timeoutMs: r }) } ... }
+  : ...   // entry.js / index.js
+```
+
+更关键的一处：**宿主自带**的规则就是这么写的 ——
+
+```js
+r.registerRule({ id: "cline-user-instructions:rules", source: "user-instruction-watcher", content: () => GC(e.watcher) })
+```
+
+即：连 cline 自己的 user-instructions 规则都用**函数式 content + watcher**，取用时才求值。
+
+**裁决**：本 ADR 的立论理由「registerRule content 只在 session 启动求值一次」**不成立**，且不是边界情况 —— 惰性 content 是这门接口的正常用法。原结论（snapshot 该走 beforeModel）因此失去核心论据。
+
+**仍未裁决的部分**：结论本身要不要翻（是否改为走 registerRule 注入 snapshot）需要另一个判断 —— 即 `resolveRuleContent` 的调用时机是否满足 snapshot 的"压缩后立即可用"要求。这属于重新设计决策，不在本次取证范围内，留待正式 ADR 处理。
+
+**依据补充**：`docs/evidence-governance.md` §6 Conflict Registry「冲突时记录，不裁决」—— 本次记录到"立论理由失效"为止，Decision 正文仍未改动。
