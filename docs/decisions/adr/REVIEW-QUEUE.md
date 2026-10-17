@@ -24,7 +24,7 @@
 >
 > **ADR-006 已于 2026-10-17 完成复查**（本地可证部分），`Evidence as of` 与 `Expires if unchanged` 已更新为 2026-10-17 / 2026-11-16，故不在上表。复查记录见该 ADR 文末「Update 2026-10-17」。
 
-| ADR-007 | `docs/decisions/adr/`（正文） | snapshot 走 registerRule 静态注入，不迁 messageBuilder | 2026-08-04 | 74 天 | 18 个文件 | **复查已失败并降级**（2026-10-17）：结论可信度 Verified→Hypothesis，冲突已登记在该 ADR 文末。剩余取证：`resolveRuleContent()` 的调用时机与频次是否足以支撑 snapshot 注入 | 上游 runtime dist | **failed_downgraded** |
+| ADR-007 | `docs/decisions/adr/`（正文） | snapshot 走 registerRule 静态注入，不迁 messageBuilder | 2026-08-04 | 74 天 | 18 个文件 | **复查已失败并降级**（2026-10-17）：结论可信度 Verified→Hypothesis，冲突已登记在该 ADR 文末。**立论理由已判失效**（读 `@cline/core@0.0.95` dist：宿主自带规则也用惰性 content）；剩余的是"结论要不要翻"，属重新设计决策，需新 ADR | 需正式 ADR | **failed_downgraded** |
 
 ## 不需复查（列出是为了让「7 份」这个数字对得上）
 
