@@ -200,6 +200,13 @@ test('H08 snapshot.json 放的是 schema 而不是实例时要点明', async () 
   });
   const c2 = byId(await readHealth(asInstance), 'L5-SNAPSHOT');
   eq(c2.status, 'pass', '真正的实例应 pass');
+
+  // 该文件是 hook 写的生成物、不入库：不存在是设计如此，不能算"通过"，也不必算缺陷
+  const absent = makeFixture({ '.governance/runtime/snapshot.json': null });
+  const c3 = byId(await readHealth(absent), 'L5-SNAPSHOT');
+  eq(c3.status, 'not_applicable', '生成物不存在 → 不适用，而不是 pass 或 fail');
+  ok(c3.fix.includes('snapshot.schema.json'), 'fix 应指向 schema 的真实位置');
+  ok(c3.fix.includes('不入库'), 'fix 应说明该文件不入库');
 });
 
 test('H09 记录型门禁：没有记录是 unknown，跑过之后才按结果判定', async () => {

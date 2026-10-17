@@ -245,15 +245,19 @@ ADR 的「该不该复查」不是一个枚举能表达清的，所以拆成三�
 
 每条检查都带 `ruleRef`（仓库里的文件 + 章节），写不出出处的检查不该存在——否则面板就在发明标准。
 
-### 这一轮读出来的 5 个问题
+### 这一轮读出来的 5 个问题（前 2 个已修）
 
 不是测试造的，是跑一遍当前仓库就出来的：
 
-1. **`snapshot.json` 放的是 JSON Schema，不是快照实例。** 该路径同时是读写路径：`snapshot-writer` 往这里写实例、`handoff-provider` 从这里读实例。现在读到的是 schema（顶层键 `$schema / properties / required`），`schema_version` 是 `undefined`、`decisions` / `active_todos` 都取不到 —— **不报错，只是 SessionStart 注入的 Snapshot 段静默变空**。这类"静默空"正是健康面板该抓的。
-2. **`rules/lifecycle.md` 有 108 行**，而 §四 的薄度量化要求每份入口规则 ≤50 行。
-3. **5 份 ADR 已过复查期**（74–86 天），`dev-rules.md §1.13` 规定未复查就不得作为新决策论据。
-4. **`evidence_source_kind` 6 份全缺**。但 §15 原文写的是「新增 ADR 必填，存量 ADR 在下次 Update 时补」——**存量缺失是规则自己给的宽限，不是违规**，所以只报 warn。判 fail 就等于把规则的宽限条款读漏了。
-5. **`traces.jsonl` 最后一条在 100 天前**，`plugin-loaded.marker` 是 103 天前——hook 机制在这台机器上已经很久没真正跑过。
+| # | 问题 | 状态 |
+|---|---|---|
+| 1 | **`snapshot.json` 放的是 JSON Schema，不是快照实例。** 该路径同时是读写路径：`snapshot-writer` 往这里写实例、`handoff-provider` 从这里读实例。读到 schema 时 `schema_version` 是 `undefined`、`decisions` / `active_todos` 都取不到 —— **不报错，只是 SessionStart 注入的 Snapshot 段静默变空** | ✅ 已修：schema 移到 `.governance/capabilities/snapshot-writer/snapshot.schema.json`，`runtime/snapshot.json` 改为生成物不入库；面板对它报 `not_applicable` 而非「通过」 |
+| 2 | **`rules/lifecycle.md` 有 108 行**，而 §四 的薄度量化要求每份入口规则 ≤50 行 | ✅ 已修：拆成入口（49 行）+ 详版 `docs/developer-guide/staleness-internals.md` |
+| 3 | **5 份 ADR 已过复查期**（74–86 天），`dev-rules.md §1.13` 规定未复查就不得作为新决策论据 | ⏳ 待排复查（内容工作，不擅自改判） |
+| 4 | **`evidence_source_kind` 6 份全缺**。但 §15 原文写的是「新增 ADR 必填，存量 ADR 在下次 Update 时补」——**存量缺失是规则自己给的宽限，不是违规**，所以只报 warn。判 fail 就等于把规则的宽限条款读漏了 | ⏳ 下次改 ADR 时补 |
+| 5 | **`traces.jsonl` 最后一条在 100 天前**，`plugin-loaded.marker` 是 103 天前——hook 机制在这台机器上已经很久没真正跑过 | ⏳ 需在本机跑一次 `cline -i` 验证链路 |
+
+两处修复的口径都是先问过 ChatGPT（带 `@GitHub` 让它直接读仓库，不是让它信我的转述）：① 选 A「schema 移独立文件」；② 保留 ≤50 行阈值、精简文件而不是放宽规则——理由是薄度量化属于已冻结的架构契约，入口规则应引用完整流程而非承载细节。
 
 ---
 

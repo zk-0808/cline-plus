@@ -150,7 +150,8 @@ governance-template/
 | **加载机制** | SessionStart hook 读取 → additionalContext 注入；PreCompact hook 写入 snapshot.json |
 | **可删性（条件式）** | **启用 Hook 时**：不可删（Hook 依赖）；**不用 Hook 时**：`HANDOFF.md` 可保留为手工笔记，`snapshot.json` 可删（无写入者，成死文件）|
 | **HANDOFF.md 结构** | 必须包含"待沉淀经验"结构化区块（不只是自由文本），供 rule-appender 追加 |
-| **填空项** | 空 `HANDOFF.md` 模板（含待沉淀区）+ 空 `snapshot.json` 结构 |
+| **填空项** | 空 `HANDOFF.md` 模板（含待沉淀区）；`snapshot.json` 的**结构**由 [`capabilities/snapshot-writer/snapshot.schema.json`](../../.governance/capabilities/snapshot-writer/snapshot.schema.json) 定义 |
+| **schema ≠ 实例** | `runtime/snapshot.json` 是 hook 写的**实例**，不入库（`.gitignore`）；schema 定义在 snapshot-writer 旁边。2026-10-17 修正：此前该路径入库的是一份 JSON Schema，`handoff-provider` 把它当实例解析，`decisions` / `active_todos` 取不到，SessionStart 注入的 Snapshot 段**静默变空**且不报错 |
 
 **HANDOFF.md 待沉淀区格式**：
 
@@ -298,7 +299,8 @@ Session 压缩
 | `.governance/examples/reviewer-personas.md` | 通用化后的评审角色 | EX-3 | GV-1 rubric（硬前置）|
 | `.governance/examples/handoff-example.md` | 填写示例 | EX-4 | GV-1 rubric（硬前置）|
 | `HANDOFF.md` | 空模板（含待沉淀经验区结构化区块）| — | 无 |
-| `.governance/runtime/snapshot.json` | 空结构 | — | 无 |
+| `.governance/runtime/snapshot.json` | 空**实例**（运行时由 hook 生成，不入库）| — | 无 |
+| `.governance/capabilities/snapshot-writer/snapshot.schema.json` | 快照实例的 JSON Schema 定义 | — | 无 |
 | `.governance/capabilities/git-checker/` | git status 检测能力设计 | GV-6 | 本契约（接口约定）|
 | `.governance/capabilities/snapshot-writer/` | 快照写入能力设计 | GV-6 | 本契约（接口约定）|
 | `.governance/capabilities/handoff-provider/` | handoff 读取+注入能力设计 | GV-6 | 本契约（接口约定）|

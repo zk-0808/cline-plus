@@ -45,6 +45,11 @@ handoff/auto-*.md
 .governance/runtime/*.marker
 .governance/runtime/*.jsonl
 
+# 运行时快照是 hook 写的**实例**，不是模板。结构定义在
+# .governance/capabilities/snapshot-writer/snapshot.schema.json。
+# 早先这里入库的是一份 JSON Schema，读取方把它当实例解析，Snapshot 段静默变空。
+.governance/runtime/snapshot.json
+
 # governance-console 的变更备份与停用区（都是可还原的运行期产物，不入库）
 .governance/runtime/console-batches/
 .governance/runtime/console-disabled/

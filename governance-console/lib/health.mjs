@@ -524,20 +524,22 @@ export async function readHealth(repo, opts = {}) {
     push({
       id: 'L5-SNAPSHOT', layer: 'L5', title: 'snapshot.json 是快照实例，可解析且带 schema_version',
       ruleRef: '.governance/runtime/snapshot.json（PreCompact hook 写、SessionStart hook 读）',
-      status: !snapText ? 'unknown'
+      status: !snapText ? 'not_applicable'
         : snapErr ? 'fail'
         : looksLikeSchema ? 'warn'
         : typeof snapJson?.schema_version === 'string' ? 'pass' : 'warn',
-      observed: !snapText ? 'snapshot.json 不存在'
+      observed: !snapText
+        ? 'runtime/snapshot.json 不存在（生成物不入库；本机尚未被 PreCompact 写过）'
         : snapErr ? `JSON 解析失败：${snapErr}`
         : looksLikeSchema
           ? `该路径上是 JSON Schema 定义（顶层键 ${Object.keys(snapJson).join('/')}），不是快照实例：schema_version 为 undefined，decisions / active_todos 取不到`
           : `schema_version=${snapJson?.schema_version ?? '(缺)'}`,
       expected: '该路径只放快照实例：含字符串型 schema_version，以及可选的 decisions / active_todos',
-      fix: !snapText ? '若无 PreCompact hook，可忽略；否则确认 hook 是否在跑。'
-        : snapErr ? '文件损坏，从 git 恢复。'
+      fix: !snapText
+        ? '该文件由 PreCompact hook 生成、不入库，所以"不存在"本身是正常的。结构定义在 .governance/capabilities/snapshot-writer/snapshot.schema.json；要验证生成链路就跑一次 cline 会话触发压缩。'
+        : snapErr ? '文件损坏：删除后由 hook 重新生成，或从备份恢复。'
         : looksLikeSchema
-          ? '把 schema 移到独立文件（如 docs/ 或 runtime/snapshot.schema.json），该路径只留实例数据。现在 SessionStart 读到的是 schema，Snapshot 段会渲染成空——不报错，所以这个缺陷一直隐身。'
+          ? '把 schema 移到 .governance/capabilities/snapshot-writer/snapshot.schema.json，该路径只留实例。现在 SessionStart 读到的是 schema，Snapshot 段会渲染成空——不报错，所以这个缺陷一直隐身。'
           : typeof snapJson?.schema_version === 'string' ? null : '补字符串型 schema_version，读方不知道按哪版结构解析。',
       detail: {
         schemaVersion: snapJson?.schema_version ?? null,
