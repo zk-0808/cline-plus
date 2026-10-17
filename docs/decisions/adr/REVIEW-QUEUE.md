@@ -18,7 +18,7 @@
 | ADR-002 | `docs/decisions/adr/` | 项目承载形态与分层架构 | 2026-07-27 | 82 天 | 20 个文件 | VS Code 扩展 plugin 可用性结论是否被后续版本推翻；SDK 迁移 issue #11944 进展 | 上游 issue + 官方文档 | blocked |
 | ADR-005 | `docs/decisions/adr/` | 拆分 Compaction 与 Handoff | 2026-07-28 | 81 天 | 29 个文件 | 依赖 ADR-001 / ADR-004 的时效；两者未复查前无法独立判定 | 上游 ADR 先复查 | blocked |
 
-| ADR-007 | `docs/decisions/adr/`（正文） | snapshot 走 registerRule 静态注入，不迁 messageBuilder | 2026-08-04 | 74 天 | 18 个文件 | registerRule 静态注入在**当前** CLI 版本下是否仍只在 session 启动求值一次 | 需 CLI 实测 | blocked |
+| ADR-007 | `docs/decisions/adr/`（正文） | snapshot 走 registerRule 静态注入，不迁 messageBuilder | 2026-08-04 | 74 天 | 18 个文件 | 核心前提「registerRule 只在 session 启动求值一次」**在上游类型文档里找不到依据**：`@cline/shared@0.0.95` 只说 `Register prompt rules included in the runtime system prompt`，没说求值时机。要么读 runtime 实现，要么实测 | 上游 runtime 源码或一次会话 | blocked |
 
 > **ADR-006 已于 2026-10-17 完成复查**（本地可证部分），`Evidence as of` 与 `Expires if unchanged` 已更新为 2026-10-17 / 2026-11-16，故不在上表。复查记录见该 ADR 文末「Update 2026-10-17」。
 
