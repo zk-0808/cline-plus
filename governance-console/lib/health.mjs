@@ -497,6 +497,27 @@ export async function readHealth(repo, opts = {}) {
       } catch { /* 跳过坏行 */ }
     }
     const traceAge = lastAt ? Math.floor((Date.now() - Date.parse(lastAt)) / 86400000) : null;
+
+    // 快照的"生产者"有没有真的跑过：按 hook/capability 找最近的 pre-compact 记录。
+    // 这一项是给 L5-SNAPSHOT 的 not_applicable 兜底的 —— 文件按设计可以不存在，
+    // 但"生成链路到底跑没跑过"不能因此变成盲区（否则 hook 静默失效就永远看不见）。
+    let preCompactLastAt = null;
+    for (const line of lines) {
+      try {
+        const j = JSON.parse(line);
+        const hook = String(j.hook ?? j.capability ?? '').toLowerCase();
+        if (hook.includes('pre-compact') || hook.includes('precompact') || hook.includes('snapshotwriter')) {
+          const ts = j.ts ?? j.at ?? j.timestamp ?? null;
+          if (ts && (!preCompactLastAt || ts > preCompactLastAt)) preCompactLastAt = ts;
+        }
+      } catch { /* 跳过坏行 */ }
+    }
+    const preCompactAge = preCompactLastAt ? Math.floor((Date.now() - Date.parse(preCompactLastAt)) / 86400000) : null;
+    const producerNote = preCompactLastAt
+      ? `traces 里最近的 pre-compact 在 ${preCompactAge} 天前`
+      : lines.length
+        ? 'traces 里有记录但没有 pre-compact 条目，生成链路未验证'
+        : '没有 traces 记录，生成链路未验证';
     push({
       id: 'L5-TRACES', layer: 'L5', title: 'Hook 调用轨迹有近期记录',
       ruleRef: '.governance/runtime/traces.jsonl（tracing 开启时各 hook 写入）',
@@ -524,19 +545,23 @@ export async function readHealth(repo, opts = {}) {
     push({
       id: 'L5-SNAPSHOT', layer: 'L5', title: 'snapshot.json 是快照实例，可解析且带 schema_version',
       ruleRef: '.governance/runtime/snapshot.json（PreCompact hook 写、SessionStart hook 读）',
-      status: !snapText ? 'not_applicable'
+      // 不存在按设计可以不适用；但若"生产者最近刚跑过"却没有产出，那就是链路断了，必须报出来
+      status: !snapText
+        ? (preCompactAge != null && preCompactAge <= 7 ? 'warn' : 'not_applicable')
         : snapErr ? 'fail'
         : looksLikeSchema ? 'warn'
         : typeof snapJson?.schema_version === 'string' ? 'pass' : 'warn',
       observed: !snapText
-        ? 'runtime/snapshot.json 不存在（生成物不入库；本机尚未被 PreCompact 写过）'
+        ? `runtime/snapshot.json 不存在（生成物不入库；本机尚未被 PreCompact 写过）· ${producerNote}`
         : snapErr ? `JSON 解析失败：${snapErr}`
         : looksLikeSchema
           ? `该路径上是 JSON Schema 定义（顶层键 ${Object.keys(snapJson).join('/')}），不是快照实例：schema_version 为 undefined，decisions / active_todos 取不到`
           : `schema_version=${snapJson?.schema_version ?? '(缺)'}`,
       expected: '该路径只放快照实例：含字符串型 schema_version，以及可选的 decisions / active_todos',
       fix: !snapText
-        ? '该文件由 PreCompact hook 生成、不入库，所以"不存在"本身是正常的。结构定义在 .governance/capabilities/snapshot-writer/snapshot.schema.json；要验证生成链路就跑一次 cline 会话触发压缩。'
+        ? (preCompactAge != null && preCompactAge <= 7
+          ? `PreCompact 在 ${preCompactAge} 天前跑过，却没有产出 runtime/snapshot.json —— 链路断了（权限？路径被改？写入被吞？）。查 snapshot-writer 的 metadata.writeError。`
+          : '该文件由 PreCompact hook 生成、不入库，所以"不存在"本身是正常的。结构定义在 .governance/capabilities/snapshot-writer/snapshot.schema.json；要验证生成链路就跑一次 cline 会话触发压缩。')
         : snapErr ? '文件损坏：删除后由 hook 重新生成，或从备份恢复。'
         : looksLikeSchema
           ? '把 schema 移到 .governance/capabilities/snapshot-writer/snapshot.schema.json，该路径只留实例。现在 SessionStart 读到的是 schema，Snapshot 段会渲染成空——不报错，所以这个缺陷一直隐身。'

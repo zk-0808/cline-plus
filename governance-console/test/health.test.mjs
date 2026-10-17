@@ -207,6 +207,20 @@ test('H08 snapshot.json 放的是 schema 而不是实例时要点明', async () 
   eq(c3.status, 'not_applicable', '生成物不存在 → 不适用，而不是 pass 或 fail');
   ok(c3.fix.includes('snapshot.schema.json'), 'fix 应指向 schema 的真实位置');
   ok(c3.fix.includes('不入库'), 'fix 应说明该文件不入库');
+  // 「不适用」不能变成盲区：要带上生成链路的证据
+  ok(c3.observed.includes('生成链路'), `observed 应说明生产者跑没跑过，实际：${c3.observed}`);
+
+  const withProducer = makeFixture({
+    '.governance/runtime/snapshot.json': null,
+    '.governance/runtime/traces.jsonl': [
+      JSON.stringify({ ts: new Date(Date.now() - 3 * 86400000).toISOString(), hook: 'pre-compact', capability: 'snapshotWriter', event: 'snapshot' }),
+    ].join('\n') + '\n',
+  });
+  const c4 = byId(await readHealth(withProducer), 'L5-SNAPSHOT');
+  // 生产者刚跑过却没产出 → 链路断了，必须从"不适用"升级为告警
+  eq(c4.status, 'warn', '生产者 3 天前跑过但文件缺失 → 应报警，不能继续判不适用');
+  ok(c4.observed.includes('最近的 pre-compact 在 3 天前'), `应报出生产者最近一次运行，实际：${c4.observed}`);
+  ok(c4.fix.includes('链路断了'), `fix 应点明链路断了，实际：${c4.fix}`);
 });
 
 test('H09 记录型门禁：没有记录是 unknown，跑过之后才按结果判定', async () => {
