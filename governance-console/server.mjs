@@ -125,6 +125,7 @@ const STATIC = {
   '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
   '/md.js': ['md.js', 'text/javascript; charset=utf-8'],
   '/style.css': ['style.css', 'text/css; charset=utf-8'],
+  '/paper.css': ['paper.css', 'text/css; charset=utf-8'],
   '/favicon.svg': ['favicon.svg', 'image/svg+xml'],
 };
 

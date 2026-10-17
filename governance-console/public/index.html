@@ -6,6 +6,8 @@
 <title>governance-console</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/style.css">
+<!-- 样张：审计纸本设计系统。默认 disabled，点顶栏「纸本」即时切换，无需刷新 -->
+<link rel="stylesheet" href="/paper.css" id="paper-css" disabled>
 </head>
 <body>
 
@@ -22,6 +24,7 @@
   <div class="searchbox">
     <input id="search" type="search" placeholder="检索规则文档…  ( / 聚焦 )" autocomplete="off">
   </div>
+  <button class="ghost sm" id="btn-theme" title="在「石墨」与「纸本」之间切换（原样保留功能，只换设计系统）">纸本 / 石墨</button>
   <button class="ghost sm" id="btn-refresh">刷新</button>
 </header>
 

@@ -4,6 +4,33 @@
 const TOKEN = window.__CONSOLE_TOKEN__ || '';
 const $ = (id) => document.getElementById(id);
 
+// ---------------------------------------------------------------- 主题（样张开关）
+// 只切 stylesheet，不改任何逻辑与 DOM 结构；因此两套外观跑的是同一份功能。
+
+const THEME_KEY = 'govconsole.theme';
+
+function applyTheme(name, persist) {
+  const on = name === 'paper';
+  const link = $('paper-css');
+  if (link) link.disabled = !on;
+  const btn = $('btn-theme');
+  if (btn) {
+    btn.textContent = on ? '纸本 ✓' : '石墨 ✓';
+    btn.title = on
+      ? '当前：审计纸本。点击切回石墨仪表台。'
+      : '当前：石墨仪表台。点击切到审计纸本样张。';
+  }
+  document.documentElement.dataset.theme = on ? 'paper' : 'graphite';
+  if (persist) { try { localStorage.setItem(THEME_KEY, on ? 'paper' : 'graphite'); } catch { /* 隐私模式忽略 */ } }
+}
+
+(function initTheme() {
+  const q = new URLSearchParams(location.search).get('theme');
+  let saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch { /* ignore */ }
+  applyTheme(q === 'paper' || q === 'paper.css' ? 'paper' : (q === 'graphite' ? 'graphite' : (saved || 'graphite')), false);
+})();
+
 let STATE = null;
 let ENV = null;
 let PLAN = null;
@@ -796,6 +823,12 @@ $('search').addEventListener('keydown', (e) => {
 });
 
 $('clause-filter').addEventListener('input', (e) => renderClauses(e.target.value));
+
+$('btn-theme').addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'paper' ? 'graphite' : 'paper';
+  applyTheme(next, true);
+  toast(next === 'paper' ? '已切换到「审计纸本」样张' : '已切回「石墨仪表台」', 'ok');
+});
 
 $('doc-body').addEventListener('click', (e) => {
   const a = e.target.closest('a.doclink');
