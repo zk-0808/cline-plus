@@ -16,8 +16,8 @@ governance-console/
 ├── lib/validate.mjs       配置门禁：15 项检查 + 每项独立的阻断策略
 ├── lib/health.mjs         健康面板：L1–L5 分层检查 + ADR 生命周期 + 记录型门禁
 ├── lib/docs.mjs           规则文档索引 / 单篇读取 / 条款抽取 / 全文检索（只读）
-├── lib/runner.mjs         白名单脚本执行（4 个任务，客户端不能传命令）
-├── test/                  38 个用例：门禁 16 + 批次 8 + 契约/UI 3 + 健康 11
+├── lib/runner.mjs         白名单脚本执行（5 个任务，客户端不能传命令）
+├── test/                  45 个用例：门禁 16 + 批次 8 + 契约/UI 3 + 健康 11 + 手动入口 7
 └── public/                index.html · app.js · md.js · style.css · paper.css · favicon.svg
 ```
 
@@ -175,7 +175,7 @@ http://127.0.0.1:7717/?t=<token>&theme=paper
 
 1. `config.json` 里有个 `tracing` 块，但 `HooksConfig` 没有这个键，`index.ts` 也没读它——追踪路径与开关其实是写死在 `index.ts` 常量里的，这个块目前**不产生任何效果**。
 2. `skipTools` 里的 `glob_file_search` 既不在 `DEFAULT_CONFIG.skipTools` 也不在 `WRITE_TOOL_NAMES`，`docs/handoff.md §3` 的工具名变更记录里也没有它（其余 7 个都在）。要么是漏同步，要么是拼写错误——写错的名字不会匹配任何工具，等于白名单没生效。
-3. `capabilities/rule-appender/` 与 `capabilities/staleness-sweeper/` 没有任何分发路径：前者无人导入，后者的逻辑被内联复制进了 `plugin/staleness-utils.ts`（同名函数 `calcStalenessWeight` / `processStaleness`）。留着会被误认为「已经生效」。
+3. `capabilities/rule-appender/` 与 `capabilities/staleness-sweeper/` 都没有分发路径——**注意不是"重复实现"**：两者都是完整实现（后者导出 `stalenessSweeper()` 并 import 了 `staleness-utils` 的 `calcStalenessWeight`），只是没有任何 hook 或脚本调用它们，而注释/文档写的是「可手动运行」。留着会被误认为「已经生效」。
 
 这三条都是 `warn`，不阻断——它们不构成落盘风险，但不该继续隐身。
 
@@ -245,7 +245,7 @@ ADR 的「该不该复查」不是一个枚举能表达清的，所以拆成三�
 
 每条检查都带 `ruleRef`（仓库里的文件 + 章节），写不出出处的检查不该存在——否则面板就在发明标准。
 
-### 这一轮读出来的 5 个问题（前 2 个已修）
+### 这一轮读出来的 6 个问题（前 3 个已修）
 
 不是测试造的，是跑一遍当前仓库就出来的：
 
@@ -253,11 +253,12 @@ ADR 的「该不该复查」不是一个枚举能表达清的，所以拆成三�
 |---|---|---|
 | 1 | **`snapshot.json` 放的是 JSON Schema，不是快照实例。** 该路径同时是读写路径：`snapshot-writer` 往这里写实例、`handoff-provider` 从这里读实例。读到 schema 时 `schema_version` 是 `undefined`、`decisions` / `active_todos` 都取不到 —— **不报错，只是 SessionStart 注入的 Snapshot 段静默变空** | ✅ 已修：schema 移到 `.governance/capabilities/snapshot-writer/snapshot.schema.json`，`runtime/snapshot.json` 改为生成物不入库；面板对它报 `not_applicable` 而非「通过」 |
 | 2 | **`rules/lifecycle.md` 有 108 行**，而 §四 的薄度量化要求每份入口规则 ≤50 行 | ✅ 已修：拆成入口（49 行）+ 详版 `docs/developer-guide/staleness-internals.md` |
-| 3 | **5 份 ADR 已过复查期**（74–86 天），`dev-rules.md §1.13` 规定未复查就不得作为新决策论据 | ⏳ 待排复查（内容工作，不擅自改判） |
-| 4 | **`evidence_source_kind` 6 份全缺**。但 §15 原文写的是「新增 ADR 必填，存量 ADR 在下次 Update 时补」——**存量缺失是规则自己给的宽限，不是违规**，所以只报 warn。判 fail 就等于把规则的宽限条款读漏了 | ⏳ 下次改 ADR 时补 |
-| 5 | **`traces.jsonl` 最后一条在 100 天前**，`plugin-loaded.marker` 是 103 天前——hook 机制在这台机器上已经很久没真正跑过 | ⏳ 需在本机跑一次 `cline -i` 验证链路 |
+| 3 | **`rule-appender` / `staleness-sweeper` 没有调用路径**：两者都是完整实现，但没有 hook 分发、`scripts/` 里也没有任何入口，而宪法 §5、`lifecycle.md` 晋升流程、`capabilities/README §七` 都按「已生效」口径写"rule-appender 机械追加" | ✅ 已补：新增 `scripts/governance-capability.mjs` 统一手动入口（白名单 + 默认干跑 + 写前备份 + 拒写权威文件区）；`staleness-sweeper` 因 `.js` 值导入在无构建步骤时加载失败，入口如实报「不可执行」并给原因 |
+| 4 | **5 份 ADR 已过复查期**（74–86 天），`dev-rules.md §1.13` 规定未复查就不得作为新决策论据 | ⏳ 待排复查（内容工作，不擅自改判） |
+| 5 | **`evidence_source_kind` 6 份全缺**。但 §15 原文写的是「新增 ADR 必填，存量 ADR 在下次 Update 时补」——**存量缺失是规则自己给的宽限，不是违规**，所以只报 warn。判 fail 就等于把规则的宽限条款读漏了 | ⏳ 下次改 ADR 时补 |
+| 6 | **`traces.jsonl` 最后一条在 100 天前**，`plugin-loaded.marker` 是 103 天前——hook 机制在这台机器上已经很久没真正跑过 | ⏳ 需在本机跑一次 `cline -i` 验证链路 |
 
-两处修复的口径都是先问过 ChatGPT（带 `@GitHub` 让它直接读仓库，不是让它信我的转述）：① 选 A「schema 移独立文件」；② 保留 ≤50 行阈值、精简文件而不是放宽规则——理由是薄度量化属于已冻结的架构契约，入口规则应引用完整流程而非承载细节。
+三处修复的口径都先问过 ChatGPT（带 `@GitHub` 让它直接读仓库，不是让它信我的转述）：① 选 A「schema 移独立文件」；② 保留 ≤50 行阈值、精简文件而不是放宽规则；③ 选 A「补统一手动入口」而不是改文档或删模块——它同时点出最大风险是「参数校验或权限边界不足导致治理文件被错误修改」，所以入口做成：**白名单登记 + 默认干跑 + 可写目标逐字限定 + 权威文件区拒写 + 写前备份**。
 
 ---
 
@@ -290,7 +291,7 @@ ADR 的「该不该复查」不是一个枚举能表达清的，所以拆成三�
 - **跨站防护**：校验 `Origin` 与 `Sec-Fetch-Site`，挡住其它网页对你本机服务的调用（DNS rebinding / CSRF）
 - **静态文件白名单**：只服务 5 个文件名，无目录穿越
 - **文档读取白名单**：`/api/doc` 只接受 `.governance/` / `docs/` / `governance-console/` 前缀与三个根文件，解析后再次校验必须落在仓库根内（`../../etc/passwd`、`C:\...`、`.git/config` 一律拒绝）
-- **脚本执行只认白名单**：`lib/runner.mjs` 里 4 个任务，客户端只能传 `taskId`，不能传命令；`--no-exec` 可整体关闭
+- **脚本执行只认白名单**：`lib/runner.mjs` 里 5 个任务，客户端只能传 `taskId`，不能传命令；`--no-exec` 可整体关闭
 - **破坏性任务二次确认**：重置安装会删掉本地插件副本再重建，前端强制 `confirm`
 - **渲染不执行原始 HTML**：`public/md.js` 先把整段文本转义再套标签，文档里写 `<script>` 只会显示成文字
 

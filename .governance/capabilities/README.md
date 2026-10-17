@@ -342,7 +342,8 @@ interface RuleAppenderResult {
 **说明**:
 - `git-checker` 在 PreToolUse 阻断文件堆积,在 SessionStart 注入感知
 - `handoff-provider` 只在 SessionStart 注入,不参与会话内(防止 mid-session 重读已写文件)
-- `rule-appender` 当前手动触发,PostToolUse 自动判断留阻塞后续集
+- `rule-appender` 当前手动触发,PostToolUse 自动判断留阻塞后续集。**手动入口**：`node scripts/governance-capability.mjs rule-appender --experience "…" [--apply]`（默认干跑；`--apply` 落盘前备份到 `runtime/console-batches/manual-*/`）。本表此前写「✓ 手动」但仓库里没有任何对应入口，2026-10-17 补齐。
+- `staleness-sweeper` 与 `tracer` 未进本表（见文件头范围澄清）。`tracer` 由 `plugin/index.ts` 静态导入调用；`staleness-sweeper` **目前无任何调用路径**，且它用 `../../plugin/staleness-utils.js` 做值导入，没有 tsc 构建产物时 Node 直接加载会失败——`governance-capability.mjs list` 会如实标为「不可执行」并给出原因。
 
 ---
 

@@ -26,7 +26,7 @@
 
 ## 晋升流程
 
-1. **追加**：人判断「这值得沉淀」→ 调用 `rule-appender` 机械追加到待沉淀区
+1. **追加**：人判断「这值得沉淀」→ `node scripts/governance-capability.mjs rule-appender --experience "…" [--apply]`（默认干跑，`--apply` 才落盘并先备份）
 2. **Review**：人工 review，决定晋升 / 删除 / 改写
 3. **晋升**：移到 `.governance/rules/`（装好即生效）或 `.governance/examples/`（需手动复制）
 4. **删除**：从待沉淀区移除，不晋升

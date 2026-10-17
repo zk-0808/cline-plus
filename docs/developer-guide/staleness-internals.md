@@ -50,7 +50,8 @@
 ## 实现位置
 
 - 衰减与注入标注：`plugin/staleness-utils.ts`
-- 清扫能力：`capabilities/staleness-sweeper/index.ts`（⚠️ 目前没有分发路径，逻辑已被内联复制进 `staleness-utils.ts`，见健康面板 `L3-ORPHAN`）
+- 清扫能力：`capabilities/staleness-sweeper/index.ts`。⚠️ 它导出 `stalenessSweeper()`，文件头也写着「Can be run manually or from a hook」，但**当前没有任何 hook 或脚本调用它**——健康面板 `L3-ORPHAN` 会把它标出来。它与 `staleness-utils.ts` 是互补关系（前者 import 后者的 `calcStalenessWeight`），不是重复实现。
+- 手动入口：`node scripts/governance-capability.mjs list` 会列出所有登记的 Capability 及可执行性。**`staleness-sweeper` 目前被标为「不可执行」**：它用值导入 `../../plugin/staleness-utils.js`，而磁盘上只有 `.ts`；Node 原生类型剥离只擦除类型、不改写 `.js` 说明符，所以在没有 tsc 构建产物时加载即失败。要启用它需要改导入说明符或补构建产物。
 - 轨迹记录：`capabilities/tracer/index.ts`
 
 ## 引用

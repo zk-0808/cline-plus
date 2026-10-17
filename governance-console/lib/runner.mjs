@@ -43,6 +43,16 @@ export const TASKS = {
     recordsGate: true,
     gateRef: 'docs/dev-rules.md §1.17 规范性引用完整性门控',
   },
+  'capability-list': {
+    label: '列出手动可调用的 Capability',
+    hint: '读 scripts/governance-capability.mjs 的登记表：哪些模块有真实调用路径、哪些没有以及原因。只读，不改任何文件。真正追加经验要自己跑 `node scripts/governance-capability.mjs rule-appender --experience "…" --apply`。',
+    file: 'scripts/governance-capability.mjs',
+    shell: 'node',
+    args: ['list'],
+    timeoutMs: 60000,
+    destructive: false,
+    confirm: null,
+  },
   'trace-stats': {
     label: '统计 hook 轨迹',
     hint: '读 .governance/runtime/traces.jsonl，输出各 hook 的调用次数与耗时。',
@@ -106,7 +116,7 @@ export function runTask(repo, taskId) {
   const started = Date.now();
   const argv = t.shell === 'pwsh'
     ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', abs]
-    : [abs];
+    : [abs, ...(t.args ?? [])];
 
   // Windows 上 Python 把中文打进管道时默认用区域代码页（简中机器是 GBK），
   // 而 Node 按 UTF-8 解码 —— 结论行会变成乱码。强制子进程用 UTF-8，从源头对齐编码。
