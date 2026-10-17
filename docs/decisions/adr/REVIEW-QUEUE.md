@@ -18,11 +18,15 @@
 | ADR-002 | `docs/decisions/adr/` | 项目承载形态与分层架构 | 2026-07-27 | 82 天 | 20 个文件 | VS Code 扩展 plugin 可用性结论是否被后续版本推翻；SDK 迁移 issue #11944 进展 | 上游 issue + 官方文档 | blocked |
 | ADR-005 | `docs/decisions/adr/` | 拆分 Compaction 与 Handoff | 2026-07-28 | 81 天 | 29 个文件 | 依赖 ADR-001 / ADR-004 的时效；两者未复查前无法独立判定 | 上游 ADR 先复查 | blocked |
 
-| ADR-007 | `docs/decisions/adr/`（正文） | snapshot 走 registerRule 静态注入，不迁 messageBuilder | 2026-08-04 | 74 天 | 18 个文件 | **前提已被实现体推翻**：`@cline/core@0.0.95` 的 `plugin-sandbox-bootstrap.js` 里 `registerRule` 接受函数式 content（`hasContentHandler:true`），宿主持有 `resolveRuleContent()` 并按需调用——"只在 session 启动求值一次"不成立 | 需重新评估该决策是否仍成立（可能应降级） | blocked |
 
+
+> **ADR-007 已于 2026-10-17 复查失败并按 §15 第 3 条降级**：结论可信度 Verified → Hypothesis，冲突已登记在该 ADR 文末的 Update 里（依据 §6「冲突时记录，不裁决」，Decision 正文未改）。剩余取证：read esolveRuleContent 的调用时机与频次。Expires if unchanged 已置为复查日，不再顺延。
+>
 > **ADR-006 已于 2026-10-17 完成复查**（本地可证部分），`Evidence as of` 与 `Expires if unchanged` 已更新为 2026-10-17 / 2026-11-16，故不在上表。复查记录见该 ADR 文末「Update 2026-10-17」。
 
-## 不需复查（列出是为了让"7 份"这个数字对得上）
+| ADR-007 | `docs/decisions/adr/`（正文） | snapshot 走 registerRule 静态注入，不迁 messageBuilder | 2026-08-04 | 74 天 | 18 个文件 | **复查已失败并降级**（2026-10-17）：结论可信度 Verified→Hypothesis，冲突已登记在该 ADR 文末。剩余取证：`resolveRuleContent()` 的调用时机与频次是否足以支撑 snapshot 注入 | 上游 runtime dist | **failed_downgraded** |
+
+## 不需复查（列出是为了让「7 份」这个数字对得上）
 
 | ADR | 来源目录 | 为何不进队列 |
 |---|---|---|

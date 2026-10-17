@@ -1,11 +1,12 @@
 # ADR-007: snapshot 走 registerRule 静态注入（不迁 messageBuilder）
 
-- **Status**: Accepted
+- **Status**: Accepted（**结论可信度已降级**：2026-10-17 复查失败，见文末 Update）
+- **Confidence**: Hypothesis（原 Verified；前提失效，结论待重新取证）
 - **Date**: 2026-07-04
 - **Deciders**: 项目所有者
 - **Related**: [ADR-005](ADR-005-split-compact-from-handoff.md)、[ADR-006](ADR-006-native-mechanism-first-principle.md)、[hook-auto-injection-design.md](../hook-auto-injection-design.md)、[thin-adapter-layer-design.md](../thin-adapter-layer-design.md)
 - **Evidence as of**: 2026-07-04
-- **Expires if unchanged**: 2026-08-04（30 天后复查）
+- **Expires if unchanged**: 2026-10-17（已复查并失败，不再顺延；重新取证后另定）
 
 ---
 
@@ -92,3 +93,51 @@ cline CLI 当前限制：registerRule 单次求值 + messageBuilder 服从度不
 | registerRule content 只在 session 启动求值一次 | [runtime-probe §2.4](../investigation/investigation-note-cline-runtime-probe.md) | 静态内容 OK，动态内容死路径 |
 | messageBuilder 注入 system 消息被训练偏好压过 | [handoff.md 决策 `registerRule-over-messageBuilder`](../../handoff.md) | 动态注入服从度不足 |
 | snapshot 写入在 beforeModel hook（不在 registerRule） | [index.ts L205-230](../../../context-snapshot/src/index.ts#L205-L230) | 写入端早已分离 |
+
+---
+
+## Update 2026-10-17：复查失败（§15 第 3 条 → 降级）
+
+**复查动作**：读 `@cline/core@0.0.95` 的实现体 `dist/extensions/plugin-sandbox-bootstrap.js`。
+
+**发现**：本 ADR 的立论前提是「`registerRule` content 只在 session 启动求值一次」。实现体显示前提不成立：
+
+```js
+registerRule:(s)=>{
+  let a=Rs(i.pluginId,"rule");
+  if(typeof s.content==="function"){
+    e.rules.set(a,s.content);
+    C.rules.push({id:a,ruleId:s.id,source:s.source,hasContentHandler:!0});
+    return;
+  }
+  C.rules.push({id:a,ruleId:s.id,content:s.content,source:s.source});
+}
+```
+
+宿主另暴露按需解析：
+
+```js
+async function kb(i){let k=ri(i.pluginId).handlers.rules.get(i.contributionId);
+  if(typeof k!=="function")return "";return await k()}
+... Db={..., resolveRuleContent: kb}
+```
+
+即：rule content 可以是**函数**，由宿主持有并通过 `resolveRuleContent()` 按需调用 —— 「只在 session 启动求值一次」这个前提不成立。
+
+**处置**（按 `docs/evidence-governance.md` §15 超期处置第 3 条「复查失败：降级为 Hypothesis，登记 Conflict Registry」）：
+
+- 结论可信度 `Verified` → **`Hypothesis`**
+- 登记冲突：**前提已失效，结论待重新取证** —— 见下方登记
+- `Expires if unchanged` 不再顺延
+
+**Conflict Registry 登记**（依据 `docs/evidence-governance.md` §6 Conflict Registry「冲突时记录，不裁决」）：
+
+| 项 | 内容 |
+|---|---|
+| 冲突命题 | 「snapshot 该走 `beforeModel`、不该走 `registerRule`」 |
+| 支持原结论的证据 | 原前提：registerRule 只在 session 启动求值一次（当时观察，未见版本标注） |
+| 反对原结论的证据 | `@cline/core@0.0.95` 实现体：registerRule 接受函数式 content 且宿主按需 `resolveRuleContent()` |
+| 当前状态 | **未裁决**。前提失效 ≠ 结论必错：结论要成立还需另一条证据——「resolveRuleContent 的调用时机不足以支撑 snapshot 注入」 |
+| 下一步取证 | 读 runtime 侧调用 `resolveRuleContent` 的位置与频次（在 `@cline/core` dist 里可查） |
+
+**注意**：本次只降级与登记，**未改 ADR 的 Decision 正文**。按 §6「冲突时记录，不裁决」，裁决需等下一步取证。
