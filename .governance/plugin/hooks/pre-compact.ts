@@ -2,6 +2,14 @@
 // 在 beforeModel() 中调用(通过长度突变检测 compaction),负责:
 // 1. 检测 compaction 发生(messages 长度骤减)
 // 2. 调用 snapshot-writer 写入 snapshot.json
+//
+// ⚠️ 待答复的决策-实现缺口（2026-10-17 记）：
+//    ADR-005 的 Status 写的是「compact-observer 改为 hook 原生 condense 事件，不做自研 token 判断」，
+//    但下面 detectCompaction() 并没有读任何原生 condense 信号 —— 它按消息条数比例自己推断压缩是否发生。
+//    这不是已被否掉的那种错误（自研 token 估算 / COMPACT_AT_RATIO 阈值都不在了），但仍属于
+//    ADR-006 §0 元规则自检第 1 条点名的「自研压缩逻辑」。
+//    要修必须先回答：beforeModel 的上下文里能否拿到原生 condense 事件？
+//    详见 docs/decisions/adr/REVIEW-QUEUE.md 的「ADR-006 的本地自查结果」一节。
 
 import { join } from "node:path";
 import { snapshotWriter, DEFAULT_EXTRACTORS } from "../../capabilities/snapshot-writer/index.js";

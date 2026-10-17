@@ -17,7 +17,7 @@
 | ADR-001 | `docs/decisions/adr/` | Handoff / Compact / Memory 架构方向 | 2026-07-23 | 86 天 | 16 个文件 | 官方文档/版本号类：Cline CLI 当前版本对 handoff/compact 的机制是否仍如当时所述 | 需 CLI 实测或官方文档；本机 `cline` 不在 PATH | blocked |
 | ADR-002 | `docs/decisions/adr/` | 项目承载形态与分层架构 | 2026-07-27 | 82 天 | 20 个文件 | VS Code 扩展 plugin 可用性结论是否被后续版本推翻；SDK 迁移 issue #11944 进展 | 上游 issue + 官方文档 | blocked |
 | ADR-005 | `docs/decisions/adr/` | 拆分 Compaction 与 Handoff | 2026-07-28 | 81 天 | 29 个文件 | 依赖 ADR-001 / ADR-004 的时效；两者未复查前无法独立判定 | 上游 ADR 先复查 | blocked |
-| ADR-006 | `docs/decisions/adr/` | Native Mechanism First Principle（原生机制优先） | 2026-08-03 | 75 天 | 13 个文件 | 项目原则类：30 天内该原则的执行情况（是否有违反而未登记） | 本仓库自身的决策记录即可自查 | blocked |
+| ADR-006 | `docs/decisions/adr/` | Native Mechanism First Principle（原生机制优先） | 2026-08-03 | 75 天 | 13 个文件 | ①原则是否仍成立（需外部事实：cline 原生 condense 是否仍在）；②**本地已查出**：实现侧用自研比例启发式检测压缩，未见"原生信号不可用"的论证 | ①上游文档；②本仓库代码（已查） | blocked |
 | ADR-007 | `docs/decisions/adr/`（正文） | snapshot 走 registerRule 静态注入，不迁 messageBuilder | 2026-08-04 | 74 天 | 18 个文件 | registerRule 静态注入在**当前** CLI 版本下是否仍只在 session 启动求值一次 | 需 CLI 实测 | blocked |
 
 ## 不需复查（列出是为了让"7 份"这个数字对得上）
@@ -44,3 +44,25 @@
 1. 复查通过 → 更新该 ADR 的 `Evidence as of` 与 `Expires if unchanged`，删除本表中的行
 2. 复查失败 → 降级为 Hypothesis，登记 Conflict Registry（`docs/evidence-governance.md §19`）
 3. 未复查 → 保持 blocked，其结论不得作为新决策论据（`dev-rules.md §1.13`）
+
+---
+
+## 附：ADR-006 的本地自查结果（2026-10-17，不需要外部证据的那一半）
+
+ADR-006 §0 元规则自检第 1 条问的是：「是不是又在造原生已有的轮子？（如：自研 token 阈值判断 / **自研压缩逻辑** / 自研截断策略）」。
+
+**查到一处未答复的缺口**：
+
+| 事实 | 位置 |
+|---|---|
+| 当前实现用**消息条数比例**判断"这次是不是发生了压缩"：`postMessages.length < preMessages.length * 0.5`，且 `preMessages.length <= 4` 直接不判 | `.governance/plugin/hooks/pre-compact.ts` · `detectCompaction()` |
+| 该判断在 `beforeModel()` 里每次模型调用前执行，靠上一次消息数组与当前数组的**长度差**推断 | `.governance/plugin/index.ts` · L394–L407 |
+| ADR-005 的 Status 写的是「实现方式部分被 ADR-006 Supersede——compact-observer 改为 **hook 原生 condense 事件**，不做自研 token 判断」 | `docs/decisions/adr/ADR-005-split-compact-from-handoff.md` |
+| ADR-006 §1.2 已核实：cline 原生确有 `ContextManager` auto-condense | 本 ADR |
+
+**缺口是什么**：ADR-005/006 要求"改用原生 condense 事件"，实现里没有读任何原生 condense 信号，而是自己按消息数比例猜。它**没有**重犯已被否掉的那类错误（自研 token 估算、`COMPACT_AT_RATIO = 0.75` 阈值都不在了），但"压缩是否发生"这个事实仍是自研推断 —— 正是元规则自检第 1 条列举的"自研压缩逻辑"。
+
+**它需要回答的问题（尚未回答）**：`beforeModel` 的上下文里到底能不能拿到原生 condense 事件/字段？如果能，这条启发式就该删掉；如果不能，就必须把这个理由写下来（证据 + 版本），否则下一个读代码的人会以为这是"已经论证过的选择"。
+
+**为什么不现在就改**：改 `detectCompaction` 会直接改变 hook 的运行时判定（写不写 snapshot），属于行为变更，且"原生信号是否可得"这一前提我没法在本机取证（`cline` 不在 PATH）。所以本轮只把缺口显性化，代码里加了指向本节的注释，不改行为。
+
