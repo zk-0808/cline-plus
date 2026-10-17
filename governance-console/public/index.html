@@ -121,10 +121,20 @@
       <button class="ghost sm" id="btn-health">重新检查</button>
       <button class="ghost sm" id="btn-run-gate">运行链接门控</button>
       <button class="ghost sm" id="btn-run-verify">运行插件自检</button>
+      <button class="ghost sm" id="btn-run-all">运行全部门禁</button>
     </header>
     <div class="body" id="health-summary"><div class="empty">加载中…</div></div>
   </section>
   <div id="health-groups"></div>
+  <section class="card" id="sec-gatelog">
+    <header>
+      <h2>门禁运行历史</h2>
+      <span class="sub">读 .governance/runtime/gate-log.jsonl · 每次运行的时间 / commit / 退出码 · 本机记录，不入库</span>
+      <span class="spacer"></span>
+      <button class="ghost sm" id="btn-gatelog">刷新</button>
+    </header>
+    <div class="body" id="gatelog-rows"><div class="empty">加载中…</div></div>
+  </section>
 </main>
 
 <!-- ============================ 视图 3：规则视图 ============================ -->

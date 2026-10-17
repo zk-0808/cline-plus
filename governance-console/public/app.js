@@ -701,7 +701,7 @@ function switchView(name) {
   $('view-docs').hidden = name !== 'docs';
   $('view-clauses').hidden = name !== 'clauses';
 
-  if (name === 'health') loadHealth(false);
+  if (name === 'health') { loadHealth(false); loadGateLog(false); }
   if (name === 'docs' && !DOCS_INDEX) loadDocs();
   if (name === 'clauses' && !CLAUSES) loadClauses();
 }
@@ -838,6 +838,71 @@ async function runGateTask(taskId, btn, label) {
 
 const runLinkGate = () => runGateTask('gate-links', $('btn-run-gate'), '运行链接门控');
 const runPluginVerify = () => runGateTask('verify-plugin', $('btn-run-verify'), '运行插件自检');
+/** 门禁运行历史：/api/gatelog 早就有了，前端一直没接。记录型门禁从"一个绿点"变成可追溯的链条。 */
+let GATELOG = null;
+
+async function loadGateLog(force) {
+  if (GATELOG && !force) return renderGateLog();
+  const box = $('gatelog-rows');
+  try {
+    GATELOG = await api('/api/gatelog');
+  } catch (e) {
+    box.innerHTML = '';
+    box.appendChild(el('div', { class: 'empty', text: `读取失败：${e.message}` }));
+    return;
+  }
+  renderGateLog();
+}
+
+function renderGateLog() {
+  const box = $('gatelog-rows');
+  box.innerHTML = '';
+  const runs = GATELOG?.runs ?? [];
+  if (!runs.length) {
+    box.appendChild(el('div', { class: 'empty', text: '还没有运行记录 —— 未运行不等于通过。' }));
+    return;
+  }
+  // 按任务分组，每组内按时间倒序取最近 6 次
+  const byTask = new Map();
+  for (const r of runs) {
+    const k = r.task ?? '(未知任务)';
+    if (!byTask.has(k)) byTask.set(k, []);
+    byTask.get(k).push(r);
+  }
+  for (const [task, list] of byTask) {
+    const shown = [...list].reverse().slice(0, 6);
+    const worst = list.some((r) => r.exit !== 0);
+    box.appendChild(el('div', { class: `h-note` },
+      el('span', { class: `chip ${worst ? 'err' : 'ok'}` },
+        el('b', { text: task }), ` 共 ${list.length} 次`),
+      el('span', { class: 'gate-ob', text: `最近一次：${shown[0]?.at ?? '-'}${shown[0]?.summary ? ` · ${shown[0].summary}` : ''}` })));
+    const listEl = el('div', { class: 'gate-list' });
+    for (const r of shown) {
+      listEl.appendChild(el('div', { class: `gate-item ${r.exit === 0 ? 'pass' : 'fail'}` },
+        el('span', { class: 'gate-st', text: r.exit === 0 ? '退出 0' : `退出 ${r.exit}` }),
+        el('span', { class: 'gate-id', text: r.commit ? String(r.commit).slice(0, 7) : '(无 commit)' }),
+        el('span', { class: 'gate-body' },
+          el('span', { class: 'gate-title', text: new Date(r.at).toLocaleString() }),
+          r.summary ? el('span', { class: 'gate-ob', text: r.summary }) : null,
+          r.counts ? el('span', { class: 'gate-ref', text: `计数：${Object.entries(r.counts).filter(([, v]) => v != null).map(([k, v]) => `${k}=${v}`).join(' · ')}` }) : null,
+        )));
+    }
+    box.appendChild(listEl);
+  }
+}
+
+/** 依次跑所有记录型门禁。串行：它们都会往 gate-log 追加，并发写会相互覆盖行序。 */
+async function runAllGates() {
+  const btn = $('btn-run-all');
+  btn.disabled = true;
+  try {
+    await runGateTask('gate-links', $('btn-run-gate'), '运行链接门控');
+    await runGateTask('verify-plugin', $('btn-run-verify'), '运行插件自检');
+    await loadGateLog(true);
+  } finally {
+    btn.disabled = false;
+  }
+}
 
 // ================================================================ 规则视图
 
@@ -1094,6 +1159,8 @@ $('btn-refresh').addEventListener('click', () => {
 $('btn-health').addEventListener('click', () => loadHealth(true));
 $('btn-run-gate').addEventListener('click', runLinkGate);
 $('btn-run-verify').addEventListener('click', runPluginVerify);
+$('btn-run-all').addEventListener('click', runAllGates);
+$('btn-gatelog').addEventListener('click', () => loadGateLog(true));
 $('btn-batches').addEventListener('click', loadBatches);
 $('d-close').addEventListener('click', closeDrawer);
 $('d-cancel').addEventListener('click', closeDrawer);
