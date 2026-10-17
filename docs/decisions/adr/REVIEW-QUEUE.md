@@ -78,3 +78,16 @@ ADR-006 §0 元规则自检第 1 条问的是：「是不是又在造原生已�
 
 **这条决策的取证方式**（需要在能跑 cline 的环境执行）：在 `beforeModel` 里临时 `console.log(Object.keys(context))` 与 `typeof context.messages`，跑一次触发压缩的会话，看原生是否暴露 condense 事件。取证后把键名清单写进 ADR-006 的 Update，再回来选 A/B/C。
 
+### 咨询侧的操作记录（为了下次少走弯路）
+
+要把这条决策交给 ChatGPT 判，必须用 `@GitHub` 让它读真实文件；但插入 GitHub 连接器的那一步只能靠菜单点选。2026-10-17 实测：
+
+| 尝试 | 结果 |
+|---|---|
+| `button[aria-label*="GitHub"]` | 不匹配（该菜单项的 accessible name 来自文本内容，不是 `aria-label`） |
+| `[role="listbox"] button` | 不匹配（插件菜单不是 listbox 角色） |
+| `bsk extract --discover` | 只返回两个匿名 `div` 列表，没有可用选择器 |
+| 完整 `observe` | **可用**：菜单项以 `button "GitHub Triage PRs, issues, CI, and publish flows"` 形式出现，可点 |
+
+结论：**没有便宜的定位捷径，必须付一次完整 observe**（本流程剩余部分约 1500 token）。下次做这条咨询时预留足够预算，别在中途开始。
+
