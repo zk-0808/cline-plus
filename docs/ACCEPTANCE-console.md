@@ -2,7 +2,7 @@
 
 > **生命周期**：任务绑定 — 本轮（P0/P1）验收通过后删除或并入复盘。
 >
-> **用途**：把 2026-10-17 这一轮（commit `5a216c0..33f2c31`）的交付物摊开成可逐条核对的清单。每条都给**验证命令**与**预期输出**，不要求读者信任叙述。
+> **用途**：把 2026-10-17 这一轮（commit `5a216c0..` 至今）的交付物摊开成可逐条核对的清单。每条都给**验证命令**与**预期输出**，不要求读者信任叙述。
 
 ---
 
@@ -24,13 +24,15 @@ node governance-console/server.mjs --port 7717 --repo .
 ## 二、自动化验证（这一节是硬的）
 
 ```powershell
-node governance-console/test/run.mjs          # 预期：51 passed, 0 failed
-python scripts/check_links_anchors.py         # 预期：PASS（非归档树 0 失效）
+node governance-console/test/run.mjs          # 预期：59 passed, 0 failed
+python scripts/check_links_anchors.py         # 预期：PASS（非归档树 0 失效）；扫 200 份 / 1199 链接 / 归档残留 185
 node --import ./scripts/ts-js-resolve.mjs .governance/plugin/verify-governance.ts   # 预期：50 passed / ALL PASSED
 node scripts/governance-capability.mjs list    # 预期：两条 Capability 均"可执行"
 ```
 
 四条都能跑通，才算这一轮交付成立。
+
+`run.mjs` 里的 `F01–F04` 是**无浏览器的前端渲染测试**：把 `public/app.js` 放进 `vm` 上下文（顶部只有函数声明，因此 `renderDetail` 会挂到全局），用最小 DOM 桩调用真实渲染函数。这台机器上 headless Chrome 打不开 `127.0.0.1`，截图不可靠；但那不等于前端不能验。
 
 ## 三、交付了什么（按可观察行为列）
 
@@ -45,6 +47,9 @@ node scripts/governance-capability.mjs list    # 预期：两条 Capability 均"
 | 7 | **记录型门禁**：没有运行记录显示"未运行"，不显示成通过 | 两条：`GATE-LINKS`、`GATE-VERIFY`，各读各的记录 |
 | 8 | **手动入口**：让"可手动运行"真的可执行 | `node scripts/governance-capability.mjs rule-appender --experience "…"`（默认干跑） |
 | 9 | **TS loader**：让 `.js` 说明符写的 `.ts` 源码能被 Node 直接跑 | 上面 verify-governance 与 rule-appender/test 两条命令 |
+| 10 | **检查明细可展开**：后端每条检查带的 `detail`（ADR 四维取值、孤儿目录、静态导入表、重复清单）在前端折叠展示，枚举翻成人话 | `/?view=health` → 任一条目下的「结构化明细（N 项）」；ADR 行显示 `expired（已过期，待复查）` 而不是裸枚举 |
+| 11 | **门禁运行历史**：`/api/gatelog` 接进页面，按任务分组显示最近 6 次的时间 / commit / 退出码 / 计数 | `/?view=health` 底部「门禁运行历史」；「运行全部门禁」串行跑两条记录型门禁 |
+| 12 | **日志有上限**：`gate-log.jsonl` 越过 400 行压实到最近 200 行（滞回，落在上限内只追加） | 测试 `H19`；面板上明确写"这里不是历史上跑过几次" |
 
 ## 四、这一轮修掉的真实缺陷（不是测试造的）
 
@@ -57,6 +62,9 @@ node scripts/governance-capability.mjs list    # 预期：两条 Capability 均"
 | ADR 计数只扫一个目录 | 「6 份全过期」是错的 | 改扫两棵树；真相是 7 份去重、2 份在时效内 |
 | `execFile('cline', …)` 执行 `.ps1` 垫片失败 | 面板假报「cline 不可用」，我据此把 4 份 ADR 判成环境阻塞 | 改为经 pwsh 执行；`cline --version` → 3.0.46 |
 | `verify-governance.ts` 的 T4 依赖工作区脏数 | 门禁变成环境的函数：干净时过、脏时挂 | 改为在临时 git 仓库里构造确定 dirty 数，并补上从未测过的**阻断分支** |
+| `/api/gatelog` 写完 5 轮，前端引用 **0 行**；`gate-log.jsonl` 无上限 | 运行历史没人看得见；日志每跑一次 +2 行、无界增长，最终没人会打开 | 接上「门禁运行历史」区块；`appendGateLog` 加 400/200 滞回上限，并把"记录条数 ≠ 历史总次数"写进接口与文案 |
+| 每条检查的 `detail` 后端算出来了，前端只显示 `observed` 一行字 | ADR 四维取值、孤儿清单、导入表这些**可核对的原始值**被丢掉，只剩我自己写的一句结论 | 新增折叠式「结构化明细」，枚举翻成人话；`F01–F04` 守住列顺序与兜底行为 |
+| `check_links_anchors.py` 全盘遍历，把 `.gitignore` 里的草稿目录也算进扫描范围 | 门禁结论变成"工作区里有没有别人放草稿"的函数：另一会话往 `experiments/` 丢 4 份临时译文，门禁从 PASS 变 FAIL(93)，而失效链接全指向沙盒之外 | 只扫**仓库自己的**文档（未跟踪且被忽略的不算，已跟踪的仍照扫）。修完回到 200 份 / 1199 链接 / must_fix 0，与基线逐字一致；`H22` 用"忽略→PASS / 一旦被跟踪→必须 FAIL"两个方向钉住它 |
 
 ## 五、ADR 复查的当前结论
 

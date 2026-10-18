@@ -745,6 +745,145 @@ function verdictLine(h) {
   return { tone, head, parts: parts.join(' · ') };
 }
 
+// ------------------------------------------------ 检查明细（detail）
+// 后端每条检查都带 detail：ADR 四维取值、孤儿目录、静态导入表、重复清单……
+// 之前前端只渲染 observed 那一行字，把这份**可核对的原始值**丢了。
+// 这里只做展开展示，不改判定：判定永远只看 status，明细是给人复核用的。
+
+const DETAIL_LABELS = {
+  bad: '违规项', missing: '缺失', chars: '字符数', files: '文件', lineCounts: '行数',
+  imports: '静态导入', orphans: '无调用路径的目录', dirs: 'capabilities 目录', manual: '手动入口',
+  installedDir: '安装目录', enabledHooks: '已启用的 hook', ageDays: '距今（天）',
+  schemaVersion: 'schema_version', looksLikeSchema: '该路径上是 schema 定义', topKeys: '顶层键',
+  counts: '各状态计数', adrs: 'ADR 明细', dups: '重复编号', expiredIds: '已过期', queued: '队列中已登记',
+  extra: '队列里有但未过期', last: '最近一次', runs: '本任务记录条数', scope: '适用范围',
+  limitation: '范围限制', logKept: '日志中保留', logSince: '日志起点', retention: '保留策略',
+  max: '上限', keep: '压实后保留',
+  id: '编号', title: '标题', state: '显示态', baseState: '本体态', expiry: '时效',
+  supersession: '取代', review: '复查义务', expires: '到期日', remainDays: '剩余天数',
+  supersededBy: '被谁取代', upstream: '上游', sourceDir: '来源目录', rel: '路径',
+  asOf: '证据日期', statusText: 'Status 原文', supersedesList: '取代了', deps: '依赖的 ADR',
+  hasAsOfField: '读到 Evidence as of', hasExpiresField: '读到 Expires', sourceKind: '时效类别',
+  from: '来源文件', spec: '导入路径', target: '解析到', capDir: '所属能力目录',
+  dir: '目录', runnable: '可执行', reason: '原因', copies: '副本', f: '文件', lines: '行数',
+  at: '时间', task: '任务', file: '脚本', ruleRef: '规则出处', exit: '退出码',
+  durationMs: '耗时（ms）', commit: 'commit', summary: '结论', seq: '序号',
+  links: '链接数', must_fix: '须修', archived: '归档豁免', scanned: '已扫描',
+};
+
+// 四维取值必须翻译成"人话"，否则面板上出现的就是一堆英文枚举，
+// 而枚举本身（我该按哪个来判定）恰恰是这套模型最容易误读的地方。
+const DETAIL_ENUM_TEXT = {
+  state: {
+    superseded: '已被整体取代', expired: '已过期，待复查', reverify: '上游已变，需重新核实',
+    due: '7 天内到期', current: '在时效内', unknown: '字段读不出',
+  },
+  baseState: {
+    superseded: '已被整体取代', expired: '已过期，待复查', reverify: '上游已变，需重新核实',
+    due: '7 天内到期', current: '在时效内', unknown: '字段读不出',
+  },
+  expiry: { valid: '有效', expired: '已过期', unknown: '读不出' },
+  supersession: { none: '无', partial: '部分', full: '整体', unknown: '读不出' },
+  review: { done: '已完成', pending: '待复查', not_required: '无需复查', unknown: '读不出' },
+  runnable: { true: '是', false: '否' },
+};
+
+// 结构化数组的列顺序（表格太宽就没人看了；只留判定要用的那几列）
+const DETAIL_COLUMNS = {
+  adrs: ['id', 'state', 'expiry', 'supersession', 'review', 'expires'],
+  imports: ['from', 'spec', 'target'],
+  files: ['f', 'lines'],
+  lineCounts: ['f', 'lines'],
+  manual: ['dir', 'runnable', 'reason'],
+  dups: ['id', 'copies'],
+  retention: ['max', 'keep'],
+};
+
+const DETAIL_EMPTY = new Set(['', null, undefined]);
+
+function detailLabel(k) { return DETAIL_LABELS[k] ?? k; }
+
+function detailScalar(k, v) {
+  if (v == null) return '—';
+  if (typeof v === 'boolean') return v ? '是' : '否';
+  const t = DETAIL_ENUM_TEXT[k]?.[String(v)];
+  if (t) return `${v}（${t}）`;
+  return String(v);
+}
+
+/** 一格：数组用「、」连，对象压成 k=v 串，避免表格里塞原生 JSON */
+function detailCell(k, v) {
+  if (v == null) return '—';
+  if (typeof v === 'boolean' || typeof v === 'number' || typeof v === 'string') return detailScalar(k, v);
+  if (Array.isArray(v)) {
+    if (!v.length) return '—';
+    return v.map((x) => (x && typeof x === 'object' ? detailObject(x) : detailScalar(k, x))).join('、');
+  }
+  if (typeof v === 'object') return detailObject(v);
+  return String(v);
+}
+
+function detailObject(o) {
+  const parts = Object.entries(o ?? {})
+    .filter(([, x]) => x != null)
+    .map(([k, x]) => `${detailLabel(k)}=${Array.isArray(x) ? (x.length ? x.map((y) => (y && typeof y === 'object' ? (y.id ?? y.f ?? detailObject(y)) : String(y))).join('/') : '—') : detailScalar(k, x)}`);
+  return parts.length ? parts.join(' · ') : '—';
+}
+
+function detailTable(key, rows) {
+  const clean = rows.filter((r) => r && typeof r === 'object');
+  let cols = DETAIL_COLUMNS[key];
+  if (!cols) {
+    cols = [];
+    for (const r of clean) {
+      for (const c of Object.keys(r)) if (!cols.includes(c) && cols.length < 6) cols.push(c);
+    }
+  }
+  cols = cols.filter((c) => clean.some((r) => c in r));
+  const LIMIT = 60;
+  const t = el('table', { class: 'det-table' },
+    el('thead', {}, el('tr', {}, ...cols.map((c) => el('th', { text: detailLabel(c) })))),
+    el('tbody', {}, ...clean.slice(0, LIMIT).map((r) =>
+      el('tr', {}, ...cols.map((c) => el('td', { text: detailCell(c, r[c]) }))))));
+  if (clean.length > LIMIT) {
+    return el('div', {}, t, el('div', { class: 'det-more', text: `另有 ${clean.length - LIMIT} 行未展开` }));
+  }
+  return t;
+}
+
+/** 一个 detail 键值对怎么画：对象→键值栅格，对象数组→表格，其余→单行 */
+function detailRow(key, v) {
+  const label = el('span', { class: 'det-k', text: detailLabel(key) });
+  if (Array.isArray(v) && v.length && typeof v[0] === 'object' && v[0] !== null) {
+    return el('div', { class: 'det-row' }, label, el('div', { class: 'det-v' }, detailTable(key, v)));
+  }
+  if (!Array.isArray(v) && v && typeof v === 'object') {
+    const grid = el('div', { class: 'det-kv' });
+    for (const [k2, v2] of Object.entries(v)) {
+      if (v2 == null) continue;
+      grid.appendChild(el('span', { class: 'det-k2', text: detailLabel(k2) }));
+      grid.appendChild(el('span', { class: 'det-v2', text: detailCell(k2, v2) }));
+    }
+    return el('div', { class: 'det-row' }, label, grid);
+  }
+  return el('div', { class: 'det-row' }, label, el('span', { class: 'det-v', text: detailCell(key, v) }));
+}
+
+function renderDetail(c) {
+  const d = c.detail;
+  if (!d || typeof d !== 'object' || Array.isArray(d)) return null;
+  const rows = Object.entries(d).filter(([, v]) => {
+    if (v == null) return false;
+    if (Array.isArray(v) && !v.length) return false;
+    if (!Array.isArray(v) && typeof v === 'object' && !Object.keys(v).length) return false;
+    return true;
+  });
+  if (!rows.length) return null;
+  return el('details', { class: 'gate-det' },
+    el('summary', { text: `结构化明细（${rows.length} 项）` }),
+    el('div', { class: 'det-body' }, ...rows.map(([k, v]) => detailRow(k, v))));
+}
+
 function renderHealth() {
   const h = HEALTH;
   if (!h) return;
@@ -803,6 +942,7 @@ function renderHealth() {
           c.observed ? el('span', { class: 'gate-ob', text: c.observed }) : null,
           c.status !== 'pass' && c.expected ? el('span', { class: 'gate-exp', text: `应满足：${c.expected}` }) : null,
           c.fix ? el('span', { class: 'gate-fix', text: `→ ${c.fix}` }) : null,
+          renderDetail(c),
           el('span', { class: 'gate-ref', text: `依据：${c.ruleRef}` }),
         )));
     }
@@ -862,6 +1002,17 @@ function renderGateLog() {
     box.appendChild(el('div', { class: 'empty', text: '还没有运行记录 —— 未运行不等于通过。' }));
     return;
   }
+  // 日志是滚动的：条数只能读成"还留着几条"。把保留策略摆在最上面，
+  // 免得有人拿它当"历史总共跑过几次"（丢掉的记录真的不在了）。
+  const rot = GATELOG.rotation;
+  box.appendChild(el('div', { class: 'h-note' },
+    el('span', { class: 'chip', text: `记录中 ${runs.length} 条` }),
+    el('span', {
+      class: 'gate-ob',
+      text: `${rot ? `滚动保留：超过 ${rot.max} 条时压实到最近 ${rot.keep} 条，` : ''}这里不是"历史上跑过几次"。`
+        + `${GATELOG.firstAt ? `最早一条 ${new Date(GATELOG.firstAt).toLocaleString()}` : ''}`,
+    })));
+
   // 按任务分组，每组内按时间倒序取最近 6 次
   const byTask = new Map();
   for (const r of runs) {
@@ -874,7 +1025,7 @@ function renderGateLog() {
     const worst = list.some((r) => r.exit !== 0);
     box.appendChild(el('div', { class: `h-note` },
       el('span', { class: `chip ${worst ? 'err' : 'ok'}` },
-        el('b', { text: task }), ` 共 ${list.length} 次`),
+        el('b', { text: task }), ` 记录 ${list.length} 条${list.length > 6 ? `（显示最近 6 次）` : ''}`),
       el('span', { class: 'gate-ob', text: `最近一次：${shown[0]?.at ?? '-'}${shown[0]?.summary ? ` · ${shown[0].summary}` : ''}` })));
     const listEl = el('div', { class: 'gate-list' });
     for (const r of shown) {

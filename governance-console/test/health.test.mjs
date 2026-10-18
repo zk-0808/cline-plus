@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { test, ok, eq, makeFixture, readJson } from './harness.mjs';
-import { readHealth, readGateLog, appendGateLog, GATE_LOG_REL } from '../lib/health.mjs';
+import { readHealth, readGateLog, appendGateLog, GATE_LOG_REL, GATE_LOG_LIMITS } from '../lib/health.mjs';
 import { runTask } from '../lib/runner.mjs';
 
 const abs = (repo, rel) => path.join(repo, ...rel.split('/'));
@@ -409,4 +409,122 @@ test('H14 GATE-VERIFY 与 GATE-LINKS 各自独立判定，互不顶替', async (
   await appendGateLog(repo, { at: new Date().toISOString(), task: 'verify-plugin', exit: 1, summary: 'HAS FAILURES' });
   const h2 = await readHealth(repo);
   eq(h2.checks.find((c) => c.id === 'GATE-VERIFY').status, 'fail', '最后一条是失败 → fail');
+});
+
+test('H19 gate-log 有上限：保留最近的记录，丢弃最早的，且落在上限内不重写', async () => {
+  const repo = makeFixture({});
+  const logAbs = abs(repo, GATE_LOG_REL);
+  const limits = { max: 6, keep: 4 };
+
+  // 上限以内：一条不丢，顺序不变
+  for (let i = 0; i < 6; i += 1) {
+    await appendGateLog(repo, { at: `2026-01-0${i + 1}T00:00:00.000Z`, task: 'gate-links', exit: 0, seq: i }, limits);
+  }
+  const kept = await readGateLog(repo);
+  eq(kept.length, 6, '未越过上限时不该丢记录');
+  eq(kept.map((r) => r.seq).join(','), '0,1,2,3,4,5', '顺序应保持追加顺序');
+
+  // 越过上限：压到最近 keep 条，丢的是最早的
+  await appendGateLog(repo, { at: '2026-02-01T00:00:00.000Z', task: 'gate-links', exit: 1, seq: 6 }, limits);
+  const after = await readGateLog(repo);
+  eq(after.length, 4, `越过上限应压到 keep=4，实际 ${after.length}`);
+  eq(after.map((r) => r.seq).join(','), '3,4,5,6', '应保留最近 4 条，最早两条被丢');
+  eq(after.at(-1).exit, 1, '最新的那条必须还在（判定只看它）');
+  // 这是"本机记录"而不是档案：丢掉的记录不可恢复，所以文案不能说"总共跑过几次"
+  ok(!fs.readFileSync(logAbs, 'utf8').includes('"seq":0'), '被丢弃的行应真的从文件里消失');
+
+  // 滞回：压实后又攒到上限以内，不该再触发重写
+  await appendGateLog(repo, { at: '2026-02-02T00:00:00.000Z', task: 'gate-links', exit: 0, seq: 7 }, limits);
+  const staged = await readGateLog(repo);
+  eq(staged.length, 5, '追加一条后应是 5 条（上限 6 以内不该压实）');
+  eq(staged[0].seq, 3, '上限以内不该再丢，最早留下的仍是 seq 3');
+
+  // 默认上限是"有界"的，不是无限增长
+  ok(GATE_LOG_LIMITS.max > GATE_LOG_LIMITS.keep, '默认 max 应大于 keep（否则每次追加都在压实）');
+});
+
+test('H20 GATE 检查把"记录中几条"与保留策略一起交出来，不把条数说成总计', async () => {
+  const repo = adrFixture();
+  const h = await readHealth(repo);
+  const g = byId(h, 'GATE-LINKS');
+  eq(g.detail.logKept, 0, '没有记录时应是 0 条');
+  eq(g.detail.logSince, null, '没有记录时起点为 null');
+  ok(g.detail.retention, '应透出保留策略，好让前端说明日志是滚动的');
+  eq(g.detail.retention.max, GATE_LOG_LIMITS.max, 'retention 应来自同一处常量');
+
+  await appendGateLog(repo, { at: '2026-01-01T00:00:00.000Z', task: 'gate-links', exit: 0 });
+  await appendGateLog(repo, { at: '2026-01-02T00:00:00.000Z', task: 'verify-plugin', exit: 0 });
+  const g2 = byId(await readHealth(repo), 'GATE-LINKS');
+  eq(g2.detail.runs, 1, '该任务自己的记录数是 1（另一条是别的任务）');
+  eq(g2.detail.logKept, 2, '日志里一共 2 条');
+  eq(g2.detail.logSince, '2026-01-01T00:00:00.000Z', '起点应是日志里最早的那条');
+});
+
+test('H21 前端展开明细所依赖的字段，健康接口必须都给', async () => {
+  // 不启浏览器，只钉住"renderDetail 读的字段后端一定有"。
+  // 明细是给人复核判定用的：少一个字段，展开后就是空白，等于把证据又藏回去了。
+  const { DEFAULT_REPO } = await import('../../scripts/governance-capability.mjs');
+  const h = await readHealth(DEFAULT_REPO);
+  for (const k of ['at', 'checks', 'layerGroups', 'summary', 'verdict', 'sources']) {
+    ok(k in h, `健康接口缺字段 ${k}`);
+  }
+  for (const c of h.checks) {
+    for (const k of ['id', 'layer', 'title', 'ruleRef', 'status', 'observed', 'expected', 'fix']) {
+      ok(k in c, `${c.id} 缺字段 ${k}`);
+    }
+  }
+
+  // ADR 检查的 detail 就是四维取值本身：前端按这四个键翻译成"人话"
+  const adr = h.checks.find((c) => /^ADR-\d{3}$/.test(c.id));
+  ok(adr, '真实仓库应有 ADR 检查');
+  ok(adr.detail && typeof adr.detail === 'object', 'ADR 检查要带 detail');
+  for (const k of ['state', 'expiry', 'supersession', 'review', 'sourceDir']) {
+    ok(k in adr.detail, `ADR detail 缺字段 ${k}`);
+  }
+
+  // 表格类明细：必须是对象数组，否则前端那张表会退化成一行 JSON
+  const summaryCheck = h.checks.find((c) => c.id === 'DR-SUMMARY');
+  ok(Array.isArray(summaryCheck?.detail?.adrs) && summaryCheck.detail.adrs.length > 0,
+    'DR-SUMMARY 要带 adrs 数组（明细表格的数据源）');
+
+  const gate = h.checks.find((c) => c.id === 'GATE-LINKS');
+  ok(gate.detail.retention, 'GATE detail 要带 retention（前端据此说明日志是滚动的）');
+  ok('logKept' in gate.detail && 'logSince' in gate.detail, 'GATE detail 要带日志条数与起点');
+  ok('limitation' in gate.detail, 'GATE detail 要带范围限制');
+});
+
+test('H22 链接门禁只扫仓库自己的文档：未跟踪的草稿不改变结论，一旦被跟踪就必须报', async () => {
+  // 回归：2026-10-18 别的会话往 gitignore 的 experiments/ 丢了几份译文草稿，
+  // 门禁从 PASS 变成 FAIL(93)，而失效链接全指向沙盒之外。门禁不该是工作区状态的函数。
+  const { execFileSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const script = path.join(
+    path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'scripts', 'check_links_anchors.py',
+  );
+  const repo = makeFixture({
+    '.gitignore': 'experiments/\n',
+    'docs/ok.md': '# 正常文档\n\n见 [README](../README.md)。\n',
+    'experiments/scratch.md': '# 草稿\n\n[坏链接](this-file-does-not-exist.md)\n',
+  });
+  const run = () => {
+    try {
+      const out = execFileSync('python', [script, repo], {
+        encoding: 'utf8',
+        env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1' },
+      });
+      return { code: 0, out };
+    } catch (err) {
+      return { code: err.status ?? 1, out: `${err.stdout ?? ''}${err.stderr ?? ''}` };
+    }
+  };
+
+  const untracked = run();
+  eq(untracked.code, 0, `未跟踪的忽略草稿不该让门禁失败：\n${untracked.out}`);
+  ok(untracked.out.includes('must_fix": 0'), '统计里 must_fix 应为 0');
+
+  // 同一份坏链接，一旦进了仓库就必须报出来（否则这就是一条"放过"规则）
+  execFileSync('git', ['add', '-f', 'experiments/scratch.md'], { cwd: repo, stdio: 'ignore' });
+  const tracked = run();
+  eq(tracked.code, 1, `被跟踪的坏链接必须让门禁失败：\n${tracked.out}`);
+  ok(tracked.out.includes('experiments/scratch.md'), '应点名那份文件');
 });

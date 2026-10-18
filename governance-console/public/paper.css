@@ -620,8 +620,7 @@ button:disabled { opacity: 0.4; }
 }
 
 /* 账本式表格：没有竖线，只有行底细线 */
-.md-table { border-collapse: collapse; font-size: 12.5px; border: 0; }
-.md-table th {
+.md-table { border-collapse: collapse; font-size: 12.5px; border: 0; }.md-table th {
   border: 0;
   border-bottom: 1.5px solid var(--p-ink);
   background: none;
@@ -697,6 +696,26 @@ button:disabled { opacity: 0.4; }
 .batch-row { padding: 12px 0; border-bottom: 1px solid var(--p-rule); }
 .batch-row:last-child { border-bottom: 0; }
 .batch-row .b-at { font-family: var(--p-mono); font-size: 10px; color: var(--p-ink-3); }
+
+/* ---------------------------------------------------------------- 检查明细 */
+
+/* 纸本里明细不用灰底盒子，用左侧细栏 + 账本式表格，和正文表格同一套骨架 */
+.det-body {
+  background: none;
+  border-left: 1px solid var(--p-rule-2);
+  padding: 6px 0 6px 14px;
+}
+.gate-det > summary { font-family: var(--p-mono); font-size: 10px; letter-spacing: 0.06em; }
+.det-table th {
+  border-bottom: 1.5px solid var(--p-ink);
+  color: var(--p-ink-3); font-size: 9.5px; letter-spacing: 0.08em;
+  text-transform: uppercase; padding: 0 14px 5px 0;
+}
+.det-table td {
+  border-bottom: 1px solid var(--p-rule);
+  padding: 6px 14px 6px 0; line-height: 1.5;
+}
+.det-table tr:last-child td { border-bottom: 1px solid var(--p-rule-2); }
 
 /* ---------------------------------------------------------------- 杂项 */
 

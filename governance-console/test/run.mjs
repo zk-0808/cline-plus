@@ -11,6 +11,7 @@ import './validate.test.mjs';
 import './batch.test.mjs';
 import './contract.test.mjs';
 import './health.test.mjs';
+import './render.test.mjs';
 import './capability-cli.test.mjs';
 
 import { runAll } from './harness.mjs';

@@ -24,7 +24,7 @@ import {
   HOOKS, LAYERS, PRESETS, CONFIG_REL, CONSTITUTION_REL,
 } from './lib/governance.mjs';
 import { listTasks, runTask } from './lib/runner.mjs';
-import { readHealth, readGateLog, HEALTH_LAYERS } from './lib/health.mjs';
+import { readHealth, readGateLog, GATE_LOG_LIMITS, HEALTH_LAYERS } from './lib/health.mjs';
 import { buildIndex, readDoc, extractClauses, searchDocs } from './lib/docs.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -196,7 +196,15 @@ const server = http.createServer(async (req, res) => {
     // ---------------- GET /api/gatelog （记录型门禁的运行历史）
     if (p === '/api/gatelog' && req.method === 'GET') {
       const runs = await readGateLog(REPO);
-      return json(res, 200, { runs, count: runs.length, logRel: '.governance/runtime/gate-log.jsonl' });
+      return json(res, 200, {
+        runs,
+        count: runs.length,
+        logRel: '.governance/runtime/gate-log.jsonl',
+        // 日志滚动：count 是"还留着几条"，不是"跑过几次"。前端必须照这个说。
+        rotation: GATE_LOG_LIMITS,
+        firstAt: runs[0]?.at ?? null,
+        lastAt: runs.at(-1)?.at ?? null,
+      });
     }
 
     // ---------------- GET /api/batches

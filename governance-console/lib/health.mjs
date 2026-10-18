@@ -758,7 +758,12 @@ export async function readHealth(repo, opts = {}) {
       fix: !last
         ? `在健康页点「${g.action}」，或命令行 \`${g.cli}\`；结果会记进 .governance/runtime/gate-log.jsonl。`
         : last.exit !== 0 ? g.fixOnFail : g.limitation,
-      detail: { last, runs: runs.length, scope: g.scope, limitation: g.limitation },
+      detail: {
+        last, runs: runs.length, scope: g.scope, limitation: g.limitation,
+        // 日志是滚动的：这里的条数是"记录中还剩几条"，不是"历史上跑过几次"。
+        // 把保留策略一起交给前端，避免它把条数说成总计。
+        logKept: gateLog.length, logSince: gateLog[0]?.at ?? null, retention: GATE_LOG_LIMITS,
+      },
     });
   }
 
@@ -801,6 +806,16 @@ export async function readHealth(repo, opts = {}) {
 export const GATE_LOG_REL = '.governance/runtime/gate-log.jsonl';
 
 /**
+ * 日志上限。不设上限的话：测试每跑一次 +2 行，一年后这个文件没人会打开，
+ * 而它存在的唯一理由是回答"上次跑过没有"。
+ *
+ * 有滞回：越过 max 行才压实到最近 keep 行，所以不是每次追加都重写整个文件。
+ * 代价是写入方要接受"最早的记录会被丢"——因此日志**不能**用来证明"总共跑过几次"。
+ * 上层文案必须按"记录中最近 N 条"说话，不能按"历史总计"说话。
+ */
+export const GATE_LOG_LIMITS = Object.freeze({ max: 400, keep: 200 });
+
+/**
  * 读门禁运行记录。文件不存在 = 从没跑过 → 返回空数组，
  * 上层据此报 unknown（"未运行不等于通过"）。
  * 放在 runtime/*.jsonl 下，因此本来就在 .gitignore 里：
@@ -817,9 +832,28 @@ export async function readGateLog(repo) {
   return out;
 }
 
-export async function appendGateLog(repo, entry) {
+/**
+ * 追加一条运行记录。
+ *
+ * 常规路径只 append（保留 O_APPEND 语义：并发追加不会互相吞掉整行）。
+ * 越过上限时才压实：先整读、取最近 keep 行、写临时文件、rename 覆盖 ——
+ * rename 在 NTFS/APFS 上都是原子的，读者不会看到写了一半的日志。
+ * 压实窗口内若有另一个写入方同时追加，那一行可能丢 —— 这是本机开发工具的
+ * 可接受取舍（门禁本身不会并发跑；面板里"运行全部门禁"也是串行的）。
+ */
+export async function appendGateLog(repo, entry, opts = {}) {
   const abs = p(repo, GATE_LOG_REL);
   await fsp.mkdir(path.dirname(abs), { recursive: true });
   await fsp.appendFile(abs, `${JSON.stringify(entry)}\n`, 'utf8');
+
+  const max = Math.max(2, Math.floor(opts.max ?? GATE_LOG_LIMITS.max));
+  const keep = Math.max(1, Math.min(Math.floor(opts.keep ?? GATE_LOG_LIMITS.keep), max - 1));
+
+  const lines = ((await read(abs)) ?? '').split('\n').filter((l) => l.trim());
+  if (lines.length <= max) return entry;
+
+  const tmp = `${abs}.${process.pid}.tmp`;
+  await fsp.writeFile(tmp, `${lines.slice(lines.length - keep).join('\n')}\n`, 'utf8');
+  await fsp.rename(tmp, abs);
   return entry;
 }
